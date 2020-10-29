@@ -116,8 +116,8 @@ if __name__=='__main__':
             valid_losses.append(valid_loss)
 
             elapsed_time = (time.time() - start) / 60
-            print("Epoch {}/{} [{:.1f}min] ({}) --- train loss: {:.5f} --- valid loss: {:.5f}".format(
-                        epoch, num_epochs, elapsed_time, mode, train_loss, valid_loss))
+            print("Epoch {}/{} [{:.1f}min] --- train loss: {:.5f} --- valid loss: {:.5f}".format(
+                        epoch, num_epochs, elapsed_time, train_loss, valid_loss))
 
             if not debug_mode:
                 if valid_loss < best_valid_loss:
@@ -137,3 +137,82 @@ if __name__=='__main__':
 
     else:
         print("Infer only mode -> skip training...")
+
+    if not debug_mode:
+        model.load_state_dict(torch.load(weights_path))
+
+    logger = Logger()
+    best_loss = 1e5
+
+    with torch.no_grad():
+        for i, batch in enumerate(tqdm(valid)):
+            original, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
+            batch_X = batch_X.to(device, non_blocking=True)
+            batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
+            batch_y_depth = batch_y_depth.to(device, non_blocking=True)
+            batch_mask_segmt = batch_mask_segmt.to(device, non_blocking=True)
+            batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
+
+            predicted = model(batch_X)
+            image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth,
+                                               batch_mask_segmt, batch_mask_depth)
+
+            pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
+            preds = [pred_segmt, pred_depth]
+            targets = [batch_y_segmt, batch_y_depth]
+            masks = [batch_mask_segmt, batch_mask_depth]
+            logger.log(preds, targets, masks)
+
+            loss = image_loss.item() + label_loss.item()
+            if loss < best_loss:
+                best_loss = loss
+                best_original = original
+                best_pred_segmt = pred_segmt
+                best_pred_depth = pred_depth
+
+    logger.get_scores()
+
+    show = 1
+    if not infer_only:
+        plt.figure(figsize=(14, 8))
+        plt.plot(np.arange(num_epochs), train_losses, linestyle="-", label="train")
+        plt.plot(np.arange(num_epochs), valid_losses, linestyle="--", label="valid")
+        plt.legend()
+        plt.savefig("./tmp/output/loss_xtask.png")
+
+    plt.figure(figsize=(12, 10))
+    plt.subplot(3,2,1)
+    plt.imshow(best_original[0][show].cpu().numpy())
+
+    if not infer_only:
+        plt.subplot(3,2,2)
+        plt.figure(figsize=(14, 8))
+        plt.plot(np.arange(num_epochs), train_losses, linestyle="-", label="train")
+        plt.plot(np.arange(num_epochs), valid_losses, linestyle="--", label="valid")
+        plt.legend()
+        
+    plt.subplot(3,2,3)
+    plt.imshow(valid_data.decode_segmt(torch.argmax(best_pred_segmt, dim=1)[show].cpu().numpy()))
+
+    plt.subplot(3,2,4)
+    plt.imshow(valid_data.decode_segmt(best_original[1][show].cpu().numpy()))
+
+    plt.subplot(3,2,5)
+    pred_clamped = torch.clamp(best_pred_depth, min=1e-9, max=1.)
+    plt.imshow(pred_clamped[show].squeeze().cpu().numpy())
+
+    plt.subplot(3,2,6)
+    plt.imshow(best_original[2][show].squeeze().cpu().numpy())
+
+    plt.tight_layout()
+    ep_or_infer = "epoch{}-{}".format(save_at_epoch, num_epochs) if not infer_only else "infer-mode"
+    plt.savefig("./tmp/output/xtask_" + ep_or_infer + "_batch{}.png".format(batch_size))
+
+    plt.figure(figsize=(8, 5))
+    flat_pred = torch.flatten(best_pred_depth[show]).cpu().numpy()
+    flat_targ = torch.flatten(best_original[2][show]).cpu().numpy()
+    sns.histplot(1 / flat_pred[flat_pred > 0], stat='density', color='blue')
+    sns.histplot(1 / flat_targ[flat_targ > 0], stat='density', color='green')
+    plt.savefig("./tmp/output/xtask_hist.png")
+
+    plt.show()

@@ -9,7 +9,7 @@ class Logger():
     """
     preds and targets are inverse depth
     """
-    def __init__(self, show_segmt=True):
+    def __init__(self):
         self.cm = 0
         self.rmse = 0
         self.irmse = 0
@@ -20,16 +20,17 @@ class Logger():
         self.delta2 = 0
         self.delta3 = 0
         self.count = 0
-        self.show_segmt = show_segmt
 
     def _confusion_matrix(self, preds, targets, n=19, ignore_label=None, mask=None):
-        preds = torch.argmax(preds, dim=1)
-        preds = preds.cpu().numpy()
-        targets = targets.squeeze().cpu().numpy().astype(int)
+        preds = np.argmax(preds, axis=1)
+        targets = np.squeeze(targets).astype(int)
+        # preds = preds.cpu().numpy()
+        # targets = targets.squeeze().cpu().numpy().astype(int)
         if mask is None:
             mask = np.ones_like(preds) == 1
         else:
-            mask = mask.squeeze().cpu().numpy()
+            # mask = mask.squeeze().cpu().numpy()
+            mask = np.squeeze(mask)
         k = (preds >= 0) & (targets < n) & (preds != ignore_label) & (mask.astype(np.bool))
         return np.bincount(n * preds[k].astype(int) + targets[k], minlength=n ** 2).reshape(n, n)
 
@@ -43,57 +44,62 @@ class Logger():
         return overall, np.nanmean(perclass), np.nanmean(IU)
 
     def _depth_rmse(self, preds, targets, masks):
-        return torch.sum(torch.sqrt(torch.abs(preds - targets) ** 2 * masks)) / torch.sum(masks)
+        return np.sum(np.sqrt(np.abs(preds - targets) ** 2 * masks)) / np.sum(masks)
 
     def _depth_irmse(self, inv_preds, inv_targets, masks):
-        return torch.sum(torch.sqrt(torch.abs(inv_preds - inv_targets) ** 2 * masks)) / torch.sum(masks)
+        return np.sum(np.sqrt(np.abs(inv_preds - inv_targets) ** 2 * masks)) / np.sum(masks)
 
     def _depth_irmse_log(self, inv_preds, inv_targets, masks):
-        return torch.sum(torch.sqrt(torch.abs(torch.log(inv_preds) - torch.log(inv_targets)) ** 2 * masks)) / torch.sum(masks)
+        return np.sum(np.sqrt(np.abs(np.log(inv_preds) - np.log(inv_targets)) ** 2 * masks)) / np.sum(masks)
 
     def _depth_abs_rel(self, preds, targets, masks):
         nonzero = targets > 0
-        absdiff = torch.abs(preds[nonzero] - targets[nonzero])
+        absdiff = np.abs(preds[nonzero] - targets[nonzero])
         relabsdiff = absdiff / targets[nonzero]
-        return torch.sum(relabsdiff) / torch.sum(nonzero)
-        # return torch.sum(torch.abs(preds - targets) * masks / targets) / torch.sum(masks)
+        return np.sum(relabsdiff) / np.sum(nonzero)
 
     def _depth_sqrt_rel(self, preds, targets, masks):
         nonzero = targets > 0
-        sqrtdiff = torch.abs(preds[nonzero] - targets[nonzero]) ** 2
+        sqrtdiff = np.abs(preds[nonzero] - targets[nonzero]) ** 2
         relsqrtdiff = sqrtdiff / targets[nonzero]
-        return torch.sum(relsqrtdiff) / torch.sum(nonzero)
-        # return torch.sum(torch.abs(preds - targets) ** 2 * masks / targets) / torch.sum(masks)
+        return np.sum(relsqrtdiff) / np.sum(nonzero)
 
     def _depth_acc(self, preds, targets, masks, thres):
-        maxratio = torch.max(preds / targets, targets / preds) * masks
-        return ((maxratio < thres).float() / torch.sum(masks)).mean()
+        nonzero = targets > 0
+        maxratio = np.fmax(preds / targets, targets / preds) * nonzero
+        maxratio[targets == 0.] += 1e5
+        return np.mean((maxratio < thres).astype(float) / np.sum(masks))
 
-    def log(self, preds, targets, masks_segmt, masks_depth, preds_segmt=None, targets_segmt=None):
+    def log(self, preds, targets, masks=None):
         """
         preds are inverse depth
         """
-        inv_preds = torch.clone(preds)
-        inv_targets = torch.clone(targets)
-        preds = 1 / preds
-        targets[targets > 0] = 1 / targets[targets > 0]
+        preds = [p.cpu().numpy() for p in preds]
+        targets = [t.cpu().numpy() for t in targets]
+        masks = [m.cpu().numpy() for m in masks]
+        preds_segmt, preds_depth = preds
+        targets_segmt, targets_depth = targets
+        masks_segmt, masks_depth = masks
 
-        N = preds.shape[0]
-        if self.show_segmt:
-            self.cm += self._confusion_matrix(preds_segmt, targets_segmt, mask=masks_segmt)
-        self.rmse += self._depth_rmse(preds, targets, masks_depth) * N
-        self.irmse += self._depth_irmse(inv_preds, inv_targets, masks_depth) * N
+        inv_preds_depth = np.copy(preds_depth)
+        inv_targets_depth = np.copy(targets_depth)
+        preds_depth = 1 / preds_depth
+        targets_depth[targets_depth > 0] = 1 / targets_depth[targets_depth > 0]
+
+        N = preds_segmt.shape[0]
+        self.cm += self._confusion_matrix(preds_segmt, targets_segmt, mask=masks_segmt)
+        self.rmse += self._depth_rmse(preds_depth, targets_depth, masks_depth) * N
+        self.irmse += self._depth_irmse(inv_preds_depth, inv_targets_depth, masks_depth) * N
         # self.irmse_log += self._depth_irmse_log(inv_preds, inv_targets, masks_depth) * N
-        self.abs_rel += self._depth_abs_rel(preds, targets, masks_depth) * N
-        self.sqrt_rel += self._depth_sqrt_rel(preds, targets, masks_depth) * N
-        self.delta1 += self._depth_acc(preds, targets, masks_depth, thres=1.25) * N
-        self.delta2 += self._depth_acc(preds, targets, masks_depth, thres=1.25**2) * N
-        self.delta3 += self._depth_acc(preds, targets, masks_depth, thres=1.25**3) * N
+        self.abs_rel += self._depth_abs_rel(preds_depth, targets_depth, masks_depth) * N
+        self.sqrt_rel += self._depth_sqrt_rel(preds_depth, targets_depth, masks_depth) * N
+        self.delta1 += self._depth_acc(preds_depth, targets_depth, masks_depth, thres=1.25) * N
+        self.delta2 += self._depth_acc(preds_depth, targets_depth, masks_depth, thres=1.25**2) * N
+        self.delta3 += self._depth_acc(preds_depth, targets_depth, masks_depth, thres=1.25**3) * N
         self.count += N
 
     def get_scores(self):
-        if self.show_segmt:
-            self.glob, self.mean, self.iou = self._get_segmt_scores()
+        self.glob, self.mean, self.iou = self._get_segmt_scores()
         self.rmse /= self.count
         self.irmse /= self.count
         # self.irmse_log /= self.count
@@ -103,11 +109,10 @@ class Logger():
         self.delta2 /= self.count
         self.delta3 /= self.count
 
-        if self.show_segmt:
-            print_segmt_str = "Pix Acc: {:.3f}, Mean acc: {:.3f}, IoU: {:.3f}"
-            print(print_segmt_str.format(
-                self.glob, self.mean, self.iou
-            ))
+        print_segmt_str = "Pix Acc: {:.3f}, Mean acc: {:.3f}, IoU: {:.3f}"
+        print(print_segmt_str.format(
+            self.glob, self.mean, self.iou
+        ))
 
         print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {:.4f}, " +\
             "delta1: {:.4f}, delta2: {:.4f}, delta3: {:.4f}"
@@ -165,7 +170,7 @@ class EarlyStopping(object):
                             best * min_delta / 100)
 
 class XTaskLoss(nn.Module):
-    def __init__(self, alpha=0.3, gamma=0.3, image_loss_type="MSE"):
+    def __init__(self, alpha=0.2, gamma=0.9, image_loss_type="MSE"):
         super(XTaskLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
@@ -220,7 +225,8 @@ class XTaskLoss(nn.Module):
 
     def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
-        targ_segmt_prob = F.one_hot(targ_segmt.clone(), num_classes=20).permute(0,3,1,2)[:, :19, :, :]
+        targ_segmt_prob = F.one_hot(targ_segmt, num_classes=20).permute(0,3,1,2)
+        targ_segmt_prob = targ_segmt_prob[:, :19, :, :].clone()
 
         if self.image_loss_type =="L1":
             depth_loss = self.masked_L1_loss(pred_depth, targ_depth, mask_depth)
@@ -232,6 +238,6 @@ class XTaskLoss(nn.Module):
         kl_loss = self.masked_kl_loss(pred_t_segmt, targ_segmt_prob, mask_segmt)
 
         image_loss = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
-        label_loss = (1 - self.gamma) * segmt_loss # + self.gamma * kl_loss
+        label_loss = (1 - self.gamma) * segmt_loss #+ self.gamma * kl_loss
 
         return image_loss, label_loss
