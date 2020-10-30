@@ -123,6 +123,8 @@ class TaskTransferNet(nn.Module):
         self.dec2 = TTUp(in_features=features[1], out_features=features[0])
         self.dec3 = TTUp(in_features=features[0], out_features=features[0])
         self.final_conv = nn.Conv2d(features[0], out_features, kernel_size=1, stride=1, bias=False)
+        self.nonlinear = nn.LogSoftmax(dim=1)
+        self.out_features = out_features
 
     def forward(self, x):
         out = self.enc1(x)
@@ -132,6 +134,8 @@ class TaskTransferNet(nn.Module):
         out = self.dec2(out)
         out = self.dec3(out)
         out = self.final_conv(out)
+        if self.out_features > 1:
+            out = self.nonlinear(out)
         return out
 
 class XTaskTSNet(nn.Module):

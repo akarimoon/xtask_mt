@@ -134,8 +134,7 @@ class CityscapesDataset(Dataset):
         self.n_classes = 19
         self.void_classes = [0, 1, 2, 3, 4, 5, 6, 9, 10, 14, 15, 16, 18, 29, 30, -1]
         self.valid_classes = [7, 8, 11, 12, 13, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33]
-        self.ignore_index_tmp = 250
-        self.ignore_index = 19
+        self.ignore_index = 250
         self.class_map = dict(zip(self.valid_classes, range(self.n_classes)))
 
         if transform is None:
@@ -237,10 +236,9 @@ class CityscapesDataset(Dataset):
     def encode_segmt(self, mask):
         # Put all void classes to zero
         for _voidc in self.void_classes:
-            mask[mask == _voidc] = self.ignore_index_tmp
+            mask[mask == _voidc] = self.ignore_index
         for _validc in self.valid_classes:
             mask[mask == _validc] = self.class_map[_validc]
-        mask[mask == self.ignore_index_tmp] = self.ignore_index
         
         return mask
 
