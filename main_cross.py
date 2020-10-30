@@ -167,6 +167,7 @@ if __name__=='__main__':
             if loss < best_loss:
                 best_loss = loss
                 best_original = original
+                best_y_depth = batch_y_depth
                 best_pred_segmt = pred_segmt
                 best_pred_depth = pred_depth
 
@@ -186,7 +187,6 @@ if __name__=='__main__':
 
     if not infer_only:
         plt.subplot(3,2,2)
-        plt.figure(figsize=(14, 8))
         plt.plot(np.arange(num_epochs), train_losses, linestyle="-", label="train")
         plt.plot(np.arange(num_epochs), valid_losses, linestyle="--", label="valid")
         plt.legend()
@@ -208,11 +208,34 @@ if __name__=='__main__':
     ep_or_infer = "epoch{}-{}".format(save_at_epoch, num_epochs) if not infer_only else "infer-mode"
     plt.savefig("./tmp/output/xtask_" + ep_or_infer + "_batch{}.png".format(batch_size))
 
-    plt.figure(figsize=(8, 5))
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
+    img = ax1.imshow(np.abs((1 / best_pred_depth[show] - 1 / best_y_depth[show]).squeeze().cpu().numpy()))
+    fig.colorbar(img, ax=ax1)
+    plt.title("Absolute error of depth (non-inverted)")
+
     flat_pred = torch.flatten(best_pred_depth[show]).cpu().numpy()
-    flat_targ = torch.flatten(best_original[2][show]).cpu().numpy()
-    sns.histplot(1 / flat_pred[flat_pred > 0], stat='density', color='blue')
-    sns.histplot(1 / flat_targ[flat_targ > 0], stat='density', color='green')
+    flat_targ = torch.flatten(best_y_depth[show]).cpu().numpy()
+    sns.histplot(1 / flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
+    sns.histplot(1 / flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
+    plt.title("Density plot of depth (non-inverted")
+    plt.legend()
+
+    df = pd.DataFrame()
+    df["pred"] = 1 / flat_pred[flat_targ > 0]
+    df["targ"] = 1 / flat_targ[flat_targ > 0]
+    df["diff_abs"] = np.abs(df["pred"] - df["targ"])
+    bins = np.linspace(0, 500, 51)
+    df["targ_bin"] = np.digitize(np.round(df["targ"]), bins) - 1
+    sns.boxplot(x="targ_bin", y="diff_abs", data=df, ax=ax3)
+    ax3.set_xticklabels([int(t.get_text()) * 10  for t in ax3.get_xticklabels()])
+    ax3.set_title("Boxplot for absolute error for all non-nan pixels")
+
+    df["is_below_20"] = df["targ"] < 20
+    bins_20 = np.linspace(0, 20, 21)
+    df["targ_bin_20"] = np.digitize(np.round(df["targ"]), bins_20) - 1
+    sns.boxplot(x="targ_bin_20", y="diff_abs", data=df[df["is_below_20"] == True], ax=ax4)
+    ax4.set_xticklabels([int(t.get_text()) * 1  for t in ax4.get_xticklabels()])
+    ax4.set_title("Boxplot for absolute error for all pixels < 20m")
     plt.savefig("./tmp/output/xtask_hist.png")
 
     plt.show()
