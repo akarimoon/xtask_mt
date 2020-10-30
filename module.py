@@ -169,15 +169,50 @@ class EarlyStopping(object):
                 self.is_better = lambda a, best: a > best + (
                             best * min_delta / 100)
 
+class MaskedKLLoss(nn.Module):
+    def __init__(self, n_classes, label_smoothing):
+        """
+        KL Divergence Loss with mask
+        - predicted: (N, C, H, W) -> (N, H * W, C)
+        - target: (N, 1, H, W) -> (N, H * W, 1)
+        - mask: (N, 1, H, W) -> (N, H * W, 1)
+        """
+        super().__init__()
+        self.label_smoothing = label_smoothing
+        self.confidence = 1.0 - label_smoothing
+        self.n_classes = n_classes
+        smoothing_value = self.label_smoothing / (self.n_classes - 2)
+        self.one_hot = torch.full((self.n_classes, ), smoothing_value)
+        self.one_hot = self.one_hot.unsqueeze(0)
+        self.loss_fn = nn.KLDivLoss(reduction='batchmean')
+
+    def forward(self, predicted, target, mask=None):
+        N, C, H, W = predicted.shape
+        predicted = predicted.view(N, H * W, C)
+        target = target.view(N, H * W, 1)
+        if mask is None:
+            mask = torch.ones(target.shape)
+        else:
+            mask = mask.view(N, H * W, 1)
+        self.one_hot = self.one_hot.to(predicted.device)
+
+        model_prob = self.one_hot.repeat(N, H * W, 1)
+        model_prob = model_prob.scatter_(2, target, value=self.confidence)
+        model_prob_masked = model_prob * mask
+        predicted = predicted * mask
+
+        return self.loss_fn(F.log_softmax(predicted, dim=2), model_prob_masked)
+
 class XTaskLoss(nn.Module):
     def __init__(self, alpha=0.2, gamma=0.9, image_loss_type="MSE"):
         super(XTaskLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.image_loss_type = image_loss_type
-        self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=19, reduction='mean')
-        self.logsoftmax = nn.LogSoftmax(dim=1)
-        self.kl_loss = nn.KLDivLoss(reduction='mean')
+        self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=250, reduction='mean')
+        self.nonlinear = nn.Softmax(dim=1)
+        # self.kl_loss = nn.KLDivLoss(reduction='batchmean')
+        self.kl_loss = MaskedKLLoss(n_classes=19, label_smoothing=0.1)
 
     def masked_SSIM(self, predicted, target, mask):
         C1 = 0.01 ** 2
@@ -202,17 +237,6 @@ class XTaskLoss(nn.Module):
 
         return torch.mean(torch.sum(SSIM, dim=(2,3)) / torch.sum(mask, dim=(2,3)))
 
-    def masked_kl_loss(self, predicted, target, mask):
-        B, C, H, W = predicted.shape
-        predicted = self.logsoftmax(predicted.reshape(C, B, H, W))
-        target = target.reshape(C, B, H, W)
-        mask = torch.nonzero(mask.reshape(1, B, H, W))
-        masked_predicted = predicted[:, mask[:,1], mask[:,2], mask[:,3]].type(torch.FloatTensor)
-        masked_target = target[:, mask[:,1], mask[:,2], mask[:,3]].type(torch.FloatTensor)
-        kl_loss = self.kl_loss(masked_predicted, masked_target)
-
-        return kl_loss
-
     def masked_L1_loss(self, predicted, target, mask):
         diff = torch.abs(predicted - target) * mask
         loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
@@ -225,19 +249,17 @@ class XTaskLoss(nn.Module):
 
     def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
-        targ_segmt_prob = F.one_hot(targ_segmt, num_classes=20).permute(0,3,1,2)
-        targ_segmt_prob = targ_segmt_prob[:, :19, :, :].clone()
 
         if self.image_loss_type =="L1":
             depth_loss = self.masked_L1_loss(pred_depth, targ_depth, mask_depth)
         elif self.image_loss_type == "MSE":
             depth_loss = self.masked_mse_loss(pred_depth, targ_depth, mask_depth)
-        ssim_loss = self.masked_SSIM(pred_depth, pred_t_depth, mask_depth)
+        ssim_loss = self.masked_SSIM(pred_depth.clone(), pred_t_depth.clone(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
-        kl_loss = self.masked_kl_loss(pred_t_segmt, targ_segmt_prob, mask_segmt)
+        kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone(), dim=1), mask_segmt)
 
         image_loss = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
-        label_loss = (1 - self.gamma) * segmt_loss #+ self.gamma * kl_loss
+        label_loss = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
 
         return image_loss, label_loss

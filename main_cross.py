@@ -36,7 +36,8 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_
     if is_train:
         optimizer.zero_grad()
         image_loss.backward(retain_graph=True)
-        label_loss.backward()
+        with torch.autograd.set_detect_anomaly(True):
+            label_loss.backward()
         optimizer.step()
 
     return image_loss.item() + label_loss.item()
