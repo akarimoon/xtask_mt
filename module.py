@@ -65,10 +65,12 @@ class Logger():
         return np.sum(relsqrtdiff) / np.sum(nonzero)
 
     def _depth_acc(self, preds, targets, masks, thres):
-        nonzero = targets > 0
-        maxratio = np.fmax(preds / targets, targets / preds) * nonzero
-        maxratio[targets == 0.] += 1e5
-        return np.mean((maxratio < thres).astype(float) / np.sum(masks))
+        preds = np.clip(preds, a_min=1e-9, a_max=None)
+        targets = np.clip(targets, a_min=1e-9, a_max=None)
+        maxratio = np.fmax(preds / targets, targets / preds) * masks
+        maxratio[masks == 0.] += 1e5
+        counts = np.sum((maxratio < thres).astype(float), axis=(2, 3))
+        return np.mean(counts / np.sum(masks, axis=(2, 3)))
 
     def log(self, preds, targets, masks=None):
         """
@@ -204,7 +206,7 @@ class MaskedKLLoss(nn.Module):
         return self.loss_fn(F.log_softmax(predicted, dim=2), model_prob_masked)
 
 class XTaskLoss(nn.Module):
-    def __init__(self, alpha=0.2, gamma=0.9, image_loss_type="MSE"):
+    def __init__(self, alpha=0.2, gamma=0., label_smoothing=0., image_loss_type="MSE"):
         super(XTaskLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
@@ -212,7 +214,7 @@ class XTaskLoss(nn.Module):
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=250, reduction='mean')
         self.nonlinear = nn.Softmax(dim=1)
         # self.kl_loss = nn.KLDivLoss(reduction='batchmean')
-        self.kl_loss = MaskedKLLoss(n_classes=19, label_smoothing=0.1)
+        self.kl_loss = MaskedKLLoss(n_classes=19, label_smoothing=label_smoothing)
 
     def masked_SSIM(self, predicted, target, mask):
         C1 = 0.01 ** 2
