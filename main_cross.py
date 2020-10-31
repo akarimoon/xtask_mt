@@ -208,7 +208,8 @@ if __name__=='__main__':
                 best_pred_depth = pred_depth
 
     logger.get_scores()
-    write_results(logger, args)
+    if not infer_only:
+        write_results(logger, args)
 
     show = 1
     if not infer_only:
