@@ -14,13 +14,15 @@ from tqdm import tqdm
 
 from dataloader import CityscapesDataset
 from parser import cityscapes_xtask_parser
-from module import Logger, XTaskLoss
+from module import Logger, XTaskLoss, PCGrad
 from model.xtask_ts import XTaskTSNet
 
 DEPTH_CORRECTION = 2.1116e-09
 
-def compute_loss(batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth, model,
-                 criterion=None, optimizer=None, is_train=True):
+def compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
+                 batch_mask_segmt, batch_mask_depth, 
+                 model, log_vars=None,
+                 criterion=None, optimizer=None, is_train=True, use_pcgrad=False):
 
     model.train(is_train)
 
@@ -31,12 +33,15 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_
     batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
 
     output = model(batch_X)
-    image_loss, label_loss = criterion(output, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth)
+    image_loss, label_loss = criterion(output, batch_y_segmt, batch_y_depth,
+                                       batch_mask_segmt, batch_mask_depth, log_vars=log_vars)
 
     if is_train:
         optimizer.zero_grad()
-        image_loss.backward(retain_graph=True)
-        with torch.autograd.set_detect_anomaly(True):
+        if use_pcgrad:
+            optimizer.pc_backward([image_loss, label_loss])
+        else:
+            image_loss.backward(retain_graph=True)
             label_loss.backward()
         optimizer.step()
 
@@ -80,6 +85,9 @@ if __name__=='__main__':
     label_smoothing = args.label_smoothing
     lp = args.lp
 
+    use_uncertainty = args.uncertainty_weights
+    use_pcgrad = args.pcgrad
+
     batch_size = args.batch_size
     num_epochs = args.epochs
  
@@ -90,6 +98,8 @@ if __name__=='__main__':
     debug_mode = args.debug
 
     weights_path = "./tmp/model/xtask_alpha{}_gamma{}.pth".format(alpha, gamma)
+
+    parameters_to_train = []
 
     print("Parameters:")
     print("   predicting at size [{}*{}]".format(height, width))
@@ -102,6 +112,20 @@ if __name__=='__main__':
     print("   device: {}".format(device))
     model = XTaskTSNet(enc_layers=enc_layers)
     model.to(device)
+    parameters_to_train = [p for p in model.parameters()]
+    
+    print("Options:")
+    log_vars = None
+    if use_uncertainty:
+        print("   use uncertainty weights")
+        log_var_a = torch.zeros((1,), requires_grad=True, device=device_name)
+        log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
+        log_var_c = torch.zeros((1,), requires_grad=True, device=device_name)
+        log_var_d = torch.zeros((1,), requires_grad=True, device=device_name)
+        log_vars = [log_var_a, log_var_b, log_var_c, log_var_d]
+        parameters_to_train += log_vars
+    if use_pcgrad:
+        print("   use pcgrad")    
 
     print("Loading dataset...")
     train_data = CityscapesDataset(root_path=input_path, height=height, width=width,
@@ -113,8 +137,11 @@ if __name__=='__main__':
     valid = DataLoader(valid_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
     criterion = XTaskLoss(alpha=alpha, gamma=gamma, label_smoothing=label_smoothing, image_loss_type=lp).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=lr, betas=betas)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, 15, 0.1)
+    if use_pcgrad:
+        optimizer = PCGrad(optim.Adam(parameters_to_train, lr=lr, betas=betas))
+    else:
+        optimizer = optim.Adam(parameters_to_train, lr=lr, betas=betas)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, 15, 0.1)
 
     if not infer_only:
         print("=======================================")
@@ -132,14 +159,19 @@ if __name__=='__main__':
 
             for i, batch in enumerate(tqdm(train)):
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
-                loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth, model,
-                                    criterion=criterion, optimizer=optimizer, is_train=True)
+                loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
+                                    batch_mask_segmt, batch_mask_depth, 
+                                    model, log_vars=log_vars,
+                                    criterion=criterion, optimizer=optimizer, is_train=True, use_pcgrad=use_pcgrad)
                 train_loss += loss
+            print([(torch.exp(v)**0.5).item() for v in log_vars])
 
             for i, batch in enumerate(tqdm(valid)):
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
-                loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth, model,
-                                    criterion=criterion, optimizer=optimizer, is_train=False)
+                loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
+                                    batch_mask_segmt, batch_mask_depth, 
+                                    model, log_vars=log_vars,
+                                    criterion=criterion, optimizer=optimizer, is_train=False, use_pcgrad=use_pcgrad)
                 valid_loss += loss
 
             train_loss /= len(train.dataset)
@@ -160,7 +192,8 @@ if __name__=='__main__':
                     best_valid_loss = valid_loss
                     save_at_epoch = epoch
 
-            scheduler.step()
+            if not use_pcgrad:
+                scheduler.step()
 
         print("Training done")
         print("=======================================")

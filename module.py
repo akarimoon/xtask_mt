@@ -1,3 +1,5 @@
+import copy
+import random
 import numpy as np
 from math import exp
 import torch
@@ -249,8 +251,12 @@ class XTaskLoss(nn.Module):
         loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
         return torch.mean(loss)
 
-    def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None):
+    def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, log_vars=None):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
+        if mask_segmt is None:
+            mask_segmt = torch.ones_like(targ_segmt)
+        if mask_depth is None:
+            mask_depth = torch.ones_like(targ_depth)
 
         if self.image_loss_type =="L1":
             depth_loss = self.masked_L1_loss(pred_depth, targ_depth, mask_depth)
@@ -261,7 +267,100 @@ class XTaskLoss(nn.Module):
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
         kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone(), dim=1), mask_segmt)
 
-        image_loss = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
-        label_loss = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
+        if log_vars is None:
+            image_loss = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
+            label_loss = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
+
+        else:
+            image_loss = torch.exp(-log_vars[0]) * depth_loss + torch.exp(-log_vars[1]) * ssim_loss + \
+                         log_vars[0] + log_vars[1]
+            label_loss = torch.exp(-log_vars[2]) * segmt_loss + torch.exp(-log_vars[3]) * kl_loss + \
+                         log_vars[2] + log_vars[3]
 
         return image_loss, label_loss
+
+class PCGrad():
+    def __init__(self, optimizer):
+        self._optim = optimizer
+        return
+
+    @property
+    def optimizer(self):
+        return self._optim
+
+    def zero_grad(self):
+        return self._optim.zero_grad()
+
+    def step(self):
+        return self._optim.step()
+
+    def pc_backward(self, objectives):
+        '''
+        input:
+        - objectives: a list of objectives
+        '''
+
+        grads, shapes = self._pack_grad(objectives)
+        pc_grad = self._project_conflicting(grads)
+        pc_grad = self._unflatten_grad(pc_grad, shapes[0])
+        self._set_grad(pc_grad)
+        return
+
+    def _project_conflicting(self, grads, shapes=None):
+        pc_grad, num_task = copy.deepcopy(grads), len(grads)
+        for g_i in pc_grad:
+            random.shuffle(grads)
+            for g_j in grads:
+                g_i_g_j = torch.dot(g_i, g_j)
+                if g_i_g_j < 0:
+                    g_i -= (g_i_g_j) * g_j / (g_j.norm()**2)
+        pc_grad = torch.stack(pc_grad).mean(dim=0)
+        return pc_grad
+
+    def _set_grad(self, grads):
+        idx = 0
+        for group in self._optim.param_groups:
+            for p in group['params']:
+                if p.grad is None: continue
+                p.grad = grads[idx]
+                idx += 1
+        return
+
+    def _pack_grad(self, objectives):
+        grads, shapes = [], []
+        for obj in objectives:
+            self._optim.zero_grad()
+            obj.backward(retain_graph=True)
+            grad, shape = self._retrieve_grad()
+            grads.append(self._flatten_grad(grad, shape))
+            shapes.append(shape)
+        return grads, shapes
+
+    def _unflatten_grad(self, grads, shapes):
+        unflatten_grad, idx = [], 0
+        for shape in shapes:
+            length = np.prod(shape)
+            unflatten_grad.append(grads[idx:idx + length].view(shape).clone())
+            idx += length
+        return unflatten_grad
+
+    def _flatten_grad(self, grads, shapes):
+        flatten_grad = torch.cat([g.flatten() for g in grads])
+        return flatten_grad
+
+    def _retrieve_grad(self):
+        '''
+        get the gradient of the parameters of the network.
+        
+        output:
+        - grad: a list of the gradient of the parameters
+        - shape: a list of the shape of the parameters
+        '''
+
+        grad, shape = [], []
+        for group in self._optim.param_groups:
+            for p in group['params']:
+                if p.grad is None: continue
+                shape.append(p.grad.shape)
+                grad.append(p.grad.clone())
+        return grad, shape

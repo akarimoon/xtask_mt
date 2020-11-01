@@ -101,7 +101,7 @@ class CityscapesDataset(Dataset):
 
     label_colours = dict(zip(range(19), colors))
 
-    def __init__(self, height, width, root_path, split='', transform=None):
+    def __init__(self, height, width, root_path, split='', transform=None, ignore_index=250):
         """
         transform should be a list
         """
@@ -134,7 +134,7 @@ class CityscapesDataset(Dataset):
         self.n_classes = 19
         self.void_classes = [0, 1, 2, 3, 4, 5, 6, 9, 10, 14, 15, 16, 18, 29, 30, -1]
         self.valid_classes = [7, 8, 11, 12, 13, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33]
-        self.ignore_index = 250
+        self.ignore_index = ignore_index
         self.class_map = dict(zip(self.valid_classes, range(self.n_classes)))
 
         if transform is None:

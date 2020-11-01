@@ -67,6 +67,11 @@ def cityscapes_xtask_parser():
     parser.add_argument('--lp', default="MSE", choices=["MSE", "L1"],
                         help='lp norm for depth loss')
 
+    parser.add_argument('--uncertainty_weights', action='store_true',
+                        help='use uncertainty weights (Kendall+, 2018) for balancing in-task losses')
+    parser.add_argument('--pcgrad', action='store_true',
+                        help='use pc grad (Yu+, 2020) for cross-task losses')
+
     parser.add_argument('-j', '--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
 
