@@ -155,8 +155,8 @@ class XTaskTSNet(nn.Module):
                                                mid_features=decoder_mid_features)
         self.decoder_depth = DecoderSequential(enc_features=enc_features, out_features=out_features_depth, 
                                                mid_features=decoder_mid_features)
-        self.trans_s2d = TaskTransferNet(in_features=out_features_segmt, out_features=out_features_depth)
-        self.trans_d2s = TaskTransferNet(in_features=out_features_depth, out_features=out_features_segmt)
+        self.trans_s2d = TaskTransferNet(in_features=out_features_segmt + decoder_mid_features, out_features=out_features_depth)
+        self.trans_d2s = TaskTransferNet(in_features=out_features_depth + decoder_mid_features, out_features=out_features_segmt)
 
         self._init_weights()
 
@@ -190,7 +190,6 @@ class XTaskTSNet(nn.Module):
         seg1 = self.decoder_segmt.conv4(torch.cat((seg2, enc1), dim=1))
         seg0 = self.decoder_segmt.conv5(torch.cat((seg1, enc0), dim=1))
         seg_out = self.decoder_segmt.conv6(seg0)
-        dep_tout = self.trans_s2d(seg_out)
 
         dep4 = self.decoder_depth.conv1(enc4)
         dep3 = self.decoder_depth.conv2(torch.cat((dep4, enc3), dim=1))
@@ -198,7 +197,9 @@ class XTaskTSNet(nn.Module):
         dep1 = self.decoder_depth.conv4(torch.cat((dep2, enc1), dim=1))
         dep0 = self.decoder_depth.conv5(torch.cat((dep1, enc0), dim=1))
         dep_out = self.decoder_depth.conv6(dep0)
-        seg_tout = self.trans_d2s(dep_out)
+
+        dep_tout = self.trans_s2d(torch.cat((seg_out, dep0), dim=1))
+        seg_tout = self.trans_d2s(torch.cat((dep_out, seg0), dim=1))
 
         return seg_out, seg_tout, dep_out, dep_tout
 

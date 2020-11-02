@@ -207,6 +207,23 @@ class MaskedKLLoss(nn.Module):
 
         return self.loss_fn(F.log_softmax(predicted, dim=2), model_prob_masked)
 
+class LabelSmoothingLoss(nn.Module):
+    def __init__(self, num_classes, label_smoothing=0.0, dim=1):
+        super(LabelSmoothingLoss, self).__init__()
+        self.confidence = 1.0 - label_smoothing
+        self.label_smoothing = label_smoothing
+        self.cls = num_classes
+        self.dim = dim
+
+    def forward(self, predicted, target):
+        predicted = pred.log_softmax(dim=self.dim)
+        with torch.no_grad():
+            # true_dist = predicted.data.clone()
+            true_dist = torch.zeros_like(predicted)
+            true_dist.fill_(self.label_smoothing / (self.cls - 1))
+            true_dist.scatter_(1, target.data.unsqueeze(1), self.confidence)
+        return torch.mean(torch.sum(-true_dist * predicted, dim=[2, 3]))
+
 class XTaskLoss(nn.Module):
     def __init__(self, alpha=0.2, gamma=0., label_smoothing=0., image_loss_type="MSE"):
         super(XTaskLoss, self).__init__()
@@ -215,8 +232,8 @@ class XTaskLoss(nn.Module):
         self.image_loss_type = image_loss_type
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=250, reduction='mean')
         self.nonlinear = nn.Softmax(dim=1)
-        # self.kl_loss = nn.KLDivLoss(reduction='batchmean')
-        self.kl_loss = MaskedKLLoss(n_classes=19, label_smoothing=label_smoothing)
+        # self.kl_loss = MaskedKLLoss(n_classes=19, label_smoothing=label_smoothing)
+        self.kl_loss = LabelSmoothingLoss(num_classes=19, label_smoothing=label_smoothing)
 
     def masked_SSIM(self, predicted, target, mask):
         C1 = 0.01 ** 2
@@ -265,8 +282,8 @@ class XTaskLoss(nn.Module):
         ssim_loss = self.masked_SSIM(pred_depth.clone(), pred_t_depth.clone(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
-        # kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone(), dim=1), mask_segmt)
-        kl_loss = self.cross_entropy_loss(pred_t_segmt, torch.argmax(pred_segmt.clone(), dim=1))
+        kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone(), dim=1))
+        # kl_loss = self.cross_entropy_loss(pred_t_segmt, torch.argmax(pred_segmt.clone(), dim=1))
 
         if log_vars is None:
             image_loss = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
@@ -281,7 +298,6 @@ class XTaskLoss(nn.Module):
             label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
             image_loss = 0.5 * torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
             label_loss = torch.exp(-log_vars[1]) * label_loss_tmp + log_vars[1]
-            print(depth_loss.item(), ssim_loss.item(), segmt_loss.item(), kl_loss.item())
 
         return image_loss, label_loss
 
