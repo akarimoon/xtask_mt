@@ -68,9 +68,9 @@ def cityscapes_xtask_parser():
                         help='lp norm for depth loss')
 
     parser.add_argument('--uncertainty_weights', action='store_true',
-                        help='use uncertainty weights (Kendall+, 2018) for balancing in-task losses')
+                        help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')
     parser.add_argument('--pcgrad', action='store_true',
-                        help='use pc grad (Yu+, 2020) for cross-task losses')
+                        help='flag: use pc grad (Yu+, 2020) for cross-task losses')
 
     parser.add_argument('-j', '--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
@@ -78,7 +78,8 @@ def cityscapes_xtask_parser():
     parser.add_argument('--save_weights', default='./tmp/model/xtask.pth',
                         help='path to where weights are saved (default: ./tmp/model/xtask.pth)')
     parser.add_argument('--infer_only', action='store_true', help='flag: only infer')
-    parser.add_argument('--cpu', action='store_true', help='use cpu')
+    parser.add_argument('--view_only', action='store_true', help='flag: do not save graphs')
+    parser.add_argument('--cpu', action='store_true', help='flag: use cpu')
     parser.add_argument('--debug', action='store_true', help='flag: debug mode, dont save weights')
 
     args = parser.parse_args()

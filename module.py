@@ -265,17 +265,23 @@ class XTaskLoss(nn.Module):
         ssim_loss = self.masked_SSIM(pred_depth.clone(), pred_t_depth.clone(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
-        kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone(), dim=1), mask_segmt)
+        # kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone(), dim=1), mask_segmt)
+        kl_loss = self.cross_entropy_loss(pred_t_segmt, torch.argmax(pred_segmt.clone(), dim=1))
 
         if log_vars is None:
             image_loss = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
             label_loss = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
 
         else:
-            image_loss = torch.exp(-log_vars[0]) * depth_loss + torch.exp(-log_vars[1]) * ssim_loss + \
-                         log_vars[0] + log_vars[1]
-            label_loss = torch.exp(-log_vars[2]) * segmt_loss + torch.exp(-log_vars[3]) * kl_loss + \
-                         log_vars[2] + log_vars[3]
+            # image_loss = torch.exp(-log_vars[0]) * depth_loss + torch.exp(-log_vars[1]) * ssim_loss + \
+            #              log_vars[0] + log_vars[1]
+            # label_loss = torch.exp(-log_vars[2]) * segmt_loss + torch.exp(-log_vars[3]) * kl_loss + \
+            #              log_vars[2] + log_vars[3]
+            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
+            label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
+            image_loss = 0.5 * torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
+            label_loss = torch.exp(-log_vars[1]) * label_loss_tmp + log_vars[1]
+            print(depth_loss.item(), ssim_loss.item(), segmt_loss.item(), kl_loss.item())
 
         return image_loss, label_loss
 

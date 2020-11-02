@@ -70,7 +70,6 @@ if __name__=='__main__':
 
     print("Initializing...")
     input_path = args.input_path
-    # weights_path = args.save_weights
 
     enc_layers = args.enc_layers
     height = args.height
@@ -94,10 +93,14 @@ if __name__=='__main__':
     num_workers = args.workers
 
     infer_only = args.infer_only
+    view_only = args.view_only
     use_cpu = args.cpu
     debug_mode = args.debug
 
-    weights_path = "./tmp/model/xtask_alpha{}_gamma{}.pth".format(alpha, gamma)
+    if infer_only:
+        weights_path = args.save_weights
+    else:
+        weights_path = "./tmp/model/xtask_alpha{}_gamma{}.pth".format(alpha, gamma)
 
     parameters_to_train = []
 
@@ -120,9 +123,9 @@ if __name__=='__main__':
         print("   use uncertainty weights")
         log_var_a = torch.zeros((1,), requires_grad=True, device=device_name)
         log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
-        log_var_c = torch.zeros((1,), requires_grad=True, device=device_name)
-        log_var_d = torch.zeros((1,), requires_grad=True, device=device_name)
-        log_vars = [log_var_a, log_var_b, log_var_c, log_var_d]
+        # log_var_c = torch.zeros((1,), requires_grad=True, device=device_name)
+        # log_var_d = torch.zeros((1,), requires_grad=True, device=device_name)
+        log_vars = [log_var_a, log_var_b]
         parameters_to_train += log_vars
     if use_pcgrad:
         print("   use pcgrad")    
@@ -158,6 +161,7 @@ if __name__=='__main__':
             valid_loss = 0.
 
             for i, batch in enumerate(tqdm(train)):
+            # for i, batch in enumerate(train):
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                     batch_mask_segmt, batch_mask_depth, 
@@ -250,7 +254,8 @@ if __name__=='__main__':
         plt.plot(np.arange(num_epochs), train_losses, linestyle="-", label="train")
         plt.plot(np.arange(num_epochs), valid_losses, linestyle="--", label="valid")
         plt.legend()
-        plt.savefig("./tmp/output/loss_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
+        if not view_only:
+            plt.savefig("./tmp/output/loss_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
 
     plt.figure(figsize=(12, 10))
     plt.subplot(3,2,1)
@@ -277,7 +282,8 @@ if __name__=='__main__':
 
     plt.tight_layout()
     ep_or_infer = "epoch{}-{}".format(save_at_epoch, num_epochs) if not infer_only else "infer-mode"
-    plt.savefig("./tmp/output/xtask_" + ep_or_infer + "_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
+    if not view_only:
+        plt.savefig("./tmp/output/xtask_" + ep_or_infer + "_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
     img = ax1.imshow(np.abs((1 / best_pred_depth[show] - 1 / best_y_depth[show]).squeeze().cpu().numpy()))
@@ -308,6 +314,7 @@ if __name__=='__main__':
     ax4.set_xticklabels([int(t.get_text()) * 1  for t in ax4.get_xticklabels()])
     ax4.set_title("Boxplot for absolute error for all pixels < 20m")
     plt.tight_layout()
-    plt.savefig("./tmp/output/xtask_hist_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
+    if not view_only:
+        plt.savefig("./tmp/output/xtask_hist_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
     
-    # plt.show()
+    plt.show()
