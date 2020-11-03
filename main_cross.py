@@ -47,12 +47,13 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
 
     return image_loss.item() + label_loss.item()
 
-def write_results(logger, args, file_path="./tmp/output/grid_search_results.txt"):
+def write_results(logger, args, model, file_path="./tmp/output/results.txt"):
     with open(file_path, 'a') as f:
         f.write("=" * 10 + "\n")
-        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, alpha={}, gamma={}, smoothing={}\n".format(
-            args.enc_layers, args.lr, (args.b1, args.b2), args.lp, args.alpha, args.gamma, args.label_smoothing
+        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, alpha={}, gamma={}, smoothing={}\n".format(
+            args.enc_layers, args.lr, (args.b1, args.b2), args.lp, args.tseg_loss, args.alpha, args.gamma, args.label_smoothing
         ))
+        f.write("transfernet type: {}, use_uncertainty: {}\n".format(model.trans_name, args.uncertainty_weights))
         print_segmt_str = "Pix Acc: {:.3f}, Mean acc: {:.3f}, IoU: {:.3f}\n"
         f.write(print_segmt_str.format(
             logger.glob, logger.mean, logger.iou
@@ -83,6 +84,7 @@ if __name__=='__main__':
     gamma = args.gamma
     label_smoothing = args.label_smoothing
     lp = args.lp
+    t_segmt = args.tseg_loss
 
     use_uncertainty = args.uncertainty_weights
     use_pcgrad = args.pcgrad
@@ -107,7 +109,7 @@ if __name__=='__main__':
     print("Parameters:")
     print("   predicting at size [{}*{}]".format(height, width))
     print("   using ResNet{}, optimizer: Adam (lr={}, beta={}), scheduler: StepLR(15, 0.1)".format(enc_layers, lr, betas))
-    print("   loss function --- Lp_depth: " + lp + ", alpha: {}, gamma: {}, smoothing: {}".format(alpha, gamma, label_smoothing))
+    print("   loss function --- Lp_depth: {}, tsegmt: {}, alpha: {}, gamma: {}, smoothing: {}".format(lp, t_segmt, alpha, gamma, label_smoothing))
     print("   batch size: {}, train for {} epochs".format(batch_size, num_epochs))
 
     device_name = "cpu" if use_cpu else "cuda"
@@ -116,6 +118,8 @@ if __name__=='__main__':
     model = XTaskTSNet(enc_layers=enc_layers)
     model.to(device)
     parameters_to_train = [p for p in model.parameters()]
+    print("TransferNet type:")
+    print("   {}".format(model.trans_name))
     
     print("Options:")
     log_vars = None
@@ -139,7 +143,8 @@ if __name__=='__main__':
     train = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     valid = DataLoader(valid_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
-    criterion = XTaskLoss(alpha=alpha, gamma=gamma, label_smoothing=label_smoothing, image_loss_type=lp).to(device)
+    criterion = XTaskLoss(alpha=alpha, gamma=gamma, label_smoothing=label_smoothing, 
+                          image_loss_type=lp, t_segmt_loss_type=t_segmt).to(device)
     if use_pcgrad:
         optimizer = PCGrad(optim.Adam(parameters_to_train, lr=lr, betas=betas))
     else:
@@ -168,7 +173,6 @@ if __name__=='__main__':
                                     model, log_vars=log_vars,
                                     criterion=criterion, optimizer=optimizer, is_train=True, use_pcgrad=use_pcgrad)
                 train_loss += loss
-            print([(torch.exp(v)**0.5).item() for v in log_vars])
 
             for i, batch in enumerate(tqdm(valid)):
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
@@ -187,6 +191,9 @@ if __name__=='__main__':
             elapsed_time = (time.time() - start) / 60
             print("Epoch {}/{} [{:.1f}min] --- train loss: {:.5f} --- valid loss: {:.5f}".format(
                         epoch, num_epochs, elapsed_time, train_loss, valid_loss))
+            if use_uncertainty:
+                print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
+                        (torch.exp(log_vars[1] ** 0.5)).item(), (torch.exp(log_vars[0] ** 0.5)).item()))
 
             if not debug_mode:
                 if epoch == 0 or valid_loss < best_valid_loss:
@@ -246,7 +253,7 @@ if __name__=='__main__':
 
     logger.get_scores()
     if not infer_only:
-        write_results(logger, args)
+        write_results(logger, args, model)
 
     show = 1
     if not infer_only:
@@ -255,7 +262,7 @@ if __name__=='__main__':
         plt.plot(np.arange(num_epochs), valid_losses, linestyle="--", label="valid")
         plt.legend()
         if not view_only:
-            plt.savefig("./tmp/output/loss_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
+            plt.savefig("./tmp/output/baseWskip_loss_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
 
     plt.figure(figsize=(12, 10))
     plt.subplot(3,2,1)
@@ -283,7 +290,7 @@ if __name__=='__main__':
     plt.tight_layout()
     ep_or_infer = "epoch{}-{}".format(save_at_epoch, num_epochs) if not infer_only else "infer-mode"
     if not view_only:
-        plt.savefig("./tmp/output/xtask_" + ep_or_infer + "_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
+        plt.savefig("./tmp/output/xtask_baseWskip_" + ep_or_infer + "_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
     img = ax1.imshow(np.abs((1 / best_pred_depth[show] - 1 / best_y_depth[show]).squeeze().cpu().numpy()))
@@ -292,10 +299,10 @@ if __name__=='__main__':
 
     flat_pred = torch.flatten(best_pred_depth[show]).cpu().numpy()
     flat_targ = torch.flatten(best_y_depth[show]).cpu().numpy()
-    sns.histplot(1 / flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
-    sns.histplot(1 / flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
-    plt.title("Density plot of depth (non-inverted")
-    plt.legend()
+    # sns.histplot(1 / flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
+    # sns.histplot(1 / flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
+    # plt.title("Density plot of depth (non-inverted")
+    # plt.legend()
 
     df = pd.DataFrame()
     df["pred"] = 1 / flat_pred[flat_targ > 0]
@@ -315,6 +322,6 @@ if __name__=='__main__':
     ax4.set_title("Boxplot for absolute error for all pixels < 20m")
     plt.tight_layout()
     if not view_only:
-        plt.savefig("./tmp/output/xtask_hist_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
+        plt.savefig("./tmp/output/xtask_baseWskip_hist_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
     
     plt.show()

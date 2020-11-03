@@ -66,6 +66,8 @@ def cityscapes_xtask_parser():
                         help='label smoothing when calculating KL loss')
     parser.add_argument('--lp', default="MSE", choices=["MSE", "L1"],
                         help='lp norm for depth loss')
+    parser.add_argument('--tseg_loss', default="cross", choices=["cross", "kl"],
+                        help='label loss for cross-task segmt loss')
 
     parser.add_argument('--uncertainty_weights', action='store_true',
                         help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')

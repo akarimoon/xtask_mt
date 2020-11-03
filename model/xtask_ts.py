@@ -2,7 +2,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .transfer_net import BaseTaskTransferNet, TaskTransferNet, TaskTransferNetWithSkipCN
+from .transfer_net import BaseTaskTransferNet, BaseTaskTransferNetWithSkipCN
+from .transfer_net import TaskTransferNet, TaskTransferNetWithSkipCN
 from .transfer_net import TaskTransferNetTwoEncoder1, TaskTransferNetTwoEncoder2
 
 class ConvBlock(nn.Module):
@@ -99,10 +100,9 @@ class XTaskTSNet(nn.Module):
                                                mid_features=decoder_mid_features)
         self.decoder_depth = DecoderSequential(enc_features=enc_features, out_features=out_features_depth, 
                                                mid_features=decoder_mid_features)
-        self.trans_s2d = TaskTransferNetTwoEncoder2(in_features=out_features_segmt, in_features_cross=decoder_mid_features,
-                                                    out_features=out_features_depth)
-        self.trans_d2s = TaskTransferNetTwoEncoder2(in_features=out_features_depth, in_features_cross=decoder_mid_features, 
-                                                    out_features=out_features_segmt)
+        self.trans_s2d = BaseTaskTransferNetWithSkipCN(in_features=out_features_segmt, out_features=out_features_depth)
+        self.trans_d2s = BaseTaskTransferNetWithSkipCN(in_features=out_features_depth, out_features=out_features_segmt)
+        self.trans_name = self.trans_s2d.name()
 
         self._init_weights()
 
@@ -144,8 +144,8 @@ class XTaskTSNet(nn.Module):
         dep0 = self.decoder_depth.conv5(torch.cat((dep1, enc0), dim=1))
         dep_out = self.decoder_depth.conv6(dep0)
 
-        dep_tout = self.trans_s2d(seg_out, dep0)
-        seg_tout = self.trans_d2s(dep_out, seg0)
+        dep_tout = self.trans_s2d(seg_out)
+        seg_tout = self.trans_d2s(dep_out)
 
         return seg_out, seg_tout, dep_out, dep_tout
 
