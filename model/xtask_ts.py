@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from .transfer_net import BaseTaskTransferNet, TaskTransferNet, TaskTransferNetWithSkipCN
+from .transfer_net import TaskTransferNetTwoEncoder1, TaskTransferNetTwoEncoder2
 
 class ConvBlock(nn.Module):
     def __init__(self, in_features, out_features, mid_features=128, is_shallow=True):
@@ -80,64 +82,6 @@ class DecoderSequential(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
-class TTDown(nn.Module):
-    def __init__(self, in_features, out_features, mid_features=None):
-        super().__init__()
-        if not mid_features:
-            mid_features = out_features
-        self.double_conv = nn.Sequential(
-            nn.Conv2d(in_features, mid_features, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(mid_features, out_features, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True)
-        )
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-
-    def forward(self, x):
-        return self.pool(self.double_conv(x))
-
-class TTUp(nn.Module):
-    def __init__(self, in_features, out_features, mid_features=None):
-        super().__init__()
-        if not mid_features:
-            mid_features = out_features
-        self.double_conv = nn.Sequential(
-                    nn.Conv2d(in_features, mid_features, kernel_size=3, padding=1),
-                    nn.ReLU(inplace=True),
-                    nn.Conv2d(mid_features, out_features, kernel_size=3, padding=1),
-                    nn.ReLU(inplace=True)
-                )
-        self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-
-    def forward(self, x):
-        return self.double_conv(self.up(x))
-
-class TaskTransferNet(nn.Module):
-    def __init__(self, in_features, out_features):
-        super().__init__()
-        features = [64, 128, 256]
-        self.enc1 = TTDown(in_features=in_features, out_features=features[0])
-        self.enc2 = TTDown(in_features=features[0], out_features=features[1])
-        self.enc3 = TTDown(in_features=features[1], out_features=features[2])
-        self.dec1 = TTUp(in_features=features[2], out_features=features[1])
-        self.dec2 = TTUp(in_features=features[1], out_features=features[0])
-        self.dec3 = TTUp(in_features=features[0], out_features=features[0])
-        self.final_conv = nn.Conv2d(features[0], out_features, kernel_size=1, stride=1, bias=False)
-        self.nonlinear = nn.LogSoftmax(dim=1)
-        self.out_features = out_features
-
-    def forward(self, x):
-        out = self.enc1(x)
-        out = self.enc2(out)
-        out = self.enc3(out)
-        out = self.dec1(out)
-        out = self.dec2(out)
-        out = self.dec3(out)
-        out = self.final_conv(out)
-        if self.out_features > 1:
-            out = self.nonlinear(out)
-        return out
-
 class XTaskTSNet(nn.Module):
     def __init__(self, enc_layers, out_features_segmt=19, out_features_depth=1, 
                  decoder_in_features=256, decoder_mid_features=128):
@@ -155,8 +99,10 @@ class XTaskTSNet(nn.Module):
                                                mid_features=decoder_mid_features)
         self.decoder_depth = DecoderSequential(enc_features=enc_features, out_features=out_features_depth, 
                                                mid_features=decoder_mid_features)
-        self.trans_s2d = TaskTransferNet(in_features=out_features_segmt + decoder_mid_features, out_features=out_features_depth)
-        self.trans_d2s = TaskTransferNet(in_features=out_features_depth + decoder_mid_features, out_features=out_features_segmt)
+        self.trans_s2d = TaskTransferNetTwoEncoder2(in_features=out_features_segmt, in_features_cross=decoder_mid_features,
+                                                    out_features=out_features_depth)
+        self.trans_d2s = TaskTransferNetTwoEncoder2(in_features=out_features_depth, in_features_cross=decoder_mid_features, 
+                                                    out_features=out_features_segmt)
 
         self._init_weights()
 
@@ -198,8 +144,8 @@ class XTaskTSNet(nn.Module):
         dep0 = self.decoder_depth.conv5(torch.cat((dep1, enc0), dim=1))
         dep_out = self.decoder_depth.conv6(dep0)
 
-        dep_tout = self.trans_s2d(torch.cat((seg_out, dep0), dim=1))
-        seg_tout = self.trans_d2s(torch.cat((dep_out, seg0), dim=1))
+        dep_tout = self.trans_s2d(seg_out, dep0)
+        seg_tout = self.trans_d2s(dep_out, seg0)
 
         return seg_out, seg_tout, dep_out, dep_tout
 
