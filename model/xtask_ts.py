@@ -3,8 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .transfer_net import BaseTaskTransferNet, BaseTaskTransferNetWithSkipCN
-from .transfer_net import TaskTransferNet, TaskTransferNetWithSkipCN
-from .transfer_net import TaskTransferNetTwoEncoder1, TaskTransferNetTwoEncoder2
 
 class ConvBlock(nn.Module):
     def __init__(self, in_features, out_features, mid_features=128, is_shallow=True):

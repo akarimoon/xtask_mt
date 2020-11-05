@@ -49,14 +49,16 @@ def cityscapes_xtask_parser():
                         help='number of epochs (default: 50)')
     parser.add_argument('--enc_layers', type=int, default=34,
                         help='type of ResNet encoder (default: 34)')
-    parser.add_argument('-b', '--batch_size', type=int, default=16,
-                        help='batch size (default: 16)')
+    parser.add_argument('-b', '--batch_size', type=int, default=6,
+                        help='batch size (default: 6)')
     parser.add_argument('--lr', '--learning_rate', type=float, default=0.0001,
                         help='learning rate (default: 0.0001)')
     parser.add_argument('--b1', '--beta_1', type=float, default=0.9,
                         help='beta_1 of Adam (default: 0.9)')
     parser.add_argument('--b2', '--beta_2', type=float, default=0.99,
                         help='beta_2 of Adam (default: 0.99)')
+    parser.add_argument('-n', '--num_classes', type=int, default=19, choices=[7, 19],
+                        help='number of classes for segmentation task (default: 19)')
 
     parser.add_argument('-a', '--alpha', type=float, default=0.4,
                         help='alpha of loss function (default: 0.4)')
@@ -73,6 +75,8 @@ def cityscapes_xtask_parser():
                         help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')
     parser.add_argument('--pcgrad', action='store_true',
                         help='flag: use pc grad (Yu+, 2020) for cross-task losses')
+    parser.add_argument("--grad_loss", action='store_true',
+                        help='use grad loss')
 
     parser.add_argument('-j', '--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
@@ -82,6 +86,8 @@ def cityscapes_xtask_parser():
 
     parser.add_argument('--infer_only', action='store_true', 
                         help='flag: only infer')
+    parser.add_argument('--exp_num', type=int,
+                        help='experiment number (only for infer_only)')
     parser.add_argument('--view_only', action='store_true', 
                         help='flag: do not save graphs')
     parser.add_argument('--cpu', action='store_true', 

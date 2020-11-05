@@ -11,7 +11,7 @@ class Logger():
     """
     preds and targets are inverse depth
     """
-    def __init__(self):
+    def __init__(self, num_classes=19):
         self.cm = 0
         self.rmse = 0
         self.irmse = 0
@@ -22,6 +22,7 @@ class Logger():
         self.delta2 = 0
         self.delta3 = 0
         self.count = 0
+        self.num_classes = num_classes
 
     def _confusion_matrix(self, preds, targets, n=19, ignore_label=None, mask=None):
         preds = np.argmax(preds, axis=1)
@@ -33,8 +34,9 @@ class Logger():
         else:
             # mask = mask.squeeze().cpu().numpy()
             mask = np.squeeze(mask)
-        k = (preds >= 0) & (targets < n) & (preds != ignore_label) & (mask.astype(np.bool))
-        return np.bincount(n * preds[k].astype(int) + targets[k], minlength=n ** 2).reshape(n, n)
+        k = (preds >= 0) & (targets < self.num_classes) & (preds != ignore_label) & (mask.astype(np.bool))
+        return np.bincount(self.num_classes * preds[k].astype(int) + targets[k], 
+                            minlength=self.num_classes ** 2).reshape(self.num_classes, self.num_classes)
 
     def _get_segmt_scores(self):
         if self.cm.sum() == 0:
@@ -212,14 +214,14 @@ class LabelSmoothingLoss(nn.Module):
         super(LabelSmoothingLoss, self).__init__()
         self.confidence = 1.0 - label_smoothing
         self.label_smoothing = label_smoothing
-        self.cls = num_classes
+        self.num_classes = num_classes
         self.dim = dim
 
     def forward(self, predicted, target, mask=None):
         with torch.no_grad():
             # true_dist = predicted.data.clone()
             true_dist = torch.zeros_like(predicted)
-            true_dist.fill_(self.label_smoothing / (self.cls - 1))
+            true_dist.fill_(self.label_smoothing / (self.num_classes - 1))
             true_dist.scatter_(1, target.data.unsqueeze(1), self.confidence)
         if mask is not None:
             predicted *= mask
@@ -227,18 +229,19 @@ class LabelSmoothingLoss(nn.Module):
         return torch.mean(torch.sum(-true_dist * F.log_softmax(predicted, dim=self.dim), dim=self.dim))
 
 class XTaskLoss(nn.Module):
-    def __init__(self, alpha=0.2, gamma=0., label_smoothing=0.,
-                 image_loss_type="MSE", t_segmt_loss_type="cross"):
+    def __init__(self, num_classes=19, alpha=0.2, gamma=0., label_smoothing=0.,
+                 image_loss_type="MSE", t_segmt_loss_type="cross", grad_loss=False):
         super(XTaskLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.image_loss_type = image_loss_type
+        self.grad_loss = grad_loss
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=250, reduction='mean')
 
         if t_segmt_loss_type == "kl":
-            self.kl_loss = MaskedKLLoss(n_classes=19, label_smoothing=label_smoothing)
+            self.kl_loss = MaskedKLLoss(n_classes=num_classes, label_smoothing=label_smoothing)
         elif t_segmt_loss_type == "cross":
-            self.kl_loss = LabelSmoothingLoss(num_classes=19, label_smoothing=label_smoothing)
+            self.kl_loss = LabelSmoothingLoss(num_classes=num_classes, label_smoothing=label_smoothing)
 
     def masked_SSIM(self, predicted, target, mask):
         C1 = 0.01 ** 2
@@ -273,12 +276,36 @@ class XTaskLoss(nn.Module):
         loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
         return torch.mean(loss)
 
+    def _calc_gradient(self, x, scale=True):
+        left = x
+        right = F.pad(x, [0, 1, 0, 0])[:, :, :, 1:]
+        top = x
+        bottom = F.pad(x, [0, 0, 0, 1])[:, :, 1:, :]
+        dx, dy = right - left, bottom - top
+        dx[:, :, :, -1] = 0
+        dy[:, :, -1, :] = 0
+
+        return dx, dy
+
+    def depth_grad_loss(self, predicted, target, mask):
+        dx, dy = self._calc_gradient(predicted - target, scale=True)
+        dx *= mask
+        dy *= mask
+        loss = torch.sum(torch.abs(dx) + torch.abs(dy), dim=(2, 3)) / torch.sum(mask, dim=(2, 3))
+        return torch.mean(loss)
+
+
     def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, log_vars=None):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
         if mask_segmt is None:
             mask_segmt = torch.ones_like(targ_segmt)
         if mask_depth is None:
             mask_depth = torch.ones_like(targ_depth)
+
+        if self.grad_loss:
+            grad_loss = self.depth_grad_loss(pred_depth, targ_depth, mask_depth)
+        else:
+            grad_loss = 0
 
         if self.image_loss_type =="L1":
             depth_loss = self.masked_L1_loss(pred_depth, targ_depth, mask_depth)
@@ -288,8 +315,7 @@ class XTaskLoss(nn.Module):
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
         kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone(), dim=1), mask_segmt)
-        # kl_loss = self.cross_entropy_loss(pred_t_segmt, torch.argmax(pred_segmt.clone(), dim=1))
-
+        
         if log_vars is None:
             image_loss = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
             label_loss = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
@@ -299,7 +325,7 @@ class XTaskLoss(nn.Module):
             #              log_vars[0] + log_vars[1]
             # label_loss = torch.exp(-log_vars[2]) * segmt_loss + torch.exp(-log_vars[3]) * kl_loss + \
             #              log_vars[2] + log_vars[3]
-            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
+            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss + grad_loss
             label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
             image_loss = 0.5 * torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
             label_loss = torch.exp(-log_vars[1]) * label_loss_tmp + log_vars[1]

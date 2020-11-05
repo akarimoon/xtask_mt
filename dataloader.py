@@ -77,7 +77,7 @@ class NYUDatasetWithOriginal(NYUDataset):
         return x, x_original, y_inverse, index
 
 class CityscapesDataset(Dataset):
-    colors = [  # [  0,   0,   0],
+    colors_19 = [  # [  0,   0,   0],
         [128, 64, 128],
         [244, 35, 232],
         [70, 70, 70],
@@ -99,12 +99,27 @@ class CityscapesDataset(Dataset):
         [119, 11, 32],
     ]
 
-    label_colours = dict(zip(range(19), colors))
+    label_colors_19 = dict(zip(range(19), colors_19))
 
-    def __init__(self, height, width, root_path, split='', transform=None, ignore_index=250):
+    colors_7 = [
+        [244, 35, 232],
+        [70, 70, 70],
+        [153, 153, 153],
+        [107, 142, 35],
+        [70, 130, 180],
+        [220, 20, 60],
+        [0, 0, 142]
+    ]
+
+    label_colors_7 = dict(zip(range(7), colors_7))
+
+    def __init__(self, height, width, root_path, num_classes=19, split='', transform=None, ignore_index=250):
         """
         transform should be a list
         """
+        if num_classes not in [7, 19]:
+            raise ValueError("# of classes must be either 7 or 19 but got {}".format(num_classes))
+
         self.height = height
         self.width = width
         self.root = root_path
@@ -131,11 +146,24 @@ class CityscapesDataset(Dataset):
                 self.segmts.append(os.path.join(segmt_targets_dir, segmt_target_name))
                 self.disps.append(os.path.join(disp_targets_dir, disp_target_name))
 
-        self.n_classes = 19
-        self.void_classes = [0, 1, 2, 3, 4, 5, 6, 9, 10, 14, 15, 16, 18, 29, 30, -1]
-        self.valid_classes = [7, 8, 11, 12, 13, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33]
+        self.n_classes = num_classes
+        if self.n_classes == 19:
+            self.void_classes = [0, 1, 2, 3, 4, 5, 6, 9, 10, 14, 15, 16, 18, 29, 30, -1]
+            self.valid_classes = [7, 8, 11, 12, 13, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33]
+            self.class_map = dict(zip(self.valid_classes, range(self.n_classes)))
+        else:
+            self.void_classes = [0, 1, 2, 3, 4, 5, 6]
+            self.valid_classes = list(range(7, 34)) + [-1]
+            self.class_map = {
+                7: 0, 8: 0, 9: 0, 10: 0,
+                11: 1, 12: 1, 13: 1, 14: 1, 15: 1, 16: 1,
+                17: 2, 18: 2, 19: 2, 20: 2,
+                21: 3, 22: 3,
+                23: 4,
+                24: 5, 25: 5,
+                26: 6, 27: 6, 28: 6, 29: 6, 30: 6, 31: 6, 32: 6, 33: 6, -1: 6
+            }
         self.ignore_index = ignore_index
-        self.class_map = dict(zip(self.valid_classes, range(self.n_classes)))
 
         if transform is None:
             transform = []
@@ -223,9 +251,15 @@ class CityscapesDataset(Dataset):
         g = temp.copy()
         b = temp.copy()
         for l in range(0, self.n_classes):
-            r[temp == l] = self.label_colours[l][0]
-            g[temp == l] = self.label_colours[l][1]
-            b[temp == l] = self.label_colours[l][2]
+            if self.n_classes == 19:
+                r[temp == l] = self.label_colors_19[l][0]
+                g[temp == l] = self.label_colors_19[l][1]
+                b[temp == l] = self.label_colors_19[l][2]
+            else:
+                r[temp == l] = self.label_colors_7[l][0]
+                g[temp == l] = self.label_colors_7[l][1]
+                b[temp == l] = self.label_colors_7[l][2]
+
 
         rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
         rgb[:, :, 0] = r / 255.0

@@ -16,6 +16,7 @@ from dataloader import CityscapesDataset
 from parser import cityscapes_xtask_parser
 from module import Logger, XTaskLoss, PCGrad
 from model.xtask_ts import XTaskTSNet
+from utils import *
 
 DEPTH_CORRECTION = 2.1116e-09
 
@@ -47,24 +48,6 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
 
     return image_loss.item() + label_loss.item()
 
-def write_results(logger, args, model, file_path="./tmp/output/results.txt"):
-    with open(file_path, 'a') as f:
-        f.write("=" * 10 + "\n")
-        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, alpha={}, gamma={}, smoothing={}\n".format(
-            args.enc_layers, args.lr, (args.b1, args.b2), args.lp, args.tseg_loss, args.alpha, args.gamma, args.label_smoothing
-        ))
-        f.write("transfernet type: {}, use_uncertainty: {}\n".format(model.trans_name, args.uncertainty_weights))
-        print_segmt_str = "Pix Acc: {:.3f}, Mean acc: {:.3f}, IoU: {:.3f}\n"
-        f.write(print_segmt_str.format(
-            logger.glob, logger.mean, logger.iou
-        ))
-
-        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {:.4f}, " +\
-            "delta1: {:.4f}, delta2: {:.4f}, delta3: {:.4f}\n"
-        f.write(print_depth_str.format(
-            logger.rmse, logger.irmse, logger.abs_rel, logger.sqrt_rel, logger.delta1, logger.delta2, logger.delta3
-        ))
-
 if __name__=='__main__':
     torch.manual_seed(0)
     args = cityscapes_xtask_parser()
@@ -88,9 +71,11 @@ if __name__=='__main__':
 
     use_uncertainty = args.uncertainty_weights
     use_pcgrad = args.pcgrad
+    use_gradloss = args.grad_loss
 
     batch_size = args.batch_size
     num_epochs = args.epochs
+    num_classes = args.num_classes
  
     num_workers = args.workers
 
@@ -100,15 +85,20 @@ if __name__=='__main__':
     debug_mode = args.debug
     notqdm = args.notqdm
 
-    if infer_only:
-        weights_path = args.save_weights
-    else:
-        weights_path = "./tmp/model/xtask_alpha{}_gamma{}.pth".format(alpha, gamma)
+    if not debug_mode:
+        if not infer_only:
+            exp_num, results_dir = make_results_dir()
+        else:
+            exp_num = str(args.exp_num).zfill(3)
+            results_dir = os.path.join("./tmp", exp_num)
+        weights_path = os.path.join(results_dir, "model", "model.pth")
 
     parameters_to_train = []
 
     print("Parameters:")
     print("   predicting at size [{}*{}]".format(height, width))
+    if num_classes != 19:
+        print("   # of classes: {}".format(num_classes))
     print("   using ResNet{}, optimizer: Adam (lr={}, beta={}), scheduler: StepLR(15, 0.1)".format(enc_layers, lr, betas))
     print("   loss function --- Lp_depth: {}, tsegmt: {}, alpha: {}, gamma: {}, smoothing: {}".format(lp, t_segmt, alpha, gamma, label_smoothing))
     print("   batch size: {}, train for {} epochs".format(batch_size, num_epochs))
@@ -116,7 +106,7 @@ if __name__=='__main__':
     device_name = "cpu" if use_cpu else "cuda"
     device = torch.device(device_name)
     print("   device: {}".format(device))
-    model = XTaskTSNet(enc_layers=enc_layers)
+    model = XTaskTSNet(enc_layers=enc_layers, out_features_segmt=num_classes)
     model.to(device)
     parameters_to_train = [p for p in model.parameters()]
     print("TransferNet type:")
@@ -134,18 +124,20 @@ if __name__=='__main__':
         parameters_to_train += log_vars
     if use_pcgrad:
         print("   use pcgrad")    
+    if use_gradloss:
+        print("   use grad loss (k=1), no scaling")
 
     print("Loading dataset...")
-    train_data = CityscapesDataset(root_path=input_path, height=height, width=width,
+    train_data = CityscapesDataset(root_path=input_path, height=height, width=width, num_classes=num_classes,
                                    split='train', transform=["random_flip"])
-    valid_data = CityscapesDataset(root_path=input_path, height=height, width=width, 
+    valid_data = CityscapesDataset(root_path=input_path, height=height, width=width, num_classes=num_classes,
                                    split='val', transform=None)
     # test_data = CityscapesDataset('./data/cityscapes', split='train', transform=transform)
     train = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     valid = DataLoader(valid_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
-    criterion = XTaskLoss(alpha=alpha, gamma=gamma, label_smoothing=label_smoothing, 
-                          image_loss_type=lp, t_segmt_loss_type=t_segmt).to(device)
+    criterion = XTaskLoss(num_classes=num_classes, alpha=alpha, gamma=gamma, label_smoothing=label_smoothing,
+                          image_loss_type=lp, t_segmt_loss_type=t_segmt, grad_loss=use_gradloss).to(device)
     if use_pcgrad:
         optimizer = PCGrad(optim.Adam(parameters_to_train, lr=lr, betas=betas))
     else:
@@ -212,8 +204,8 @@ if __name__=='__main__':
         train_losses = np.array(train_losses)
         valid_losses = np.array(valid_losses)
 
-        np.save("./tmp/model/tr_losses_alpha{}_gamma{}.npy".format(alpha, gamma), train_losses)
-        np.save("./tmp/model/va_losses_alpha{}_gamma{}.npy".format(alpha, gamma), valid_losses)
+        np.save(os.path.join(results_dir, "model", "tr_losses.npy".format(alpha, gamma)), train_losses)
+        np.save(os.path.join(results_dir, "model", "va_losses.npy".format(alpha, gamma)), valid_losses)
 
     else:
         print("Infer only mode -> skip training...")
@@ -221,7 +213,7 @@ if __name__=='__main__':
     if not debug_mode:
         model.load_state_dict(torch.load(weights_path))
 
-    logger = Logger()
+    logger = Logger(num_classes=num_classes)
     best_loss = 1e5
 
     with torch.no_grad():
@@ -252,10 +244,12 @@ if __name__=='__main__':
                 best_pred_depth = pred_depth
                 best_pred_tsegmt = pred_t_segmt
                 best_pred_tdepth = pred_t_depth
-
+            
     logger.get_scores()
+    
     if not infer_only:
-        write_results(logger, args, model)
+        write_results(logger, args, model, exp_num=exp_num)
+        write_indv_results(args, model, folder_path=results_dir)
 
     show = 1
     if not infer_only:
@@ -264,7 +258,7 @@ if __name__=='__main__':
         plt.plot(np.arange(num_epochs), valid_losses, linestyle="--", label="valid")
         plt.legend()
         if not view_only:
-            plt.savefig("./tmp/output/baseWskip_loss_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
+            plt.savefig(os.path.join(results_dir, "output", "loss.png".format(batch_size, alpha, gamma)))
 
     plt.figure(figsize=(18, 10))
     plt.subplot(3,3,1)
@@ -307,7 +301,7 @@ if __name__=='__main__':
     plt.tight_layout()
     ep_or_infer = "epoch{}-{}".format(save_at_epoch, num_epochs) if not infer_only else "infer-mode"
     if not view_only:
-        plt.savefig("./tmp/output/xtask_baseWskip_" + ep_or_infer + "_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
+        plt.savefig(os.path.join(results_dir, "output", "results.png".format(batch_size, alpha, gamma)))
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
     img = ax1.imshow(np.abs((1 / best_pred_depth[show] - 1 / best_y_depth[show]).squeeze().cpu().numpy()))
@@ -339,6 +333,6 @@ if __name__=='__main__':
     ax4.set_title("Boxplot for absolute error for all pixels < 20m")
     plt.tight_layout()
     if not view_only:
-        plt.savefig("./tmp/output/xtask_baseWskip_hist_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
+        plt.savefig(os.path.join(results_dir, "output", "hist.png".format(batch_size, alpha, gamma)))
     
     plt.show()
