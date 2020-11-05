@@ -79,10 +79,17 @@ def cityscapes_xtask_parser():
 
     parser.add_argument('--save_weights', default='./tmp/model/xtask.pth',
                         help='path to where weights are saved (default: ./tmp/model/xtask.pth)')
-    parser.add_argument('--infer_only', action='store_true', help='flag: only infer')
-    parser.add_argument('--view_only', action='store_true', help='flag: do not save graphs')
-    parser.add_argument('--cpu', action='store_true', help='flag: use cpu')
-    parser.add_argument('--debug', action='store_true', help='flag: debug mode, dont save weights')
+
+    parser.add_argument('--infer_only', action='store_true', 
+                        help='flag: only infer')
+    parser.add_argument('--view_only', action='store_true', 
+                        help='flag: do not save graphs')
+    parser.add_argument('--cpu', action='store_true', 
+                        help='flag: use cpu')
+    parser.add_argument('--debug', action='store_true', 
+                        help='flag: debug mode, dont save weights')
+    parser.add_argument('--notqdm', action='store_true',
+                        help='flag: disable tqdm')
 
     args = parser.parse_args()
 

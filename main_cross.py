@@ -98,6 +98,7 @@ if __name__=='__main__':
     view_only = args.view_only
     use_cpu = args.cpu
     debug_mode = args.debug
+    notqdm = args.notqdm
 
     if infer_only:
         weights_path = args.save_weights
@@ -165,8 +166,7 @@ if __name__=='__main__':
             train_loss = 0.
             valid_loss = 0.
 
-            for i, batch in enumerate(tqdm(train)):
-            # for i, batch in enumerate(train):
+            for i, batch in enumerate(tqdm(train, disable=notqdm)):
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                     batch_mask_segmt, batch_mask_depth, 
@@ -174,7 +174,7 @@ if __name__=='__main__':
                                     criterion=criterion, optimizer=optimizer, is_train=True, use_pcgrad=use_pcgrad)
                 train_loss += loss
 
-            for i, batch in enumerate(tqdm(valid)):
+            for i, batch in enumerate(tqdm(valid, disable=notqdm)):
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                     batch_mask_segmt, batch_mask_depth, 
@@ -193,7 +193,7 @@ if __name__=='__main__':
                         epoch, num_epochs, elapsed_time, train_loss, valid_loss))
             if use_uncertainty:
                 print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
-                        (torch.exp(log_vars[1] ** 0.5)).item(), (torch.exp(log_vars[0] ** 0.5)).item()))
+                        (torch.exp(log_vars[1]) ** 0.5).item(), (torch.exp(log_vars[0]) ** 0.5).item()))
 
             if not debug_mode:
                 if epoch == 0 or valid_loss < best_valid_loss:
@@ -225,7 +225,7 @@ if __name__=='__main__':
     best_loss = 1e5
 
     with torch.no_grad():
-        for i, batch in enumerate(tqdm(valid)):
+        for i, batch in enumerate(tqdm(valid, disable=notqdm)):
             original, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
             batch_X = batch_X.to(device, non_blocking=True)
             batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
@@ -250,6 +250,8 @@ if __name__=='__main__':
                 best_y_depth = batch_y_depth
                 best_pred_segmt = pred_segmt
                 best_pred_depth = pred_depth
+                best_pred_tsegmt = pred_t_segmt
+                best_pred_tdepth = pred_t_depth
 
     logger.get_scores()
     if not infer_only:
@@ -264,28 +266,43 @@ if __name__=='__main__':
         if not view_only:
             plt.savefig("./tmp/output/baseWskip_loss_batch{}_alpha{}_gamma{}.png".format(batch_size, alpha, gamma))
 
-    plt.figure(figsize=(12, 10))
-    plt.subplot(3,2,1)
+    plt.figure(figsize=(18, 10))
+    plt.subplot(3,3,1)
     plt.imshow(best_original[0][show].cpu().numpy())
+    plt.title("Image")
 
     if not infer_only:
-        plt.subplot(3,2,2)
+        plt.subplot(3,3,2)
         plt.plot(np.arange(num_epochs), train_losses, linestyle="-", label="train")
         plt.plot(np.arange(num_epochs), valid_losses, linestyle="--", label="valid")
+        plt.title("Loss")
         plt.legend()
         
-    plt.subplot(3,2,3)
+    plt.subplot(3,3,4)
     plt.imshow(valid_data.decode_segmt(torch.argmax(best_pred_segmt, dim=1)[show].cpu().numpy()))
+    plt.title("Direct segmt. pred.")
 
-    plt.subplot(3,2,4)
+    plt.subplot(3,3,5)
+    plt.imshow(valid_data.decode_segmt(torch.argmax(best_pred_tsegmt, dim=1)[show].cpu().numpy()))
+    plt.title("Cross-task segmt. pred.")
+
+    plt.subplot(3,3,6)
     plt.imshow(valid_data.decode_segmt(best_original[1][show].cpu().numpy()))
+    plt.title("Segmt. target")
 
-    plt.subplot(3,2,5)
+    plt.subplot(3,3,7)
     pred_clamped = torch.clamp(best_pred_depth, min=1e-9, max=1.)
     plt.imshow(pred_clamped[show].squeeze().cpu().numpy())
+    plt.title("Direct depth pred.")
 
-    plt.subplot(3,2,6)
+    plt.subplot(3,3,8)
+    pred_t_clamped = torch.clamp(best_pred_tdepth, min=1e-9, max=1.)
+    plt.imshow(pred_t_clamped[show].squeeze().cpu().numpy())
+    plt.title("Cross-task depth pred.")
+
+    plt.subplot(3,3,9)
     plt.imshow(best_original[2][show].squeeze().cpu().numpy())
+    plt.title("Depth target")
 
     plt.tight_layout()
     ep_or_infer = "epoch{}-{}".format(save_at_epoch, num_epochs) if not infer_only else "infer-mode"
