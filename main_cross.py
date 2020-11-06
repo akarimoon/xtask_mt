@@ -92,6 +92,9 @@ if __name__=='__main__':
             exp_num = str(args.exp_num).zfill(3)
             results_dir = os.path.join("./tmp", exp_num)
         weights_path = os.path.join(results_dir, "model", "model.pth")
+    else:
+        exp_num = ""
+        results_dir = "./tmp"
 
     parameters_to_train = []
 
@@ -211,7 +214,7 @@ if __name__=='__main__':
         print("Infer only mode -> skip training...")
 
     if not debug_mode:
-        model.load_state_dict(torch.load(weights_path))
+        model.load_state_dict(torch.load(weights_path, map_location=device))
 
     logger = Logger(num_classes=num_classes)
     best_loss = 1e5
@@ -246,12 +249,12 @@ if __name__=='__main__':
                 best_pred_tdepth = pred_t_depth
             
     logger.get_scores()
-    
+
     if not infer_only:
         write_results(logger, args, model, exp_num=exp_num)
         write_indv_results(args, model, folder_path=results_dir)
 
-    show = 1
+    show = 2
     if not infer_only:
         plt.figure(figsize=(14, 8))
         plt.plot(np.arange(num_epochs), train_losses, linestyle="-", label="train")
@@ -299,9 +302,9 @@ if __name__=='__main__':
     plt.title("Depth target")
 
     plt.tight_layout()
-    ep_or_infer = "epoch{}-{}".format(save_at_epoch, num_epochs) if not infer_only else "infer-mode"
+    ep_or_infer = "epoch{}-{}_".format(save_at_epoch, num_epochs) if not infer_only else "infer_"
     if not view_only:
-        plt.savefig(os.path.join(results_dir, "output", "results.png".format(batch_size, alpha, gamma)))
+        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "results.png".format(batch_size, alpha, gamma)))
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
     img = ax1.imshow(np.abs((1 / best_pred_depth[show] - 1 / best_y_depth[show]).squeeze().cpu().numpy()))
@@ -333,6 +336,6 @@ if __name__=='__main__':
     ax4.set_title("Boxplot for absolute error for all pixels < 20m")
     plt.tight_layout()
     if not view_only:
-        plt.savefig(os.path.join(results_dir, "output", "hist.png".format(batch_size, alpha, gamma)))
+        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png".format(batch_size, alpha, gamma)))
     
     plt.show()
