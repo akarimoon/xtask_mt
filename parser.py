@@ -66,8 +66,8 @@ def cityscapes_xtask_parser():
                         help='gamma of loss function (default: 0.1')
     parser.add_argument('--label_smoothing', type=float, default=0.,
                         help='label smoothing when calculating KL loss')
-    parser.add_argument('--lp', default="MSE", choices=["MSE", "L1"],
-                        help='lp norm for depth loss')
+    parser.add_argument('--lp', default="MSE", choices=["MSE", "L1", "logL1"],
+                        help='depth loss for depth loss')
     parser.add_argument('--tseg_loss', default="cross", choices=["cross", "kl"],
                         help='label loss for cross-task segmt loss')
 
