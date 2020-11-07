@@ -90,6 +90,8 @@ def cityscapes_xtask_parser():
                         help='experiment number (only for infer_only)')
     parser.add_argument('--view_only', action='store_true', 
                         help='flag: do not save graphs')
+    parser.add_argument('--run_only', action='store_true', 
+                        help='flag: do not show graphs')
     parser.add_argument('--cpu', action='store_true', 
                         help='flag: use cpu')
     parser.add_argument('--debug', action='store_true', 

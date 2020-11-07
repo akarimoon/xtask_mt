@@ -81,6 +81,7 @@ if __name__=='__main__':
 
     infer_only = args.infer_only
     view_only = args.view_only
+    run_only = args.run_only
     use_cpu = args.cpu
     debug_mode = args.debug
     notqdm = args.notqdm
@@ -338,4 +339,5 @@ if __name__=='__main__':
     if not view_only:
         plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png".format(batch_size, alpha, gamma)))
     
-    plt.show()
+    if not run_only:
+        plt.show()
