@@ -98,8 +98,10 @@ class XTaskTSNet(nn.Module):
                                                mid_features=decoder_mid_features)
         self.decoder_depth = DecoderSequential(enc_features=enc_features, out_features=out_features_depth, 
                                                mid_features=decoder_mid_features)
-        self.trans_s2d = BaseTaskTransferNetWithSkipCN(in_features=out_features_segmt, out_features=out_features_depth)
-        self.trans_d2s = BaseTaskTransferNetWithSkipCN(in_features=out_features_depth, out_features=out_features_segmt)
+        self.trans_s2d = BaseTaskTransferNetWithSkipCN(in_features=out_features_segmt, out_features=out_features_depth,
+                                             features=[32, 64, 128])
+        self.trans_d2s = BaseTaskTransferNetWithSkipCN(in_features=out_features_depth, out_features=out_features_segmt,
+                                             features=[32, 64, 128])
         self.trans_name = self.trans_s2d.name()
 
         self._init_weights()

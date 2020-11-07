@@ -41,9 +41,8 @@ class BaseTaskTransferNet(nn.Module):
     predict y_a->b from y_a
     no transferred features from y_b decoder
     """
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features, out_features, features=[64, 128, 256]):
         super().__init__()
-        features = [64, 128, 256]
         self.enc1 = TTDown(in_features=in_features, out_features=features[0])
         self.enc2 = TTDown(in_features=features[0], out_features=features[1])
         self.enc3 = TTDown(in_features=features[1], out_features=features[2])
@@ -75,9 +74,8 @@ class BaseTaskTransferNetWithSkipCN(nn.Module):
     predict y_a->b from y_a
     no transferred features from y_b decoder
     """
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features, out_features, features=[64, 128, 256]):
         super().__init__()
-        features = [64, 128, 256]
         self.enc1 = TTDown(in_features=in_features, out_features=features[0])
         self.enc2 = TTDown(in_features=features[0], out_features=features[1])
         self.enc3 = TTDown(in_features=features[1], out_features=features[2])
