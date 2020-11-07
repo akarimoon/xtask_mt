@@ -355,6 +355,11 @@ class XTaskLoss(nn.Module):
         loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
         return torch.mean(loss)
 
+    def masked_logL1_loss(self, predicted, target, mask):
+        diff = torch.log(1 + torch.abs(predicted - target)) * mask
+        loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
+        return torch.mean(loss)
+
     def _calc_gradient(self, x, scale=True):
         left = x
         right = F.pad(x, [0, 1, 0, 0])[:, :, :, 1:]
@@ -390,6 +395,8 @@ class XTaskLoss(nn.Module):
             depth_loss = self.masked_L1_loss(pred_depth, targ_depth, mask_depth)
         elif self.image_loss_type == "MSE":
             depth_loss = self.masked_mse_loss(pred_depth, targ_depth, mask_depth)
+        elif self.image_loss_type == "logL1":
+            depth_loss = self.masked_logL1_loss(pred_depth, targ_depth, mask_depth)
         ssim_loss = self.masked_SSIM(pred_depth.clone(), pred_t_depth.clone(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
