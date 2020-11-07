@@ -233,12 +233,14 @@ if __name__=='__main__':
                                                batch_mask_segmt, batch_mask_depth)
 
             pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
+
             preds = [pred_segmt, pred_depth]
             targets = [batch_y_segmt, batch_y_depth]
             masks = [batch_mask_segmt, batch_mask_depth]
             logger.log(preds, targets, masks)
 
-            loss = image_loss.item() + label_loss.item()
+            # loss = image_loss.item() + label_loss.item()
+            loss = miou - abs_err
             if i == 0 or loss < best_loss:
                 best_loss = loss
                 best_original = original
@@ -254,7 +256,7 @@ if __name__=='__main__':
         write_results(logger, args, model, exp_num=exp_num)
         write_indv_results(args, model, folder_path=results_dir)
 
-    show = 2
+    show = 0
     if not infer_only:
         plt.figure(figsize=(14, 8))
         plt.plot(np.arange(num_epochs), train_losses, linestyle="-", label="train")

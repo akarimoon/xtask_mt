@@ -15,13 +15,18 @@ def write_results(logger, args, model, file_path="./tmp/output/results.txt", exp
             model.trans_name, args.uncertainty_weights, args.grad_loss))
         print_segmt_str = "Pix Acc: {:.3f}, Mean acc: {:.3f}, IoU: {:.3f}\n"
         f.write(print_segmt_str.format(
-            logger.glob, logger.mean, logger.iou
+            logger.pixel_acc, logger.mean_acc, logger.iou
         ))
 
-        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {:.4f}, " +\
+        print_segmt_mtan_str = "(from MTAN): mIoU: {:.3f}, IoU: {:.3f}\n"
+        f.write(print_segmt_mtan_str.format(
+            self.mtan_miou, self.mtan_iou
+        ))
+
+        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, " +\
             "delta1: {:.4f}, delta2: {:.4f}, delta3: {:.4f}\n"
         f.write(print_depth_str.format(
-            logger.rmse, logger.irmse, logger.abs_rel, logger.sqrt_rel, logger.delta1, logger.delta2, logger.delta3
+            logger.rmse, logger.irmse, logger.abs, logger.abs_rel, logger.delta1, logger.delta2, logger.delta3
         ))
 
 def write_indv_results(args, model, folder_path):
