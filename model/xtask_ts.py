@@ -100,7 +100,7 @@ class XTaskTSNet(nn.Module):
                                                mid_features=decoder_mid_features)
         self.trans_s2d = BaseTaskTransferNetWithSkipCN(in_features=out_features_segmt, out_features=out_features_depth)
         self.trans_d2s = BaseTaskTransferNetWithSkipCN(in_features=out_features_depth, out_features=out_features_segmt)
-        self.trans_name = self.trans_s2d.name()
+        self.trans_name = self.trans_s2d.name
 
         self._init_weights()
 
@@ -120,18 +120,6 @@ class XTaskTSNet(nn.Module):
         pretrained.layer3 = backbone.layer3
         pretrained.layer4 = backbone.layer4
         return pretrained
-
-    def calc_gradient(self, x):
-        left = x
-        right = F.pad(x, [0, 1, 0, 0])[:, :, :, 1:]
-        top = x
-        bottom = F.pad(x, [0, 0, 0, 1])[:, :, 1:, :]
-        dx, dy = right - left, bottom - top
-        dx[:, :, :, -1] = 0
-        dy[:, :, -1, :] = 0
-        grads = torch.cat((dx, dy), dim=1)
-
-        return grads
 
     def forward(self, x):
         enc0 = self.pretrained_encoder.layer0(x)
@@ -153,11 +141,9 @@ class XTaskTSNet(nn.Module):
         dep1 = self.decoder_depth.conv4(torch.cat((dep2, enc1), dim=1))
         dep0 = self.decoder_depth.conv5(torch.cat((dep1, enc0), dim=1))
         dep_out = self.decoder_depth.conv6(dep0)
-        # grads = self.calc_gradient(dep_out)
 
         dep_tout = self.trans_s2d(seg_out)
         seg_tout = self.trans_d2s(dep_out)
-        # seg_tout = self.trans_d2s(grads)
 
         return seg_out, seg_tout, dep_out, dep_tout
 

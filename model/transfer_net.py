@@ -52,9 +52,8 @@ class BaseTaskTransferNet(nn.Module):
         self.final_conv = nn.Conv2d(features[0], out_features, kernel_size=1, stride=1, bias=False)
         self.nonlinear = nn.LogSoftmax(dim=1)
         self.out_features = out_features
-
-    def name(self):
-        return "Base Task TransferNet"
+        
+        self.name = "Base Task TransferNet"
 
     def forward(self, x):
         out = self.enc1(x)
@@ -86,8 +85,7 @@ class BaseTaskTransferNetWithSkipCN(nn.Module):
         self.nonlinear = nn.LogSoftmax(dim=1)
         self.out_features = out_features
 
-    def name(self):
-        return "Base Task TransferNet with skip-connection"
+        self.name = "Base Task TransferNet with skip-connection"
 
     def forward(self, x):
         e1 = self.enc1(x)
