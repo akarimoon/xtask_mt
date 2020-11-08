@@ -69,7 +69,7 @@ The results are the following:
 | Knowledge Distillation| 52.71 | 91.54 | 0.0139 | 27.33  |
 | Ours                  | 57.80 | 93.00 | 0.0169 | 0.6344 |
 
-MTAN: https://arxiv.org/pdf/1803.10704.pdf
+MTAN: https://arxiv.org/pdf/1803.10704.pdf<br>
 Knowledge Distillation: https://arxiv.org/pdf/2007.06889.pdf
 
 ## Some issues
