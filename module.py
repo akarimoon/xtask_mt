@@ -30,6 +30,9 @@ class Logger():
         self.ignore_index = ignore_index
 
     def _confusion_matrix(self, preds, targets, mask=None):
+        """
+        Calculate confusion matrix
+        """
         preds = np.argmax(preds, axis=1)
         targets = np.squeeze(targets).astype(int)
         if mask is None:
@@ -44,6 +47,9 @@ class Logger():
         #                     minlength=self.num_classes ** 2).reshape(self.num_classes, self.num_classes)
 
     def _get_segmt_scores(self):
+        """
+        Calculate scores for segmentation task from the confusion matrix
+        """
         if self.cm.sum() == 0:
             return 0, 0, 0
         pixel = np.diag(self.cm).sum() / self.cm.sum()
@@ -111,32 +117,54 @@ class Logger():
         return pixel_acc / batch_size
 
     def _depth_rmse(self, preds, targets, masks):
+        """
+        Calculate RMSE of actual depth
+        """
         return np.sum(np.sqrt(np.abs(preds - targets) ** 2 * masks)) / np.sum(masks)
 
     def _depth_irmse(self, inv_preds, inv_targets, masks):
+        """
+        Calculate RMSE of inverse depth
+        """
         return np.sum(np.sqrt(np.abs(inv_preds - inv_targets) ** 2 * masks)) / np.sum(masks)
 
     def _depth_irmse_log(self, inv_preds, inv_targets, masks):
+        """
+        Calculate log RMSE of inverse depth
+        """
         return np.sum(np.sqrt(np.abs(np.log(inv_preds) - np.log(inv_targets)) ** 2 * masks)) / np.sum(masks)
 
     def _depth_abs(self, preds, targets, masks):
+        """
+        Calculate absolute error of inverse depth
+        """
         nonzero = targets > 0
         absdiff = np.abs(preds[nonzero] - targets[nonzero])
         return np.sum(absdiff) / np.sum(nonzero)
     
     def _depth_abs_rel(self, preds, targets, masks):
+        """
+        Calculate absolute relative error of inverse depth
+        """
         nonzero = targets > 0
         absdiff = np.abs(preds[nonzero] - targets[nonzero])
         relabsdiff = absdiff / targets[nonzero]
         return np.sum(relabsdiff) / np.sum(nonzero)
 
     def _depth_sqrt_rel(self, preds, targets, masks):
+        """
+        NOT IN USE
+        Calculate square relative error of inverse depth
+        """
         nonzero = targets > 0
         sqrtdiff = np.abs(preds[nonzero] - targets[nonzero]) ** 2
         relsqrtdiff = sqrtdiff / targets[nonzero]
         return np.sum(relsqrtdiff) / np.sum(nonzero)
 
     def _depth_acc(self, preds, targets, masks, thres):
+        """
+        Calculate accuracy of depth
+        """
         preds = np.clip(preds, a_min=1e-9, a_max=None)
         targets = np.clip(targets, a_min=1e-9, a_max=None)
         maxratio = np.fmax(preds / targets, targets / preds) * masks
@@ -289,6 +317,9 @@ class MaskedKLLoss(nn.Module):
         return self.loss_fn(F.log_softmax(predicted, dim=2), model_prob_masked)
 
 class LabelSmoothingLoss(nn.Module):
+    """
+    Cross Entropy loss with mask and smoothing
+    """
     def __init__(self, num_classes, label_smoothing=0.0, dim=1):
         super(LabelSmoothingLoss, self).__init__()
         self.confidence = 1.0 - label_smoothing
@@ -378,7 +409,6 @@ class XTaskLoss(nn.Module):
         loss = torch.sum(torch.abs(dx) + torch.abs(dy), dim=(2, 3)) / torch.sum(mask, dim=(2, 3))
         return torch.mean(loss)
 
-
     def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, log_vars=None):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
         if mask_segmt is None:
@@ -407,10 +437,6 @@ class XTaskLoss(nn.Module):
             label_loss = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
 
         else:
-            # image_loss = torch.exp(-log_vars[0]) * depth_loss + torch.exp(-log_vars[1]) * ssim_loss + \
-            #              log_vars[0] + log_vars[1]
-            # label_loss = torch.exp(-log_vars[2]) * segmt_loss + torch.exp(-log_vars[3]) * kl_loss + \
-            #              log_vars[2] + log_vars[3]
             image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss + grad_loss
             label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
             image_loss = 0.5 * torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]

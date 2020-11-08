@@ -77,6 +77,13 @@ class NYUDatasetWithOriginal(NYUDataset):
         return x, x_original, y_inverse, index
 
 class CityscapesDataset(Dataset):
+    """
+    Code based on torchvision's cityscapes dataset (link below)
+    https://pytorch.org/docs/stable/_modules/torchvision/datasets/cityscapes.html#Cityscapes
+
+    See CityscapesScripts' code for the mapping of the 19 classes to 7 classes
+    https://github.com/mcordts/cityscapesScripts/blob/master/cityscapesscripts/helpers/labels.py
+    """
     colors_19 = [  # [  0,   0,   0],
         [128, 64, 128],
         [244, 35, 232],
@@ -172,6 +179,22 @@ class CityscapesDataset(Dataset):
         self.random_flip_prob = 0.5
 
     def __getitem__(self, index):
+        """
+        Given an index, return
+        - original: list of image, target segmentation, target depth with the original size
+        - image: preprocessed image
+        - segmt: preprocessed segmentation
+        - depth: preprocessed depth
+
+        Note that Cityscapes dataset only contains disparity maps instead of depth so it needs to be transformed
+        The equation used to transform disparity to depth is https://github.com/mcordts/cityscapesScripts/issues/55
+
+        For Cityscapes, we are predicting inverse depth instead of the actual depth because some pixels have infinity depth (e.g. sky)
+
+        The masks are boolean mask to exclude:
+        - mask_segmt: pixels with ignore_index
+        - mask_depth: pixels with 0 actual depth (pixels which correct depth was not measured)
+        """
         inputs = {}
 
         image_org = np.array(Image.open(self.images[index]).convert('RGB'))

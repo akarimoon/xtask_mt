@@ -2,19 +2,19 @@ import os
 from datetime import datetime
 import torch
 
-def write_results(logger, args, model, file_path="./tmp/output/results.txt", exp_num=None):
+def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=None):
     with open(file_path, 'a') as f:
         f.write("=" * 10 + "\n")
         if exp_num is not None:
             f.write("Experiment #{}\n".format(exp_num))
         f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, alpha={}, gamma={}, smoothing={}\n".format(
-            args.enc_layers, args.lr, (args.b1, args.b2), args.lp, args.tseg_loss, args.alpha, args.gamma, args.label_smoothing
+            opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.alpha, opt.gamma, opt.label_smoothing
         ))
-        f.write("Optimizer: Adam, Scheduler: StepLR(step size={}, gamma={})\n".format(args.scheduler_step_size, args.scheduler_gamma))
-        if args.num_classes != 19:
-            f.write("# of classes: {}\n".format(args.num_classes))
+        f.write("Optimizer: Adam, Scheduler: StepLR(step size={}, gamma={})\n".format(opt.scheduler_step_size, opt.scheduler_gamma))
+        if opt.num_classes != 19:
+            f.write("# of classes: {}\n".format(opt.num_classes))
         f.write("transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(
-            model.trans_name, args.uncertainty_weights, args.grad_loss))
+            model.trans_name, opt.uncertainty_weights, opt.grad_loss))
         print_segmt_str = "Pix Acc: {:.3f}, Mean acc: {:.3f}, IoU: {:.3f}\n"
         f.write(print_segmt_str.format(
             logger.pixel_acc, logger.mean_acc, logger.iou
@@ -31,20 +31,20 @@ def write_results(logger, args, model, file_path="./tmp/output/results.txt", exp
             logger.rmse, logger.irmse, logger.abs, logger.abs_rel, logger.delta1, logger.delta2, logger.delta3
         ))
 
-def write_indv_results(args, model, folder_path):
+def write_indv_results(opt, model, folder_path):
     with open(os.path.join(folder_path, "indv_results.txt"), "a") as f:
         now = datetime.now()
         f.write("Date: {}\n".format(now.strftime("%b-%d-%Y %H:%M:%S")))
         f.write("arguments:\n")
-        f.write("   predicting at size [{}*{}]\n".format(args.height, args.width))
-        f.write("   batch size: {}, train for {} epochs\n".format(args.batch_size, args.epochs))
-        f.write("   optimizer: Adam, scheduler: StepLR(step size={}, gamma={})\n".format(args.scheduler_step_size, args.scheduler_gamma))
+        f.write("   predicting at size [{}*{}]\n".format(opt.height, opt.width))
+        f.write("   batch size: {}, train for {} epochs\n".format(opt.batch_size, opt.epochs))
+        f.write("   optimizer: Adam, scheduler: StepLR(step size={}, gamma={})\n".format(opt.scheduler_step_size, opt.scheduler_gamma))
         f.write("   enc={}, numclasses={}, lr={}, beta={}, lp={}, tsegmt={}, alpha={}, gamma={}, smoothing={}\n".format(
-            args.enc_layers, args.num_classes, args.lr, (args.b1, args.b2), args.lp, args.tseg_loss,
-            args.alpha, args.gamma, args.label_smoothing
+            opt.enc_layers, opt.num_classes, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss,
+            opt.alpha, opt.gamma, opt.label_smoothing
         ))
         f.write("   transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(
-            model.trans_name, args.uncertainty_weights, args.grad_loss))
+            model.trans_name, opt.uncertainty_weights, opt.grad_loss))
 
 def make_results_dir(folder_path="./tmp"):
     i = 1

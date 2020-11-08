@@ -91,6 +91,10 @@ if __name__=='__main__':
     log_vars = None
     if opt.uncertainty_weights:
         print("   use uncertainty weights")
+        """
+        Implementation of uncertainty weights (learnable weight parameters to balance losses of multiple tasks)
+        See arxiv.org/abs/1705.07115
+        """
         log_var_a = torch.zeros((1,), requires_grad=True, device=device_name)
         log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
         log_vars = [log_var_a, log_var_b]
@@ -203,6 +207,7 @@ if __name__=='__main__':
             masks = [batch_mask_segmt, batch_mask_depth]
             logger.log(preds, targets, masks)
 
+            # use best results for final plot
             loss = compute_miou(pred_segmt, batch_y_segmt) - depth_error(pred_depth, batch_y_depth)[0]
             if i == 0 or loss < best_loss:
                 best_loss = loss
