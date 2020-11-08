@@ -2,10 +2,10 @@ import argparse, sys, os, time
 import cv2
 import numpy as np
 import pandas as pd
-import torch
-from torch import optim
 import matplotlib.pyplot as plt
 import seaborn as sns
+import torch
+from torch import optim
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from dataloader import CityscapesDataset
 from parser import cityscapes_xtask_parser
-from module import Logger, XTaskLoss, PCGrad
+from module import Logger, XTaskLoss
 from model.xtask_ts import XTaskTSNet
 from utils import *
 
@@ -23,7 +23,7 @@ DEPTH_CORRECTION = 2.1116e-09
 def compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                  batch_mask_segmt, batch_mask_depth, 
                  model, log_vars=None,
-                 criterion=None, optimizer=None, is_train=True, use_pcgrad=False):
+                 criterion=None, optimizer=None, is_train=True):
 
     model.train(is_train)
 
@@ -39,78 +39,49 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
 
     if is_train:
         optimizer.zero_grad()
-        if use_pcgrad:
-            optimizer.pc_backward([image_loss, label_loss])
-        else:
-            image_loss.backward(retain_graph=True)
-            label_loss.backward()
+        image_loss.backward(retain_graph=True)
+        label_loss.backward()
         optimizer.step()
 
     return image_loss.item() + label_loss.item()
 
 if __name__=='__main__':
     torch.manual_seed(0)
-    args = cityscapes_xtask_parser()
+    opt = cityscapes_xtask_parser()
+    opt.betas = (opt.b1, opt.b2)
 
     print("Initializing...")
-    input_path = args.input_path
+    if not os.path.exists(opt.save_path):
+        os.makedirs(opt.save_path)
 
-    enc_layers = args.enc_layers
-    height = args.height
-    width = args.width
-
-    lr = args.lr
-    beta_1 = args.b1
-    beta_2 = args.b2
-    betas = (beta_1, beta_2)
-    alpha = args.alpha
-    gamma = args.gamma
-    label_smoothing = args.label_smoothing
-    lp = args.lp
-    t_segmt = args.tseg_loss
-
-    use_uncertainty = args.uncertainty_weights
-    use_pcgrad = args.pcgrad
-    use_gradloss = args.grad_loss
-
-    batch_size = args.batch_size
-    num_epochs = args.epochs
-    num_classes = args.num_classes
- 
-    num_workers = args.workers
-
-    infer_only = args.infer_only
-    view_only = args.view_only
-    run_only = args.run_only
-    use_cpu = args.cpu
-    debug_mode = args.debug
-    notqdm = args.notqdm
-
-    if not debug_mode:
-        if not infer_only:
+    if not opt.debug:
+        if not opt.infer_only:
             exp_num, results_dir = make_results_dir()
         else:
-            exp_num = str(args.exp_num).zfill(3)
-            results_dir = os.path.join("./tmp", exp_num)
+            exp_num = str(opt.exp_num).zfill(3)
+            results_dir = os.path.join(opt.save_path, exp_num)
         weights_path = os.path.join(results_dir, "model", "model.pth")
     else:
         exp_num = ""
-        results_dir = "./tmp"
+        results_dir = opt.save_path
 
     parameters_to_train = []
 
     print("Parameters:")
-    print("   predicting at size [{}*{}]".format(height, width))
-    if num_classes != 19:
-        print("   # of classes: {}".format(num_classes))
-    print("   using ResNet{}, optimizer: Adam (lr={}, beta={}), scheduler: StepLR(15, 0.1)".format(enc_layers, lr, betas))
-    print("   loss function --- Lp_depth: {}, tsegmt: {}, alpha: {}, gamma: {}, smoothing: {}".format(lp, t_segmt, alpha, gamma, label_smoothing))
-    print("   batch size: {}, train for {} epochs".format(batch_size, num_epochs))
+    print("   predicting at size [{}*{}]".format(opt.height, opt.width))
+    if opt.num_classes != 19:
+        print("   # of classes: {}".format(opt.num_classes))
+    print("   using ResNet{}, optimizer: Adam (lr={}, beta={}), scheduler: StepLR({}, {})".format(
+        opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
+    print("   loss function --- Lp_depth: {}, tsegmt: {}, alpha: {}, gamma: {}, smoothing: {}".format(
+        opt.lp, opt.tseg_loss, opt.alpha, opt.gamma, opt.label_smoothing))
+    print("   batch size: {}, train for {} epochs".format(
+        opt.batch_size, opt.epochs))
 
-    device_name = "cpu" if use_cpu else "cuda"
+    device_name = "cpu" if opt.cpu else "cuda"
     device = torch.device(device_name)
     print("   device: {}".format(device))
-    model = XTaskTSNet(enc_layers=enc_layers, out_features_segmt=num_classes)
+    model = XTaskTSNet(enc_layers=opt.enc_layers, out_features_segmt=opt.num_classes)
     model.to(device)
     parameters_to_train = [p for p in model.parameters()]
     print("TransferNet type:")
@@ -118,37 +89,30 @@ if __name__=='__main__':
     
     print("Options:")
     log_vars = None
-    if use_uncertainty:
+    if opt.uncertainty_weights:
         print("   use uncertainty weights")
         log_var_a = torch.zeros((1,), requires_grad=True, device=device_name)
         log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
-        # log_var_c = torch.zeros((1,), requires_grad=True, device=device_name)
-        # log_var_d = torch.zeros((1,), requires_grad=True, device=device_name)
         log_vars = [log_var_a, log_var_b]
         parameters_to_train += log_vars
-    if use_pcgrad:
-        print("   use pcgrad")    
-    if use_gradloss:
+    if opt.grad_loss:
         print("   use grad loss (k=1), no scaling")
 
     print("Loading dataset...")
-    train_data = CityscapesDataset(root_path=input_path, height=height, width=width, num_classes=num_classes,
+    train_data = CityscapesDataset(root_path=opt.input_path, height=opt.height, width=opt.width, num_classes=opt.num_classes,
                                    split='train', transform=["random_flip"])
-    valid_data = CityscapesDataset(root_path=input_path, height=height, width=width, num_classes=num_classes,
+    valid_data = CityscapesDataset(root_path=opt.input_path, height=opt.height, width=opt.width, num_classes=opt.num_classes,
                                    split='val', transform=None)
     # test_data = CityscapesDataset('./data/cityscapes', split='train', transform=transform)
-    train = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    valid = DataLoader(valid_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    train = DataLoader(train_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
+    valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
 
-    criterion = XTaskLoss(num_classes=num_classes, alpha=alpha, gamma=gamma, label_smoothing=label_smoothing,
-                          image_loss_type=lp, t_segmt_loss_type=t_segmt, grad_loss=use_gradloss).to(device)
-    if use_pcgrad:
-        optimizer = PCGrad(optim.Adam(parameters_to_train, lr=lr, betas=betas))
-    else:
-        optimizer = optim.Adam(parameters_to_train, lr=lr, betas=betas)
-        scheduler = optim.lr_scheduler.StepLR(optimizer, 15, 0.1)
+    criterion = XTaskLoss(num_classes=opt.num_classes, alpha=opt.alpha, gamma=opt.gamma, label_smoothing=opt.label_smoothing,
+                          image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, grad_loss=opt.grad_loss).to(device)
+    optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, opt.scheduler_step_size, opt.scheduler_gamma)
 
-    if not infer_only:
+    if not opt.infer_only:
         print("=======================================")
         print("Start training...")
         best_valid_loss = 1e5
@@ -156,26 +120,26 @@ if __name__=='__main__':
         valid_losses = []
         save_at_epoch = 0
 
-        for epoch in range(1, num_epochs + 1):
+        for epoch in range(1, opt.epochs + 1):
 
             start = time.time()
             train_loss = 0.
             valid_loss = 0.
 
-            for i, batch in enumerate(tqdm(train, disable=notqdm)):
+            for i, batch in enumerate(tqdm(train, disable=opt.notqdm)):
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                     batch_mask_segmt, batch_mask_depth, 
                                     model, log_vars=log_vars,
-                                    criterion=criterion, optimizer=optimizer, is_train=True, use_pcgrad=use_pcgrad)
+                                    criterion=criterion, optimizer=optimizer, is_train=True)
                 train_loss += loss
 
-            for i, batch in enumerate(tqdm(valid, disable=notqdm)):
+            for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                     batch_mask_segmt, batch_mask_depth, 
                                     model, log_vars=log_vars,
-                                    criterion=criterion, optimizer=optimizer, is_train=False, use_pcgrad=use_pcgrad)
+                                    criterion=criterion, optimizer=optimizer, is_train=False)
                 valid_loss += loss
 
             train_loss /= len(train.dataset)
@@ -187,11 +151,11 @@ if __name__=='__main__':
             elapsed_time = (time.time() - start) / 60
             print("Epoch {}/{} [{:.1f}min] --- train loss: {:.5f} --- valid loss: {:.5f}".format(
                         epoch, num_epochs, elapsed_time, train_loss, valid_loss))
-            if use_uncertainty:
+            if opt.uncertainty_weights:
                 print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
                         (torch.exp(log_vars[1]) ** 0.5).item(), (torch.exp(log_vars[0]) ** 0.5).item()))
 
-            if not debug_mode:
+            if not opt.debug:
                 if epoch == 0 or valid_loss < best_valid_loss:
                     print("Saving weights...")
                     weights = model.state_dict()
@@ -199,8 +163,7 @@ if __name__=='__main__':
                     best_valid_loss = valid_loss
                     save_at_epoch = epoch
 
-            if not use_pcgrad:
-                scheduler.step()
+            scheduler.step()
 
         print("Training done")
         print("=======================================")
@@ -208,20 +171,20 @@ if __name__=='__main__':
         train_losses = np.array(train_losses)
         valid_losses = np.array(valid_losses)
 
-        np.save(os.path.join(results_dir, "model", "tr_losses.npy".format(alpha, gamma)), train_losses)
-        np.save(os.path.join(results_dir, "model", "va_losses.npy".format(alpha, gamma)), valid_losses)
+        np.save(os.path.join(results_dir, "model", "tr_losses.npy".format(opt.alpha, opt.gamma)), train_losses)
+        np.save(os.path.join(results_dir, "model", "va_losses.npy".format(opt.alpha, opt.gamma)), valid_losses)
 
     else:
         print("Infer only mode -> skip training...")
 
-    if not debug_mode:
+    if not opt.debug:
         model.load_state_dict(torch.load(weights_path, map_location=device))
 
-    logger = Logger(num_classes=num_classes)
+    logger = Logger(num_classes=opt.num_classes)
     best_loss = 1e5
 
     with torch.no_grad():
-        for i, batch in enumerate(tqdm(valid, disable=notqdm)):
+        for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
             original, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
             batch_X = batch_X.to(device, non_blocking=True)
             batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
@@ -240,8 +203,7 @@ if __name__=='__main__':
             masks = [batch_mask_segmt, batch_mask_depth]
             logger.log(preds, targets, masks)
 
-            # loss = image_loss.item() + label_loss.item()
-            loss = miou - abs_err
+            loss = compute_miou(pred_segmt, batch_y_segmt) - depth_error(pred_depth, batch_y_depth)[0]
             if i == 0 or loss < best_loss:
                 best_loss = loss
                 best_original = original
@@ -253,28 +215,28 @@ if __name__=='__main__':
             
     logger.get_scores()
 
-    if not infer_only:
-        write_results(logger, args, model, exp_num=exp_num)
-        write_indv_results(args, model, folder_path=results_dir)
+    if not opt.infer_only:
+        write_results(logger, opt, model, exp_num=exp_num)
+        write_indv_results(opt, model, folder_path=results_dir)
 
     show = 0
-    if not infer_only:
+    if not opt.infer_only:
         plt.figure(figsize=(14, 8))
-        plt.plot(np.arange(num_epochs), train_losses, linestyle="-", label="train")
-        plt.plot(np.arange(num_epochs), valid_losses, linestyle="--", label="valid")
+        plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
+        plt.plot(np.arange(opt.epochs), valid_losses, linestyle="--", label="valid")
         plt.legend()
-        if not view_only:
-            plt.savefig(os.path.join(results_dir, "output", "loss.png".format(batch_size, alpha, gamma)))
+        if not opt.view_only:
+            plt.savefig(os.path.join(results_dir, "output", "loss.png".format(opt.batch_size, opt.alpha, opt.gamma)))
 
     plt.figure(figsize=(18, 10))
     plt.subplot(3,3,1)
     plt.imshow(best_original[0][show].cpu().numpy())
     plt.title("Image")
 
-    if not infer_only:
+    if not opt.infer_only:
         plt.subplot(3,3,2)
-        plt.plot(np.arange(num_epochs), train_losses, linestyle="-", label="train")
-        plt.plot(np.arange(num_epochs), valid_losses, linestyle="--", label="valid")
+        plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
+        plt.plot(np.arange(opt.epochs), valid_losses, linestyle="--", label="valid")
         plt.title("Loss")
         plt.legend()
         
@@ -305,9 +267,9 @@ if __name__=='__main__':
     plt.title("Depth target")
 
     plt.tight_layout()
-    ep_or_infer = "epoch{}-{}_".format(save_at_epoch, num_epochs) if not infer_only else "infer_"
-    if not view_only:
-        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "results.png".format(batch_size, alpha, gamma)))
+    ep_or_infer = "epoch{}-{}_".format(save_at_epoch, opt.epochs) if not opt.infer_only else "infer_"
+    if not opt.view_only:
+        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "results.png".format(opt.batch_size, opt.alpha, opt.gamma)))
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
     img = ax1.imshow(np.abs((1 / best_pred_depth[show] - 1 / best_y_depth[show]).squeeze().cpu().numpy()))
@@ -338,8 +300,8 @@ if __name__=='__main__':
     ax4.set_xticklabels([int(t.get_text()) * 1  for t in ax4.get_xticklabels()])
     ax4.set_title("Boxplot for absolute error for all pixels < 20m")
     plt.tight_layout()
-    if not view_only:
-        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png".format(batch_size, alpha, gamma)))
+    if not opt.view_only:
+        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png".format(opt.batch_size, opt.alpha, opt.gamma)))
     
-    if not run_only:
+    if not opt.run_only:
         plt.show()

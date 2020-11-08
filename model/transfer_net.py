@@ -101,6 +101,10 @@ class BaseTaskTransferNetWithSkipCN(nn.Module):
             out = self.nonlinear(out)
         return out
 
+# ================================
+# NOT IN USE BELOW
+# ================================
+
 class TaskTransferNet(nn.Module):
     """
     Task-Transfer Net
@@ -121,10 +125,10 @@ class TaskTransferNet(nn.Module):
         self.final_conv = nn.Conv2d(features[0], out_features, kernel_size=1, stride=1, bias=False)
         self.nonlinear = nn.LogSoftmax(dim=1)
         self.out_features = out_features
-
+# 
     def name(self):
         return "Task TransferNet, concat before encoding"
-
+# 
     def forward(self, x1, x2):
         x2 = self.first_conv(x2)
         out = self.enc1(torch.cat((x1, x2), dim=1))
@@ -137,7 +141,7 @@ class TaskTransferNet(nn.Module):
         if self.out_features > 1:
             out = self.nonlinear(out)
         return out
-
+# 
 class TaskTransferNetWithSkipCN(nn.Module):
     """
     Task-Transfer Net with skip connection
@@ -159,10 +163,10 @@ class TaskTransferNetWithSkipCN(nn.Module):
         self.final_conv = nn.Conv2d(features[0], out_features, kernel_size=1, stride=1, bias=False)
         self.nonlinear = nn.LogSoftmax(dim=1)
         self.out_features = out_features
-
+# 
     def name(self):
         return "Task TransferNet with skip connection, concat before encoding"
-
+# 
     def forward(self, x1, x2):
         x2 = self.first_conv(x2)
         e1 = self.enc1(torch.cat((x1, x2), dim=1))
@@ -175,7 +179,7 @@ class TaskTransferNetWithSkipCN(nn.Module):
         if self.out_features > 1:
             out = self.nonlinear(out)
         return out
-
+# 
 class TaskTransferNetTwoEncoder1(nn.Module):
     """
     Task-Transfer Net with 2 encoders (1)
@@ -190,20 +194,20 @@ class TaskTransferNetTwoEncoder1(nn.Module):
         self.enc1 = TTDown(in_features=in_features, out_features=features[0])
         self.enc2 = TTDown(in_features=features[0], out_features=features[1])
         self.enc3 = TTDown(in_features=features[1], out_features=features[1])
-
+# 
         self.t_enc1 = TTDown(in_features=in_features_cross, out_features=features[1])
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-
+# 
         self.dec1 = TTUp(in_features=features[1] * 2, out_features=features[1])
         self.dec2 = TTUp(in_features=features[1], out_features=features[0])
         self.dec3 = TTUp(in_features=features[0], out_features=features[0])
         self.final_conv = nn.Conv2d(features[0], out_features, kernel_size=1, stride=1, bias=False)
         self.nonlinear = nn.LogSoftmax(dim=1)
         self.out_features = out_features
-
+# 
     def name(self):
         return "Task TransferNet, 2 encoders and concat before decoder"
-
+# 
     def forward(self, x1, x2):
         enc = self.enc1(x1)
         enc = self.enc2(enc)
@@ -217,7 +221,7 @@ class TaskTransferNetTwoEncoder1(nn.Module):
         if self.out_features > 1:
             out = self.nonlinear(out)
         return out
-
+# 
 class BalanceUnit(nn.Module):
     def __init__(self, in_features, out_features):
         super().__init__()
@@ -226,12 +230,12 @@ class BalanceUnit(nn.Module):
             nn.Sigmoid()
         )
         self.conv2 = nn.Conv2d(in_features, out_features, kernel_size=1, stride=1, bias=False)
-
+# 
     def forward(self, x1, x2):
         b = self.conv1(torch.cat((x1, x2), dim=1))
         out = self.conv2(torch.cat((torch.mul(b, x1), torch.mul(1 - b, x2)), dim=1))
         return out
-
+# 
 class TaskTransferNetTwoEncoder2(nn.Module):
     """
     Task-Transfer Net with 2 encoders (2)
@@ -246,22 +250,22 @@ class TaskTransferNetTwoEncoder2(nn.Module):
         self.enc1 = TTDown(in_features=in_features, out_features=features[0])
         self.enc2 = TTDown(in_features=features[0], out_features=features[1])
         self.enc3 = TTDown(in_features=features[1], out_features=features[1])
-
+# 
         self.t_enc1 = TTDown(in_features=in_features_cross, out_features=features[1])
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-
+# 
         self.b_unit = BalanceUnit(in_features=features[1] * 2, out_features=features[1])
-
+# 
         self.dec1 = TTUp(in_features=features[1], out_features=features[1])
         self.dec2 = TTUp(in_features=features[1], out_features=features[0])
         self.dec3 = TTUp(in_features=features[0], out_features=features[0])
         self.final_conv = nn.Conv2d(features[0], out_features, kernel_size=1, stride=1, bias=False)
         self.nonlinear = nn.LogSoftmax(dim=1)
         self.out_features = out_features
-
+# 
     def name(self):
         return "Task TransferNet, 2 encoders and balance module before decoder"
-
+# 
     def forward(self, x1, x2):
         enc = self.enc1(x1)
         enc = self.enc2(enc)

@@ -39,7 +39,7 @@ class Logger():
         k = (preds >= 0) & (preds < self.num_classes) & (preds != self.ignore_index)
         k &= (targets >= 0) & (targets < self.num_classes) & (targets != self.ignore_index)
         k &= (mask.astype(np.bool))
-        return confusion_matrix(preds[k].flatten(), targets[k].flatten())
+        return confusion_matrix(preds[k].flatten(), targets[k].flatten(), labels=list(range(self.num_classes)))
         # return np.bincount(self.num_classes * preds[k].astype(int) + targets[k], 
         #                     minlength=self.num_classes ** 2).reshape(self.num_classes, self.num_classes)
 

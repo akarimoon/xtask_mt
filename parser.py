@@ -59,6 +59,10 @@ def cityscapes_xtask_parser():
                         help='beta_2 of Adam (default: 0.99)')
     parser.add_argument('-n', '--num_classes', type=int, default=19, choices=[7, 19],
                         help='number of classes for segmentation task (default: 19)')
+    parser.add_argument('--scheduler_step_size', type=int, default=15,
+                        help='step size of scheduler (steplr)')
+    parser.add_argument('--scheduler_gamma', default=0.1,
+                        help='lr decay of scheduler (steplr)')
 
     parser.add_argument('-a', '--alpha', type=float, default=0.4,
                         help='alpha of loss function (default: 0.4)')
@@ -73,16 +77,16 @@ def cityscapes_xtask_parser():
 
     parser.add_argument('--uncertainty_weights', action='store_true',
                         help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')
-    parser.add_argument('--pcgrad', action='store_true',
-                        help='flag: use pc grad (Yu+, 2020) for cross-task losses')
+    # parser.add_argument('--pcgrad', action='store_true',
+    #                     help='flag: use pc grad (Yu+, 2020) for cross-task losses')
     parser.add_argument("--grad_loss", action='store_true',
                         help='use grad loss')
 
     parser.add_argument('-j', '--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
 
-    parser.add_argument('--save_weights', default='./tmp/model/xtask.pth',
-                        help='path to where weights are saved (default: ./tmp/model/xtask.pth)')
+    parser.add_argument('--save_path', default='./tmp/',
+                        help='path to folder where weights are saved (default: ./tmp/)')
 
     parser.add_argument('--infer_only', action='store_true', 
                         help='flag: only infer')
