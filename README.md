@@ -58,6 +58,7 @@ Evaluation metrics are the following:
 <ins>Segmentation</ins>
 - Pixel accuracy (Pix Acc): percentage of pixels with the correct label
 - mIoU: mean Intersection over Union
+
 <ins>Depth</ins>
 - Absolute Error (Abs)
 - Absolute Relative Error (Abs Rel): Absolute error divided by ground truth depth
