@@ -32,7 +32,7 @@ The total loss consists of 4 different losses:
 - transferred segmentation loss: <br>_CrossEntropyLosswithLabelSmoothing()_ or _KLDivergence()_
 - transferred depth loss: _SSIM()_
 
-\* Label smoothing: To "smooth" the one-hot probability by taking some of the probability from the correct class and distributing it among other classes.
+\* Label smoothing: To "smooth" the one-hot probability by taking some of the probability from the correct class and distributing it among other classes.<br>
 \* SSIM: Structural Similarity Loss: https://github.com/Po-Hsun-Su/pytorch-ssim
 
 When combining these losses, the naive method is to use a hyperparameter and take the weighted average. 
@@ -64,7 +64,7 @@ Evaluation metrics are the following:
 
 The results are the following:
 | Models                |Pix acc|mIoU   |Abs     |Abs Rel |
-|:---------------------:|:-----:|:- ---:|:------:|:------:|
+|:---------------------:|:-----:|:-----:|:------:|:------:|
 | MTAN                  | 53.86 | 91.11 | 0.0144 | 33.63  |
 | Knowledge Distillation| 52.71 | 91.54 | 0.0139 | 27.33  |
 | Ours                  | 57.80 | 93.00 | 0.0169 | 0.6344 |
