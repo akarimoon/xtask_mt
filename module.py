@@ -13,9 +13,8 @@ class Logger():
     preds and targets are inverse depth
     """
     def __init__(self, num_classes=19, ignore_index=250):
-        self.cm = 0
-        self.mtan_miou = 0
-        self.mtan_iou = 0
+        self.pixel_acc = 0
+        self.miou = 0
         self.rmse = 0
         self.irmse = 0
         self.irmse_log = 0
@@ -29,38 +28,6 @@ class Logger():
         self.num_classes = num_classes
         self.ignore_index = ignore_index
 
-    def _confusion_matrix(self, preds, targets, mask=None):
-        """
-        Calculate confusion matrix
-        """
-        preds = np.argmax(preds, axis=1)
-        targets = np.squeeze(targets).astype(int)
-        if mask is None:
-            mask = np.ones_like(preds) == 1
-        else:
-            mask = np.squeeze(mask)
-        k = (preds >= 0) & (preds < self.num_classes) & (preds != self.ignore_index)
-        k &= (targets >= 0) & (targets < self.num_classes) & (targets != self.ignore_index)
-        k &= (mask.astype(np.bool))
-        return confusion_matrix(preds[k].flatten(), targets[k].flatten(), labels=list(range(self.num_classes)))
-        # return np.bincount(self.num_classes * preds[k].astype(int) + targets[k], 
-        #                     minlength=self.num_classes ** 2).reshape(self.num_classes, self.num_classes)
-
-    def _get_segmt_scores(self):
-        """
-        Calculate scores for segmentation task from the confusion matrix
-        """
-        if self.cm.sum() == 0:
-            return 0, 0, 0
-        pixel = np.diag(self.cm).sum() / self.cm.sum()
-        perclass = np.diag(self.cm) / np.sum(self.cm, axis=1)
-        iou = np.diag(self.cm) / (self.cm.sum(axis=1) + self.cm.sum(axis=0) - np.diag(self.cm))
-        # with np.errstate(divide='ignore', invalid='ignore'):
-        #     pixel = np.diag(self.cm).sum() / np.float(self.cm.sum())
-        #     perclass = np.diag(self.cm) / self.cm.sum(1).astype(np.float)
-        #     IU = np.diag(self.cm) / (self.cm.sum(1) + self.cm.sum(0) - np.diag(self.cm)).astype(np.float)
-        return pixel, np.nanmean(perclass), np.nanmean(iou)
-
     def _compute_miou(self, x_pred, x_output):
         """
         from https://github.com/lorenmt/mtan
@@ -70,33 +37,29 @@ class Logger():
         _, x_pred_label = torch.max(x_pred, dim=1)
         x_output_label = x_output
         batch_size = x_pred.size(0)
-        class_nb = x_pred.size(1)
         device = x_pred.device
+
+        batch_avg = 0
         for i in range(batch_size):
             true_class = 0
-            first_switch = True
-            invalid_mask = (x_output[i] >= 0).float()
-            for j in range(class_nb):
+            class_prob = 0
+            mask = (x_output[i] != self.ignore_index).float()
+
+            for j in range(self.num_classes):
                 pred_mask = torch.eq(x_pred_label[i], j * torch.ones(x_pred_label[i].shape).long().to(device))
                 true_mask = torch.eq(x_output_label[i], j * torch.ones(x_output_label[i].shape).long().to(device))
                 mask_comb = pred_mask.float() + true_mask.float()
-                union = torch.sum((mask_comb > 0).float() * invalid_mask)  # remove non-defined pixel predictions
+                union = torch.sum((mask_comb > 0).float() * mask)  # remove non-defined pixel predictions
                 intsec = torch.sum((mask_comb > 1).float())
                 if union == 0:
                     continue
-                if first_switch:
-                    class_prob = intsec / union
-                    first_switch = False
-                else:
-                    class_prob = intsec / union + class_prob
+                class_prob += intsec / union
                 true_class += 1
-            if i == 0:
-                batch_avg = class_prob / true_class
-            else:
-                batch_avg = class_prob / true_class + batch_avg
+                
+            batch_avg += class_prob / true_class
         return batch_avg / batch_size
 
-    def _compute_iou(self, x_pred, x_output):
+    def _compute_pixacc(self, x_pred, x_output):
         """
         from https://github.com/lorenmt/mtan
         """
@@ -105,15 +68,12 @@ class Logger():
         _, x_pred_label = torch.max(x_pred, dim=1)
         x_output_label = x_output
         batch_size = x_pred.size(0)
+        pixel_acc = 0
         for i in range(batch_size):
-            if i == 0:
-                pixel_acc = torch.div(
-                    torch.sum(torch.eq(x_pred_label[i], x_output_label[i]).float()),
-                    torch.sum((x_output_label[i] >= 0).float()))
-            else:
-                pixel_acc = pixel_acc + torch.div(
-                    torch.sum(torch.eq(x_pred_label[i], x_output_label[i]).float()),
-                    torch.sum((x_output_label[i] >= 0).float()))
+            pixel_acc +=torch.div(
+                            torch.sum(torch.eq(x_pred_label[i], x_output_label[i]).float()),
+                            torch.sum((x_output_label[i] != self.ignore_index).float())
+                        )
         return pixel_acc / batch_size
 
     def _depth_rmse(self, preds, targets, masks):
@@ -189,9 +149,8 @@ class Logger():
         targets_depth[targets_depth > 0] = 1 / targets_depth[targets_depth > 0]
 
         N = preds_segmt.shape[0]
-        self.cm += self._confusion_matrix(preds_segmt, targets_segmt, masks_segmt)
-        self.mtan_miou += self._compute_miou(preds_segmt, targets_segmt) * N
-        self.mtan_iou += self._compute_iou(preds_segmt, targets_segmt) * N
+        self.pixel_acc += self._compute_pixacc(preds_segmt, targets_segmt) * N
+        self.miou += self._compute_miou(preds_segmt, targets_segmt) * N
         self.rmse += self._depth_rmse(preds_depth, targets_depth, masks_depth) * N
         self.irmse += self._depth_irmse(inv_preds_depth, inv_targets_depth, masks_depth) * N
         # self.irmse_log += self._depth_irmse_log(inv_preds, inv_targets, masks_depth) * N
@@ -204,9 +163,8 @@ class Logger():
         self.count += N
 
     def get_scores(self):
-        self.pixel_acc, self.mean_acc, self.iou = self._get_segmt_scores()
-        self.mtan_miou /= self.count
-        self.mtan_iou /= self.count
+        self.pixel_acc /= self.count
+        self.miou /= self.count
         self.rmse /= self.count
         self.irmse /= self.count
         # self.irmse_log /= self.count
@@ -217,14 +175,9 @@ class Logger():
         self.delta2 /= self.count
         self.delta3 /= self.count
 
-        print_segmt_str = "Pix Acc: {:.3f}, Mean acc: {:.3f}, IoU: {:.3f}"
+        print_segmt_str = "Pix Acc: {:.4f}, mIoU: {:.4f}"
         print(print_segmt_str.format(
-            self.pixel_acc, self.mean_acc, self.iou
-        ))
-
-        print_segmt_mtan_str = "(from MTAN): mIoU: {:.3f}, IoU: {:.3f}"
-        print(print_segmt_mtan_str.format(
-            self.mtan_miou, self.mtan_iou
+            self.pixel_acc, self.miou
         ))
 
         print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, " +\

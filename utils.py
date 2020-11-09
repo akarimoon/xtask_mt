@@ -22,7 +22,7 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
 
         print_segmt_mtan_str = "(from MTAN): mIoU: {:.3f}, IoU: {:.3f}\n"
         f.write(print_segmt_mtan_str.format(
-            self.mtan_miou, self.mtan_iou
+            logger.mtan_miou, logger.mtan_iou
         ))
 
         print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, " +\
@@ -65,16 +65,17 @@ def make_results_dir(folder_path="./tmp"):
 From MTAN
 https://github.com/lorenmt/mtan
 """
-def compute_miou(x_pred, x_output):
+def compute_miou(x_pred, x_output, ignore_index=250):
     _, x_pred_label = torch.max(x_pred, dim=1)
     x_output_label = x_output
     batch_size = x_pred.size(0)
     class_nb = x_pred.size(1)
     device = x_pred.device
+    batch_avg = 0
     for i in range(batch_size):
         true_class = 0
-        first_switch = True
-        invalid_mask = (x_output[i] >= 0).float()
+        class_prob = 0
+        invalid_mask = (x_output[i] != ignore_index).float()
         for j in range(class_nb):
             pred_mask = torch.eq(x_pred_label[i], j * torch.ones(x_pred_label[i].shape).long().to(device))
             true_mask = torch.eq(x_output_label[i], j * torch.ones(x_output_label[i].shape).long().to(device))
@@ -83,32 +84,23 @@ def compute_miou(x_pred, x_output):
             intsec = torch.sum((mask_comb > 1).float())
             if union == 0:
                 continue
-            if first_switch:
-                class_prob = intsec / union
-                first_switch = False
-            else:
-                class_prob = intsec / union + class_prob
+            class_prob += intsec / union
             true_class += 1
-        if i == 0:
-            batch_avg = class_prob / true_class
-        else:
-            batch_avg = class_prob / true_class + batch_avg
+        
+        batch_avg += class_prob / true_class
     return batch_avg / batch_size
 
 
-def compute_iou(x_pred, x_output):
+def compute_iou(x_pred, x_output, ignore_index=250):
     _, x_pred_label = torch.max(x_pred, dim=1)
     x_output_label = x_output
     batch_size = x_pred.size(0)
+    pixel_acc = 0
     for i in range(batch_size):
-        if i == 0:
-            pixel_acc = torch.div(
-                torch.sum(torch.eq(x_pred_label[i], x_output_label[i]).float()),
-                torch.sum((x_output_label[i] >= 0).float()))
-        else:
-            pixel_acc = pixel_acc + torch.div(
-                torch.sum(torch.eq(x_pred_label[i], x_output_label[i]).float()),
-                torch.sum((x_output_label[i] >= 0).float()))
+        pixel_acc += torch.div(
+                        torch.sum(torch.eq(x_pred_label[i], x_output_label[i]).float()),
+                        torch.sum((x_output_label[i] != ignore_index).float())
+                        )
     return pixel_acc / batch_size
 
 

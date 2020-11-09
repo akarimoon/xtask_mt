@@ -154,7 +154,7 @@ if __name__=='__main__':
 
             elapsed_time = (time.time() - start) / 60
             print("Epoch {}/{} [{:.1f}min] --- train loss: {:.5f} --- valid loss: {:.5f}".format(
-                        epoch, num_epochs, elapsed_time, train_loss, valid_loss))
+                        epoch, opt.epochs, elapsed_time, train_loss, valid_loss))
             if opt.uncertainty_weights:
                 print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
                         (torch.exp(log_vars[1]) ** 0.5).item(), (torch.exp(log_vars[0]) ** 0.5).item()))
