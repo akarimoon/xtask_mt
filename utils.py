@@ -15,14 +15,9 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
             f.write("# of classes: {}\n".format(opt.num_classes))
         f.write("transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(
             model.trans_name, opt.uncertainty_weights, opt.grad_loss))
-        print_segmt_str = "Pix Acc: {:.3f}, Mean acc: {:.3f}, IoU: {:.3f}\n"
+        print_segmt_str = "Pix Acc: {:.3f}, mIoU: {:.3f}\n"
         f.write(print_segmt_str.format(
-            logger.pixel_acc, logger.mean_acc, logger.iou
-        ))
-
-        print_segmt_mtan_str = "(from MTAN): mIoU: {:.3f}, IoU: {:.3f}\n"
-        f.write(print_segmt_mtan_str.format(
-            logger.mtan_miou, logger.mtan_iou
+            logger.pixel_acc, logger.miou
         ))
 
         print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, " +\

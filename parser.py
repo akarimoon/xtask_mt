@@ -38,8 +38,8 @@ def nyu_parser():
 def cityscapes_xtask_parser():
 
     parser = argparse.ArgumentParser(description='XTask MT on Cityscapes Dataset')
-    parser.add_argument('--input_path', default='../data/cityscapes',
-                        help='path of dataset (default: ../data/cityscapes)')
+    parser.add_argument('--input_path', default='./data/cityscapes',
+                        help='path of dataset (default: ./data/cityscapes)')
     parser.add_argument('--height', type=int, default=256,
                         help='height of output (default: 256)')
     parser.add_argument('--width', type=int, default=512,
@@ -61,7 +61,7 @@ def cityscapes_xtask_parser():
                         help='number of classes for segmentation task (default: 19)')
     parser.add_argument('--scheduler_step_size', type=int, default=15,
                         help='step size of scheduler (steplr)')
-    parser.add_argument('--scheduler_gamma', default=0.1,
+    parser.add_argument('--scheduler_gamma', type=float, default=0.1,
                         help='lr decay of scheduler (steplr)')
 
     parser.add_argument('-a', '--alpha', type=float, default=0.4,
