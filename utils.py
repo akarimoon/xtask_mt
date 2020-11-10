@@ -13,6 +13,7 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
         f.write("Optimizer: Adam, Scheduler: StepLR(step size={}, gamma={})\n".format(opt.scheduler_step_size, opt.scheduler_gamma))
         if opt.num_classes != 19:
             f.write("# of classes: {}\n".format(opt.num_classes))
+        f.write("shallow decoder: {} (if not written, then True)\n".format(opt.is_shallow))
         f.write("transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(
             model.trans_name, opt.uncertainty_weights, opt.grad_loss))
         print_segmt_str = "Pix Acc: {:.3f}, mIoU: {:.3f}\n"
@@ -20,10 +21,11 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
             logger.pixel_acc, logger.miou
         ))
 
-        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, " +\
+        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, iRMSE log: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {}, " +\
             "delta1: {:.4f}, delta2: {:.4f}, delta3: {:.4f}\n"
         f.write(print_depth_str.format(
-            logger.rmse, logger.irmse, logger.abs, logger.abs_rel, logger.delta1, logger.delta2, logger.delta3
+            logger.rmse, logger.irmse, logger.irmse_log, logger.abs, logger.abs_rel, logger.sqrt_rel,
+            logger.delta1, logger.delta2, logger.delta3
         ))
 
 def write_indv_results(opt, model, folder_path):
@@ -38,6 +40,7 @@ def write_indv_results(opt, model, folder_path):
             opt.enc_layers, opt.num_classes, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss,
             opt.alpha, opt.gamma, opt.label_smoothing
         ))
+        f.write("   shallow decoder: {} (if not written, then True)\n".format(opt.is_shallow))
         f.write("   transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(
             model.trans_name, opt.uncertainty_weights, opt.grad_loss))
 

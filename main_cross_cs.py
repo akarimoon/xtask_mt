@@ -81,7 +81,7 @@ if __name__=='__main__':
     device_name = "cpu" if opt.cpu else "cuda"
     device = torch.device(device_name)
     print("   device: {}".format(device))
-    model = XTaskTSNet(enc_layers=opt.enc_layers, out_features_segmt=opt.num_classes)
+    model = XTaskTSNet(enc_layers=opt.enc_layers, out_features_segmt=opt.num_classes, is_shallow=opt.is_shallow)
     model.to(device)
     parameters_to_train = [p for p in model.parameters()]
     print("TransferNet type:")
@@ -89,6 +89,8 @@ if __name__=='__main__':
     
     print("Options:")
     log_vars = None
+    if opt.is_shallow:
+        print("   shallow decoder")
     if opt.uncertainty_weights:
         print("   use uncertainty weights")
         """
