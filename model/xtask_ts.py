@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from .transfer_net import BaseTaskTransferNet, BaseTaskTransferNetWithSkipCN
 
 class ConvBlock(nn.Module):
-    def __init__(self, in_features, out_features, mid_features=128, is_shallow=True):
+    def __init__(self, in_features, out_features, mid_features=128, is_shallow=False):
         super(ConvBlock, self).__init__()
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_features, mid_features, kernel_size=1, stride=1),
