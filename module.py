@@ -92,6 +92,8 @@ class Logger():
         """
         Calculate log RMSE of inverse depth
         """
+        inv_preds = np.clip(inv_preds, a_min=1e-9, a_max=None)
+        inv_targets = np.clip(inv_targets, a_min=1e-9, a_max=None)
         return np.sum(np.sqrt(np.abs(np.log(inv_preds) - np.log(inv_targets)) ** 2 * masks)) / np.sum(masks)
 
     def _depth_abs(self, preds, targets, masks):
@@ -113,7 +115,6 @@ class Logger():
 
     def _depth_sqrt_rel(self, preds, targets, masks):
         """
-        NOT IN USE
         Calculate square relative error of inverse depth
         """
         nonzero = targets > 0
@@ -153,7 +154,7 @@ class Logger():
         self.miou += self._compute_miou(preds_segmt, targets_segmt) * N
         self.rmse += self._depth_rmse(preds_depth, targets_depth, masks_depth) * N
         self.irmse += self._depth_irmse(inv_preds_depth, inv_targets_depth, masks_depth) * N
-        # self.irmse_log += self._depth_irmse_log(inv_preds, inv_targets, masks_depth) * N
+        self.irmse_log += self._depth_irmse_log(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.abs += self._depth_abs(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.abs_rel += self._depth_abs_rel(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.sqrt_rel += self._depth_sqrt_rel(inv_preds_depth, inv_targets_depth, masks_depth) * N
@@ -167,7 +168,7 @@ class Logger():
         self.miou /= self.count
         self.rmse /= self.count
         self.irmse /= self.count
-        # self.irmse_log /= self.count
+        self.irmse_log /= self.count
         self.abs /= self.count
         self.abs_rel /= self.count
         self.sqrt_rel /= self.count
@@ -180,10 +181,10 @@ class Logger():
             self.pixel_acc, self.miou
         ))
 
-        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, " +\
+        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, iRMSE log: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {:.4f}, " +\
             "delta1: {:.4f}, delta2: {:.4f}, delta3: {:.4f}"
         print(print_depth_str.format(
-            self.rmse, self.irmse, self.abs, self.abs_rel, self.delta1, self.delta2, self.delta3
+            self.rmse, self.irmse, self.irmse_log, self.abs, self.abs_rel, self.sqrt_rel, self.delta1, self.delta2, self.delta3
         ))
 
 class EarlyStopping(object):
