@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+import fnmatch
 import h5py
 from PIL import Image
 import torch
@@ -10,71 +11,132 @@ from torchvision import transforms
 from torchvision.datasets import Cityscapes
 import torchvision.transforms.functional as TF
 
-class NYUDataset(Dataset):
-    def __init__(self, mat_path, transform=None):
-        with h5py.File(mat_path, 'r') as data:
-            self.images = data["images"][()]
-            self.targets = data["depths"][()]
-        self.transform = transform
+class NYUv2(Dataset):
+    """
+    From https://github.com/lorenmt/mtan
+    """
+    def __init__(self, root_path, split='', transforms=None):
+        self.transforms = transforms
+        self.data_path = os.path.join(root_path, split)
+        
+        # calculate data length
+        self.data_len = len(fnmatch.filter(os.listdir(self.data_path + '/image'), '*.npy'))
 
     def __getitem__(self, index):
-        x = self.images[index]
-        y = self.targets[index]
-        mask = np.ones(x.shape)
-        if self.transform:
-            x = x.transpose(1, 2, 0)
-            sample = self.transform({"image": x, "depth": y, "mask": mask})
-            x = sample["image"]
-            y = sample["depth"]
-        y_inverse = 1 / y
+        # load data from the pre-processed npy files
+        image = torch.from_numpy(np.moveaxis(np.load(self.data_path + '/image/{:d}.npy'.format(index)), -1, 0))
+        semantic = torch.from_numpy(np.load(self.data_path + '/label/{:d}.npy'.format(index)))
+        depth = torch.from_numpy(np.moveaxis(np.load(self.data_path + '/depth/{:d}.npy'.format(index)), -1, 0))
 
-        return x, y_inverse, index
+        # apply data augmentation if required
+        if self.transforms:
+            # image, semantic, depth, normal = RandomScaleCrop()(image, semantic, depth, normal)
+            # if torch.rand(1) < 0.5:
+            #     image = torch.flip(image, dims=[2])
+            #     semantic = torch.flip(semantic, dims=[1])
+            #     depth = torch.flip(depth, dims=[2])
+            #     normal = torch.flip(normal, dims=[2])
+            #     normal[0, :, :] = - normal[0, :, :]
+            pass
+
+        return image.float(), semantic.long(), depth.float()
+
+    def __len__(self):
+        return self.data_len
+
+class NYUDataset(Dataset):
+    def __init__(self, root_path, height, width, split='', transform=None):
+        data_path = os.path.join(root_path, 'nyu_depth_v2_labeled.mat')
+        splits_path = os.path.join(root_path, 'splits.mat')
+        idxs = io.loadmat(splits_path)[split + 'Ndxs']
+
+        with h5py.File(data_path, 'r') as data:
+            self.images = data["images"][idxs - 1]
+            self.segmts = data["labels"][idxs - 1]
+            self.depths = data["depths"][idxs - 1]
+        self.height = height
+        self.width = width
+
+        if transform is None:
+            transform = []
+        self.random_crop = True if "random_crop" in transform else False
+        self.random_flip = True if "random_flip" in transform else False
+        self.random_flip_prob = 0.5
+
+        self.class_map = {
+            1: 11, 2: 4, 3: 5, 4: 0, 5: 3,
+            6: 8, 7: 9, 8: 11, 9: 12, 10: 5,
+            11: 7, 12: 5, 13: 12, 14: 9, 15: 5,
+            16: 12, 17: 5, 18: 6, 19: 6, 20: 4,
+            21: 6, 22: 2, 23: 1, 24: 5, 25: 10, 
+            26: 6, 27: 6, 28: 6, 29: 7, 30: 6,
+            31: 6, 32: 5, 33: 6, 34: 6, 35: 6,
+            36: 6, 37: 6, 38: 6, 39: 5, 40: 6
+        }
+
+    def __getitem__(self, index):
+        inputs = {}
+        inputs["image"] = self.images[index]
+        inputs["segmt"] = self.encode_segmt(self.segmts[index])
+        inputs["depth"] = np.array(self.depths[index]).astype(np.float32)
+        
+        self._transform(inputs)
+
+        image = inputs["image"]
+        semgt = inputs["semgt"]
+        depth = inputs["depth"]
+        
+        return image, segmt, depth
+
+    def _transform(self, inputs):
+        resize = transforms.Resize(size=(self.height, self.width), interpolation=cv2.INTER_NEAREST)
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+        # array -> PIL
+        for k in list(inputs):
+            print(k)
+            inputs[k] = TF.to_pil_image(inputs[k])
+
+        # resize
+        for k in list(inputs):
+            inputs[k] = resize(inputs[k])
+
+        # random transformation
+        if self.random_crop:
+            i, j, h, w = transforms.RandomCrop.get_params(inputs["image"], output_size=size)
+            for k in inputs.keys():
+                inputs[k] = TF.crop(inputs[k], i, j, h, w)
+
+        if self.random_flip:
+            if np.random.rand() > self.random_flip_prob:
+                for k in inputs.keys():
+                    inputs[k] = TF.hflip(inputs[k])
+
+        # PIL -> tensor
+        for k in list(inputs):
+            arr = np.array(inputs[k])
+            inputs[k] = TF.to_tensor(arr)
+
+        # normalize
+        inputs["image"] = normalize(inputs["image"])
+        inputs["segmt"] = inputs["segmt"].squeeze()
+        inputs["segmt"] *= 255
+
+        # change tensor type
+        for k in list(inputs):
+            if k == "segmt":
+                inputs[k] = inputs[k].type(torch.LongTensor)
+            else:
+                inputs[k] = inputs[k].type(torch.FloatTensor)
+    
+    def encode_segmt(self, mask):
+        for _validc in range(1, 41):
+            mask[mask == _validc] = self.class_map[_validc]
+        
+        return mask
 
     def __len__(self):
         return len(self.images)
-
-class NYUDatasetExtended(NYUDataset):
-    def __init__(self, mat_path, transform=None, sample_count=1000):
-        NYUDataset.__init__(self, mat_path, transform)
-        self.sample_count = sample_count
-
-    def create_sparse_mask(self, mask_size=384*384):
-        mask = np.zeros(mask_size)
-        mask[:self.sample_count] = 1
-        np.random.shuffle(mask)
-        mask = np.reshape(mask, (384, 384))
-        return mask
-
-    def __getitem__(self, index):
-        x = self.images[index]
-        y = self.targets[index]
-        mask = self.create_sparse_mask()
-        if self.transform:
-            x = x.transpose(1, 2, 0)
-            sample = self.transform({"image": x, "depth": y, "mask": mask})
-            x = sample["image"]
-            y = sample["depth"]
-        y_inverse = 1 / y
-
-        return x, y_inverse, mask, index
-
-class NYUDatasetWithOriginal(NYUDataset):
-    def __init__(self, mat_path, transform=None):
-        NYUDataset.__init__(self, mat_path, transform)
-
-    def __getitem__(self, index):
-        x_original = self.images[index]
-        y_original = self.targets[index]
-        mask = np.ones(x_original.shape)
-        if self.transform:
-            x_original = x_original.transpose(1, 2, 0)
-            sample = self.transform({"image": x_original, "depth": y_original, "mask": mask})
-            x = sample["image"]
-            y = sample["depth"]
-
-        y_inverse = 1 / y
-
-        return x, x_original, y_inverse, index
 
 class CityscapesDataset(Dataset):
     """
