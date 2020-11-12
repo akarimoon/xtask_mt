@@ -381,7 +381,7 @@ class XTaskLoss(nn.Module):
             depth_loss = self.masked_mse_loss(pred_depth, targ_depth, mask_depth)
         elif self.image_loss_type == "logL1":
             depth_loss = self.masked_logL1_loss(pred_depth, targ_depth, mask_depth)
-        ssim_loss = self.masked_SSIM(pred_depth.clone(), pred_t_depth.clone(), mask_depth)
+        ssim_loss = self.masked_L1_loss(pred_depth.clone(), pred_t_depth.clone(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
         kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone(), dim=1), mask_segmt)
