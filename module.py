@@ -390,11 +390,17 @@ class XTaskLoss(nn.Module):
             image_loss = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
             label_loss = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
 
-        else:
+        elif len(log_vars) == 2:
             image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss + grad_loss
             label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
             image_loss = 0.5 * torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
             label_loss = torch.exp(-log_vars[1]) * label_loss_tmp + log_vars[1]
+
+        elif len(log_vars) == 4:
+            image_loss = 0.5 * torch.exp(-log_vars[0]) * depth_loss + torch.exp(-log_vars[1]) * ssim_loss + \
+                            log_vars[0] + log_vars[1] + grad_loss
+            label_loss = torch.exp(-log_vars[2]) * segmt_loss + torch.exp(-log_vars[3]) * kl_loss + \
+                            log_vars[2] + log_vars[3]
 
         return image_loss, label_loss
 
