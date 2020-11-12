@@ -6,7 +6,7 @@ import h5py
 from PIL import Image
 import torch
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.datasets import Cityscapes
 import torchvision.transforms.functional as TF
@@ -268,9 +268,10 @@ class CityscapesDataset(Dataset):
 
         disp = np.array(Image.open(self.disps[index])).astype(np.float32)
         inputs["mask_depth"] = np.float32(disp > 0)
-        disp[disp > 0] = (disp[disp > 0] - 1 ) / 256
+        disp[disp > 0] = (disp[disp > 0] - 1 ) / 256 ** 2
+        disp = np.around(disp, decimals=4)
         depth_org = disp.copy()
-        # depth_org[depth_org > 0] = (0.209313 * 2262.52) / depth_org[depth_org > 0]　# if use disparity, comment out
+        # depth_org[depth_org > 0] = (0.20 * 2262) / depth_org[depth_org > 0] # if use disparity, comment out
         inputs["depth"] = depth_org
 
         self._transform(inputs)
@@ -281,8 +282,7 @@ class CityscapesDataset(Dataset):
         mask_segmt = inputs["mask_segmt"]
         mask_depth = inputs["mask_depth"]
 
-        original = [image_org, segmt_org, depth_org]
-
+        original = [image_org, segmt_org, disp]
         return original, image, segmt, depth, mask_segmt, mask_depth
 
     def _transform(self, inputs):
@@ -296,7 +296,7 @@ class CityscapesDataset(Dataset):
         # array -> PIL
         for k in list(inputs):
             # if k == "depth":
-            #     inputs[k][inputs[k] > 0] = 1 / inputs[k][inputs[k] > 0] # if use disparity, comment out
+            #     inputs[k][inputs[k] > 0] = 1 / inputs[k][inputs[k] > 0]
             inputs[k] = TF.to_pil_image(inputs[k])
 
         # resize

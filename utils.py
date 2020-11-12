@@ -21,7 +21,7 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
             logger.pixel_acc, logger.miou
         ))
 
-        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, iRMSE log: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {}, " +\
+        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, iRMSE log: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {:.4f}, " +\
             "delta1: {:.4f}, delta2: {:.4f}, delta3: {:.4f}\n"
         f.write(print_depth_str.format(
             logger.rmse, logger.irmse, logger.irmse_log, logger.abs, logger.abs_rel, logger.sqrt_rel,
