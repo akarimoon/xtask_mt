@@ -269,6 +269,7 @@ class CityscapesDataset(Dataset):
         disp = np.array(Image.open(self.disps[index])).astype(np.float32)
         inputs["mask_depth"] = np.float32(disp > 0)
         disp[disp > 0] = (disp[disp > 0] - 1 ) / 256 ** 2
+        # disp[disp > 0] = (disp[disp > 0] - 1 ) / 256 # if use disparity, comment ou
         disp = np.around(disp, decimals=4)
         depth_org = disp.copy()
         # depth_org[depth_org > 0] = (0.20 * 2262) / depth_org[depth_org > 0] # if use disparity, comment out
@@ -296,7 +297,7 @@ class CityscapesDataset(Dataset):
         # array -> PIL
         for k in list(inputs):
             # if k == "depth":
-            #     inputs[k][inputs[k] > 0] = 1 / inputs[k][inputs[k] > 0]
+            #     inputs[k][inputs[k] > 0] = 1 / inputs[k][inputs[k] > 0] # if use disparity, comment out
             inputs[k] = TF.to_pil_image(inputs[k])
 
         # resize

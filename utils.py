@@ -7,8 +7,8 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
         f.write("=" * 10 + "\n")
         if exp_num is not None:
             f.write("Experiment #{}\n".format(exp_num))
-        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, alpha={}, gamma={}, smoothing={}\n".format(
-            opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.alpha, opt.gamma, opt.label_smoothing
+        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, alpha={}, gamma={}, smoothing={}\n".format(
+            opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss, opt.alpha, opt.gamma, opt.label_smoothing
         ))
         f.write("Optimizer: Adam, Scheduler: StepLR(step size={}, gamma={})\n".format(opt.scheduler_step_size, opt.scheduler_gamma))
         if opt.num_classes != 19:
@@ -36,8 +36,8 @@ def write_indv_results(opt, model, folder_path):
         f.write("   predicting at size [{}*{}]\n".format(opt.height, opt.width))
         f.write("   batch size: {}, train for {} epochs\n".format(opt.batch_size, opt.epochs))
         f.write("   optimizer: Adam, scheduler: StepLR(step size={}, gamma={})\n".format(opt.scheduler_step_size, opt.scheduler_gamma))
-        f.write("   enc={}, numclasses={}, lr={}, beta={}, lp={}, tsegmt={}, alpha={}, gamma={}, smoothing={}\n".format(
-            opt.enc_layers, opt.num_classes, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss,
+        f.write("   enc={}, numclasses={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, alpha={}, gamma={}, smoothing={}\n".format(
+            opt.enc_layers, opt.num_classes, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss,
             opt.alpha, opt.gamma, opt.label_smoothing
         ))
         f.write("   shallow decoder: {} (if not written, then True)\n".format(opt.is_shallow))
