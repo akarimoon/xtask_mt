@@ -75,10 +75,10 @@ def cityscapes_xtask_parser():
     parser = argparse.ArgumentParser(description='XTask MT on Cityscapes Dataset')
     parser.add_argument('--input_path', default='./data/cityscapes',
                         help='path of dataset (default: ./data/cityscapes)')
-    parser.add_argument('--height', type=int, default=256,
-                        help='height of output (default: 256)')
-    parser.add_argument('--width', type=int, default=512,
-                        help='width of output (default: 512)')
+    parser.add_argument('--height', type=int, default=128,
+                        help='height of output (default: 128)')
+    parser.add_argument('--width', type=int, default=256,
+                        help='width of output (default: 256)')
 
     parser.add_argument('-e', '--epochs', type=int, default=50,
                         help='number of epochs (default: 50)')
@@ -107,6 +107,7 @@ def cityscapes_xtask_parser():
                         help='label smoothing when calculating KL loss')
     parser.add_argument('--lp', default="L1", choices=["MSE", "L1", "logL1"],
                         help='depth loss for depth loss')
+    parser.add_argument('--tdep_loss', default='ssim', choices=["ssim", "L1"])
     parser.add_argument('--tseg_loss', default="cross", choices=["cross", "kl"],
                         help='label loss for cross-task segmt loss')
 

@@ -294,13 +294,15 @@ class LabelSmoothingLoss(nn.Module):
 
 class XTaskLoss(nn.Module):
     def __init__(self, num_classes=19, alpha=0.2, gamma=0., label_smoothing=0.,
-                 image_loss_type="MSE", t_segmt_loss_type="cross", grad_loss=False):
+                 image_loss_type="MSE", t_segmt_loss_type="cross", t_depth_loss_type="ssim",
+                 grad_loss=False):
         super(XTaskLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.image_loss_type = image_loss_type
         self.grad_loss = grad_loss
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=250, reduction='mean')
+        self.t_depth_loss_type = t_depth_loss_type
 
         if t_segmt_loss_type == "kl":
             self.kl_loss = MaskedKLLoss(n_classes=num_classes, label_smoothing=label_smoothing)
@@ -381,10 +383,13 @@ class XTaskLoss(nn.Module):
             depth_loss = self.masked_mse_loss(pred_depth, targ_depth, mask_depth)
         elif self.image_loss_type == "logL1":
             depth_loss = self.masked_logL1_loss(pred_depth, targ_depth, mask_depth)
-        ssim_loss = self.masked_L1_loss(pred_depth.clone(), pred_t_depth.clone(), mask_depth)
+        if self.t_depth_loss_type == "ssim":
+            ssim_loss = self.masked_SSIM(pred_t_depth.clone(), pred_depth.clone(), mask_depth)
+        elif self.t_depth_loss_type == "L1":
+            ssim_loss = self.masked_L1_loss(pred_t_depth.clone(), pred_depth.clone().detach(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
-        kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone(), dim=1), mask_segmt)
+        kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone().detach(), dim=1), mask_segmt)
         
         if log_vars is None:
             image_loss = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
@@ -393,11 +398,11 @@ class XTaskLoss(nn.Module):
         elif len(log_vars) == 2:
             image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss + grad_loss
             label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
-            image_loss = 0.5 * torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
+            image_loss = torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
             label_loss = torch.exp(-log_vars[1]) * label_loss_tmp + log_vars[1]
 
         elif len(log_vars) == 4:
-            image_loss = 0.5 * torch.exp(-log_vars[0]) * depth_loss + torch.exp(-log_vars[1]) * ssim_loss + \
+            image_loss = torch.exp(-log_vars[0]) * depth_loss + torch.exp(-log_vars[1]) * ssim_loss + \
                             log_vars[0] + log_vars[1] + grad_loss
             label_loss = torch.exp(-log_vars[2]) * segmt_loss + torch.exp(-log_vars[3]) * kl_loss + \
                             log_vars[2] + log_vars[3]

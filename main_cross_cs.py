@@ -73,8 +73,8 @@ if __name__=='__main__':
         print("   # of classes: {}".format(opt.num_classes))
     print("   using ResNet{}, optimizer: Adam (lr={}, beta={}), scheduler: StepLR({}, {})".format(
         opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
-    print("   loss function --- Lp_depth: {}, tsegmt: {}, alpha: {}, gamma: {}, smoothing: {}".format(
-        opt.lp, opt.tseg_loss, opt.alpha, opt.gamma, opt.label_smoothing))
+    print("   loss function --- Lp_depth: {}, tsegmt: {}, tdepth: {}, alpha: {}, gamma: {}, smoothing: {}".format(
+        opt.lp, opt.tseg_loss, opt.tdep_loss, opt.alpha, opt.gamma, opt.label_smoothing))
     print("   batch size: {}, train for {} epochs".format(
         opt.batch_size, opt.epochs))
 
@@ -116,7 +116,8 @@ if __name__=='__main__':
     valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
 
     criterion = XTaskLoss(num_classes=opt.num_classes, alpha=opt.alpha, gamma=opt.gamma, label_smoothing=opt.label_smoothing,
-                          image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, grad_loss=opt.grad_loss).to(device)
+                          image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
+                          grad_loss=opt.grad_loss).to(device)
     optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
     scheduler = optim.lr_scheduler.StepLR(optimizer, opt.scheduler_step_size, opt.scheduler_gamma)
 
@@ -233,7 +234,7 @@ if __name__=='__main__':
         write_results(logger, opt, model, exp_num=exp_num)
         write_indv_results(opt, model, folder_path=results_dir)
 
-    show = 1
+    show = np.random.randint(best_pred_segmt.shape[0])
     if not opt.infer_only:
         plt.figure(figsize=(14, 8))
         plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
