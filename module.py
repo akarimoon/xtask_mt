@@ -383,6 +383,7 @@ class XTaskLoss(nn.Module):
             depth_loss = self.masked_mse_loss(pred_depth, targ_depth, mask_depth)
         elif self.image_loss_type == "logL1":
             depth_loss = self.masked_logL1_loss(pred_depth, targ_depth, mask_depth)
+            
         if self.t_depth_loss_type == "ssim":
             ssim_loss = self.masked_SSIM(pred_t_depth.clone(), pred_depth.clone(), mask_depth)
         elif self.t_depth_loss_type == "L1":
