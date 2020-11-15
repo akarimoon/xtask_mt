@@ -56,6 +56,8 @@ class BaseTaskTransferNet(nn.Module):
         self.name = "Base Task TransferNet"
 
     def forward(self, x):
+        if self.out_features == 1:
+            x = self.nonlinear(x)
         out = self.enc1(x)
         out = self.enc2(out)
         out = self.enc3(out)
@@ -63,8 +65,6 @@ class BaseTaskTransferNet(nn.Module):
         out = self.dec2(out)
         out = self.dec3(out)
         out = self.final_conv(out)
-        if self.out_features > 1:
-            out = self.nonlinear(out)
         return out
 
 class BaseTaskTransferNetWithSkipCN(nn.Module):

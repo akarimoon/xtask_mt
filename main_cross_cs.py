@@ -222,6 +222,7 @@ if __name__=='__main__':
             if i == 0 or loss < best_loss:
                 best_loss = loss
                 best_original = original
+                best_y_segmt = batch_y_segmt
                 best_y_depth = batch_y_depth
                 best_pred_segmt = pred_segmt
                 best_pred_depth = pred_depth
@@ -264,7 +265,7 @@ if __name__=='__main__':
     plt.title("Cross-task segmt. pred.")
 
     plt.subplot(3,3,6)
-    plt.imshow(valid_data.decode_segmt(best_original[1][show].cpu().numpy()))
+    plt.imshow(valid_data.decode_segmt(best_y_segmt[show].cpu().numpy()))
     plt.title("Segmt. target")
 
     plt.subplot(3,3,7)
@@ -278,7 +279,7 @@ if __name__=='__main__':
     plt.title("Cross-task depth pred.")
 
     plt.subplot(3,3,9)
-    plt.imshow(best_original[2][show].squeeze().cpu().numpy())
+    plt.imshow(best_y_depth[show].squeeze().cpu().numpy())
     plt.title("Depth target")
 
     plt.tight_layout()
@@ -302,7 +303,7 @@ if __name__=='__main__':
     df["pred"] = (0.20 * 2262) / (256 * flat_pred[flat_targ > 0])
     df["targ"] = (0.20 * 2262) / (256 * flat_targ[flat_targ > 0])
     df["diff_abs"] = np.abs(df["pred"] - df["targ"])
-    bins = np.linspace(0, 130, 14)
+    bins = np.linspace(0, 500, 51)
     df["targ_bin"] = np.digitize(np.round(df["targ"]), bins) - 1
     sns.boxplot(x="targ_bin", y="diff_abs", data=df, ax=ax3)
     ax3.set_xticklabels([int(t.get_text()) * 10  for t in ax3.get_xticklabels()])
@@ -317,6 +318,6 @@ if __name__=='__main__':
     plt.tight_layout()
     if not opt.view_only:
         plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png".format(opt.batch_size, opt.alpha, opt.gamma)))
-    
+
     if not opt.run_only:
         plt.show()
