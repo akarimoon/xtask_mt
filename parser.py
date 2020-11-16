@@ -103,11 +103,13 @@ def cityscapes_xtask_parser():
                         help='alpha of loss function (default: 0.4)')
     parser.add_argument('-g', '--gamma', type=float, default=0.0001,
                         help='gamma of loss function (default: 0.0001')
+    parser.add_argument('-t', '--temp', type=int, default=1,
+                        help='temperature of distillation (default: 1)')
     parser.add_argument('--label_smoothing', type=float, default=0.,
                         help='label smoothing when calculating KL loss')
-    parser.add_argument('--lp', default="L1", choices=["MSE", "L1", "logL1"],
+    parser.add_argument('--lp', default="L1", choices=["MSE", "L1", "logL1", "smoothL1"],
                         help='depth loss for depth loss')
-    parser.add_argument('--tdep_loss', default='ssim', choices=["ssim", "L1"])
+    parser.add_argument('--tdep_loss', default='L1', choices=["ssim", "L1"])
     parser.add_argument('--tseg_loss', default="cross", choices=["cross", "kl"],
                         help='label loss for cross-task segmt loss')
 

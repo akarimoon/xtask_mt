@@ -73,8 +73,10 @@ if __name__=='__main__':
         print("   # of classes: {}".format(opt.num_classes))
     print("   using ResNet{}, optimizer: Adam (lr={}, beta={}), scheduler: StepLR({}, {})".format(
         opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
-    print("   loss function --- Lp_depth: {}, tsegmt: {}, tdepth: {}, alpha: {}, gamma: {}, smoothing: {}".format(
-        opt.lp, opt.tseg_loss, opt.tdep_loss, opt.alpha, opt.gamma, opt.label_smoothing))
+    print("   loss function --- Lp_depth: {}, tsegmt: {}, tdepth: {}".format(
+        opt.lp, opt.tseg_loss, opt.tdep_loss))
+    print("   hyperparameters --- alpha: {}, gamma: {}, temp:{}, smoothing: {}".format(
+        opt.alpha, opt.gamma, opt.temp, opt.label_smoothing))
     print("   batch size: {}, train for {} epochs".format(
         opt.batch_size, opt.epochs))
 
@@ -99,8 +101,6 @@ if __name__=='__main__':
         """
         log_var_a = torch.zeros((1,), requires_grad=True, device=device_name)
         log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
-        # log_var_c = torch.zeros((1,), requires_grad=True, device=device_name)
-        # log_var_d = torch.zeros((1,), requires_grad=True, device=device_name)
         log_vars = [log_var_a, log_var_b]
         parameters_to_train += log_vars
     if opt.grad_loss:
@@ -108,14 +108,14 @@ if __name__=='__main__':
 
     print("Loading dataset...")
     train_data = CityscapesDataset(root_path=opt.input_path, height=opt.height, width=opt.width, num_classes=opt.num_classes,
-                                   split='train', transform=["random_flip"])
+                                   split='train', transform=["random_flip", "random_crop"])
     valid_data = CityscapesDataset(root_path=opt.input_path, height=opt.height, width=opt.width, num_classes=opt.num_classes,
                                    split='val', transform=None)
     # test_data = CityscapesDataset('./data/cityscapes', split='train', transform=transform)
     train = DataLoader(train_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
     valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
 
-    criterion = XTaskLoss(num_classes=opt.num_classes, alpha=opt.alpha, gamma=opt.gamma, label_smoothing=opt.label_smoothing,
+    criterion = XTaskLoss(num_classes=opt.num_classes, alpha=opt.alpha, gamma=opt.gamma, temp=opt.temp, label_smoothing=opt.label_smoothing,
                           image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
                           grad_loss=opt.grad_loss).to(device)
     optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
@@ -294,8 +294,8 @@ if __name__=='__main__':
 
     flat_pred = torch.flatten(best_pred_depth[show]).cpu().numpy()
     flat_targ = torch.flatten(best_y_depth[show]).cpu().numpy()
-    # sns.histplot(1 / flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
-    # sns.histplot(1 / flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
+    # sns.histplot(flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
+    # sns.histplot(flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
     # plt.title("Density plot of depth (non-inverted")
     # plt.legend()
 

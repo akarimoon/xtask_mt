@@ -7,8 +7,8 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
         f.write("=" * 10 + "\n")
         if exp_num is not None:
             f.write("Experiment #{}\n".format(exp_num))
-        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, alpha={}, gamma={}, smoothing={}\n".format(
-            opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss, opt.alpha, opt.gamma, opt.label_smoothing
+        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, alpha={}, gamma={}, temp:{}, smoothing={}\n".format(
+            opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss, opt.alpha, opt.gamma, opt.temp, opt.label_smoothing
         ))
         f.write("Optimizer: Adam, Scheduler: StepLR(step size={}, gamma={})\n".format(opt.scheduler_step_size, opt.scheduler_gamma))
         if opt.num_classes != 19:
@@ -16,11 +16,11 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
         f.write("shallow decoder: {} (if not written, then True)\n".format(opt.is_shallow))
         f.write("transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(
             model.trans_name, opt.uncertainty_weights, opt.grad_loss))
-        print_segmt_str = "Pix Acc: {:.3f}, mIoU: {:.3f}\n"
+            
+        print_segmt_str = "Pix Acc: {:.4f}, mIoU: {:.4f}\n"
         f.write(print_segmt_str.format(
             logger.pixel_acc, logger.miou
         ))
-
         print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, iRMSE log: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {:.4f}, " +\
             "delta1: {:.4f}, delta2: {:.4f}, delta3: {:.4f}\n"
         f.write(print_depth_str.format(
