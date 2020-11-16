@@ -293,21 +293,36 @@ class LabelSmoothingLoss(nn.Module):
         return torch.mean(torch.sum(-true_dist * F.log_softmax(predicted, dim=self.dim), dim=self.dim))
 
 class XTaskLoss(nn.Module):
-    def __init__(self, num_classes=19, alpha=0.2, gamma=0., label_smoothing=0.,
+    def __init__(self, num_classes=19, alpha=0.2, gamma=0., temp=1, label_smoothing=0.,
                  image_loss_type="MSE", t_segmt_loss_type="cross", t_depth_loss_type="ssim",
                  grad_loss=False):
         super(XTaskLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
+        self.temp = float(temp)
         self.image_loss_type = image_loss_type
         self.grad_loss = grad_loss
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=250, reduction='mean')
         self.t_depth_loss_type = t_depth_loss_type
 
+        if image_loss_type == "L1":
+            self.image_loss = self.masked_L1_loss
+        elif image_loss_type == "MSE":
+            self.image_loss = self.masked_mse_loss
+        elif image_loss_type == "logL1":
+            self.image_loss = self.masked_logL1_loss
+        elif image_loss_type == "smoothL1":
+            self.image_loss = self.masked_smoothL1_loss
+
+        if t_depth_loss_type == "ssim":
+            self.tdep_loss = self.masked_SSIM
+        elif t_depth_loss_type == "L1":
+            self.tdep_loss = self.masked_L1_loss
+
         if t_segmt_loss_type == "kl":
-            self.kl_loss = MaskedKLLoss(n_classes=num_classes, label_smoothing=label_smoothing)
+            self.tseg_loss = MaskedKLLoss(n_classes=num_classes, label_smoothing=label_smoothing)
         elif t_segmt_loss_type == "cross":
-            self.kl_loss = LabelSmoothingLoss(num_classes=num_classes, label_smoothing=label_smoothing)
+            self.tseg_loss = LabelSmoothingLoss(num_classes=num_classes, label_smoothing=label_smoothing)
 
     def masked_SSIM(self, predicted, target, mask):
         C1 = 0.01 ** 2
@@ -334,6 +349,12 @@ class XTaskLoss(nn.Module):
 
     def masked_L1_loss(self, predicted, target, mask):
         diff = torch.abs(predicted - target) * mask
+        loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
+        return torch.mean(loss)
+
+    def masked_smoothL1_loss(self, predicted, target, mask, beta=1.0):
+        absdiff = torch.abs(predicted - target)
+        diff = torch.where(absdiff < beta, 0.5 * absdiff ** 2 / beta, absdiff - 0.5 * beta) * mask
         loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
         return torch.mean(loss)
 
@@ -377,121 +398,20 @@ class XTaskLoss(nn.Module):
         else:
             grad_loss = 0
 
-        if self.image_loss_type =="L1":
-            depth_loss = self.masked_L1_loss(pred_depth, targ_depth, mask_depth)
-        elif self.image_loss_type == "MSE":
-            depth_loss = self.masked_mse_loss(pred_depth, targ_depth, mask_depth)
-        elif self.image_loss_type == "logL1":
-            depth_loss = self.masked_logL1_loss(pred_depth, targ_depth, mask_depth)
-            
-        if self.t_depth_loss_type == "ssim":
-            ssim_loss = self.masked_SSIM(pred_t_depth.clone(), pred_depth.clone(), mask_depth)
-        elif self.t_depth_loss_type == "L1":
-            ssim_loss = self.masked_L1_loss(pred_t_depth.clone(), pred_depth.clone().detach(), mask_depth)
+        depth_loss = self.image_loss(pred_depth, targ_depth, mask_depth)
+        tdep_loss = self.tdep_loss(pred_t_depth.clone(), pred_depth.clone(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
-        kl_loss = self.kl_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone().detach(), dim=1), mask_segmt)
+        tseg_loss = self.tseg_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone().detach(), dim=1), mask_segmt)
         
         if log_vars is None:
-            image_loss = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss
-            label_loss = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
+            image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp
+            label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss / self.temp
 
         elif len(log_vars) == 2:
-            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * ssim_loss + grad_loss
-            label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * kl_loss
-            image_loss = torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
-            label_loss = torch.exp(-log_vars[1]) * label_loss_tmp + log_vars[1]
-
-        elif len(log_vars) == 4:
-            image_loss = torch.exp(-log_vars[0]) * depth_loss + torch.exp(-log_vars[1]) * ssim_loss + \
-                            log_vars[0] + log_vars[1] + grad_loss
-            label_loss = torch.exp(-log_vars[2]) * segmt_loss + torch.exp(-log_vars[3]) * kl_loss + \
-                            log_vars[2] + log_vars[3]
+            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp + grad_loss
+            label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss / self.temp
+            image_loss = 0.5 * torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
+            label_loss = 0.5 * torch.exp(-log_vars[1]) * label_loss_tmp + log_vars[1]
 
         return image_loss, label_loss
-
-class PCGrad():
-    def __init__(self, optimizer):
-        self._optim = optimizer
-        return
-
-    @property
-    def optimizer(self):
-        return self._optim
-
-    def zero_grad(self):
-        return self._optim.zero_grad()
-
-    def step(self):
-        return self._optim.step()
-
-    def pc_backward(self, objectives):
-        '''
-        input:
-        - objectives: a list of objectives
-        '''
-
-        grads, shapes = self._pack_grad(objectives)
-        pc_grad = self._project_conflicting(grads)
-        pc_grad = self._unflatten_grad(pc_grad, shapes[0])
-        self._set_grad(pc_grad)
-        return
-
-    def _project_conflicting(self, grads, shapes=None):
-        pc_grad, num_task = copy.deepcopy(grads), len(grads)
-        for g_i in pc_grad:
-            random.shuffle(grads)
-            for g_j in grads:
-                g_i_g_j = torch.dot(g_i, g_j)
-                if g_i_g_j < 0:
-                    g_i -= (g_i_g_j) * g_j / (g_j.norm()**2)
-        pc_grad = torch.stack(pc_grad).mean(dim=0)
-        return pc_grad
-
-    def _set_grad(self, grads):
-        idx = 0
-        for group in self._optim.param_groups:
-            for p in group['params']:
-                if p.grad is None: continue
-                p.grad = grads[idx]
-                idx += 1
-        return
-
-    def _pack_grad(self, objectives):
-        grads, shapes = [], []
-        for obj in objectives:
-            self._optim.zero_grad()
-            obj.backward(retain_graph=True)
-            grad, shape = self._retrieve_grad()
-            grads.append(self._flatten_grad(grad, shape))
-            shapes.append(shape)
-        return grads, shapes
-
-    def _unflatten_grad(self, grads, shapes):
-        unflatten_grad, idx = [], 0
-        for shape in shapes:
-            length = np.prod(shape)
-            unflatten_grad.append(grads[idx:idx + length].view(shape).clone())
-            idx += length
-        return unflatten_grad
-
-    def _flatten_grad(self, grads, shapes):
-        flatten_grad = torch.cat([g.flatten() for g in grads])
-        return flatten_grad
-
-    def _retrieve_grad(self):
-        '''
-        get the gradient of the parameters of the network.
-        
-        output:
-        - grad: a list of the gradient of the parameters
-        - shape: a list of the shape of the parameters
-        '''
-
-        grad, shape = [], []
-        for group in self._optim.param_groups:
-            for p in group['params']:
-                if p.grad is None: continue
-                shape.append(p.grad.shape)
-                grad.append(p.grad.clone())
-        return grad, shape

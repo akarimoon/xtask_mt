@@ -1,4 +1,4 @@
-import os
+import os, random
 import cv2
 import numpy as np
 import fnmatch
@@ -10,6 +10,37 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.datasets import Cityscapes
 import torchvision.transforms.functional as TF
+
+class RandomScaleCrop(object):
+    """
+    Credit to Jialong Wu from https://github.com/lorenmt/mtan/issues/34.
+    """
+    def __init__(self, scale=[1.0, 1.2, 1.5]):
+        self.scale = scale
+
+    def __call__(self, inputs, height, width):
+        sc = self.scale[random.randint(0, len(self.scale) - 1)]
+        h, w = int(height / sc), int(width / sc)
+        i = random.randint(0, height - h)
+        j = random.randint(0, width - w)
+
+        inputs["image"] = F.interpolate(
+                                inputs["image"][None, :, i:i + h, j:j + w],
+                                size=(height, width), 
+                                mode='bilinear', 
+                                align_corners=True
+                            ).squeeze(0)
+        inputs["segmt"] = F.interpolate(
+                                inputs["segmt"][None, :, i:i + h, j:j + w], 
+                                size=(height, width), 
+                                mode='nearest'
+                            ).squeeze(0).squeeze(0)
+        inputs["depth"] = F.interpolate(
+                                inputs["depth"][None, :, i:i + h, j:j + w], 
+                                size=(height, width), 
+                                mode='nearest'
+                            ).squeeze(0)
+        return inputs
 
 class NYUv2(Dataset):
     """
@@ -270,7 +301,7 @@ class CityscapesDataset(Dataset):
         inputs["mask_depth"] = np.float32(disp > 0)
         disp[disp > 0] = (disp[disp > 0] - 1 ) / 256 ** 2
         # disp[disp > 0] = (disp[disp > 0] - 1 ) / 256 # if use disparity, comment ou
-        disp = np.around(disp, decimals=4)
+        disp = np.clip(disp, a_min=None, a_max=0.4922)
         depth_org = disp.copy()
         # depth_org[depth_org > 0] = (0.20 * 2262) / depth_org[depth_org > 0] # if use disparity, comment out
         inputs["depth"] = depth_org
@@ -304,12 +335,6 @@ class CityscapesDataset(Dataset):
         for k in list(inputs):
             inputs[k] = resize(inputs[k])
 
-        # random transformation
-        if self.random_crop:
-            i, j, h, w = transforms.RandomCrop.get_params(inputs["image"], output_size=size)
-            for k in inputs.keys():
-                inputs[k] = TF.crop(inputs[k], i, j, h, w)
-
         if self.random_flip:
             if np.random.rand() > self.random_flip_prob:
                 for k in inputs.keys():
@@ -319,6 +344,10 @@ class CityscapesDataset(Dataset):
         for k in list(inputs):
             arr = np.array(inputs[k])
             inputs[k] = TF.to_tensor(arr)
+
+        # random transformation
+        if self.random_crop:
+            inputs = RandomScaleCrop()(inputs, height=self.height, width=self.width)
 
         # normalize
         inputs["image"] = normalize(inputs["image"])
