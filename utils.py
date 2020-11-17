@@ -14,6 +14,7 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
         if opt.num_classes != 19:
             f.write("# of classes: {}\n".format(opt.num_classes))
         f.write("shallow decoder: {} (if not written, then True)\n".format(opt.is_shallow))
+        f.write("   batch norm in ttnet: {} (if not written, then False)\n".format(opt.batch_norm))
         f.write("transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(
             model.trans_name, opt.uncertainty_weights, opt.grad_loss))
             
@@ -41,6 +42,7 @@ def write_indv_results(opt, model, folder_path):
             opt.alpha, opt.gamma, opt.label_smoothing
         ))
         f.write("   shallow decoder: {} (if not written, then True)\n".format(opt.is_shallow))
+        f.write("   batch norm in ttnet: {} (if not written, then False)\n".format(opt.batch_norm))
         f.write("   transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(
             model.trans_name, opt.uncertainty_weights, opt.grad_loss))
 

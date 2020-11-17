@@ -115,6 +115,8 @@ def cityscapes_xtask_parser():
 
     parser.add_argument('--is_shallow', action='store_true',
                         help='flag: use shallow decoder for each task')
+    parser.add_argument('--batch_norm', action='store_true',
+                        help='flag: enable batch normalization in ttnet')
 
     parser.add_argument('--uncertainty_weights', action='store_true',
                         help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')
