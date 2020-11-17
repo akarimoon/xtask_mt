@@ -89,7 +89,7 @@ class DecoderSequential(nn.Module):
 class XTaskTSNet(nn.Module):
     def __init__(self, enc_layers, out_features_segmt=19, out_features_depth=1, 
                  decoder_in_features=256, decoder_mid_features=128,
-                 is_shallow=False):
+                 is_shallow=False, batch_norm=False):
         super(XTaskTSNet, self).__init__()
 
         if enc_layers not in [18, 34, 50, 101, 152]:
@@ -104,8 +104,8 @@ class XTaskTSNet(nn.Module):
                                                mid_features=decoder_mid_features, is_shallow=is_shallow)
         self.decoder_depth = DecoderSequential(enc_features=enc_features, out_features=out_features_depth, 
                                                mid_features=decoder_mid_features, is_shallow=is_shallow)
-        self.trans_s2d = BaseTaskTransferNetWithSkipCN(in_features=out_features_segmt, out_features=out_features_depth)
-        self.trans_d2s = BaseTaskTransferNetWithSkipCN(in_features=out_features_depth, out_features=out_features_segmt)
+        self.trans_s2d = BaseTaskTransferNetWithSkipCN(in_features=out_features_segmt, out_features=out_features_depth, batch_norm=batch_norm)
+        self.trans_d2s = BaseTaskTransferNetWithSkipCN(in_features=out_features_depth, out_features=out_features_segmt, batch_norm=batch_norm)
         self.trans_name = self.trans_s2d.name
 
         self._init_weights()
