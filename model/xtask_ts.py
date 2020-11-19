@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .transfer_net import BaseTaskTransferNet, BaseTaskTransferNetWithSkipCN
+from .transfer_net import TaskTransferNet, TaskTransferNetWithSkipCN
 
 class ConvBlock(nn.Module):
     def __init__(self, in_features, out_features, mid_features=128, is_shallow=False):
@@ -104,8 +104,8 @@ class XTaskTSNet(nn.Module):
                                                mid_features=decoder_mid_features, is_shallow=is_shallow)
         self.decoder_depth = DecoderSequential(enc_features=enc_features, out_features=out_features_depth, 
                                                mid_features=decoder_mid_features, is_shallow=is_shallow)
-        self.trans_s2d = BaseTaskTransferNetWithSkipCN(in_features=out_features_segmt, out_features=out_features_depth, batch_norm=batch_norm)
-        self.trans_d2s = BaseTaskTransferNetWithSkipCN(in_features=out_features_depth, out_features=out_features_segmt, batch_norm=batch_norm)
+        self.trans_s2d = TaskTransferNetWithSkipCN(in_features=out_features_segmt, out_features=out_features_depth, batch_norm=batch_norm)
+        self.trans_d2s = TaskTransferNetWithSkipCN(in_features=out_features_depth, out_features=out_features_segmt, batch_norm=batch_norm)
         self.trans_name = self.trans_s2d.name
 
         self._init_weights()

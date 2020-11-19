@@ -9,4 +9,3 @@ python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --alpha 0.01
 
 # compare with other alpha/gamma
 python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --alpha 0.1 --gamma 0.001 -e 200 --scheduler_step_size 60 --run_only --notqdm
-python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --alpha 0.1 --gamma 0.01 -e 200 --scheduler_step_size 60 --run_only --notqdm
