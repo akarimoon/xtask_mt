@@ -24,19 +24,25 @@ def nyu_xtask_parser():
                         help='beta_2 of Adam (default: 0.99)')
     parser.add_argument('--scheduler_step_size', type=int, default=15,
                         help='step size of scheduler (steplr)')
-    parser.add_argument('--scheduler_gamma', type=float, default=0.1,
+    parser.add_argument('--scheduler_gamma', type=float, default=0.5,
                         help='lr decay of scheduler (steplr)')
 
-    parser.add_argument('-a', '--alpha', type=float, default=0.4,
+    parser.add_argument('-a', '--alpha', type=float, default=0.001,
                         help='alpha of loss function (default: 0.4)')
-    parser.add_argument('-g', '--gamma', type=float, default=0.1,
+    parser.add_argument('-g', '--gamma', type=float, default=0.001,
                         help='gamma of loss function (default: 0.1')
     parser.add_argument('--label_smoothing', type=float, default=0.,
                         help='label smoothing when calculating KL loss')
-    parser.add_argument('--lp', default="MSE", choices=["MSE", "L1", "logL1"],
+    parser.add_argument('--lp', default="L1", choices=["MSE", "L1", "logL1"],
                         help='depth loss for depth loss')
     parser.add_argument('--tseg_loss', default="cross", choices=["cross", "kl"],
                         help='label loss for cross-task segmt loss')
+    parser.add_argument('--tdep_loss', default='L1', choices=["ssim", "L1"])
+
+    parser.add_argument('--is_shallow', action='store_true',
+                        help='flag: use shallow decoder for each task')
+    parser.add_argument('--batch_norm', action='store_true',
+                        help='flag: enable batch normalization in ttnet')
 
     parser.add_argument('--uncertainty_weights', action='store_true',
                         help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')

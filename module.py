@@ -139,10 +139,14 @@ class Logger():
         """
         preds = [p.cpu().numpy() for p in preds]
         targets = [t.cpu().numpy() for t in targets]
-        masks = [m.cpu().numpy() for m in masks]
         preds_segmt, preds_depth = preds
         targets_segmt, targets_depth = targets
-        masks_segmt, masks_depth = masks
+        if masks is not None:
+            masks = [m.cpu().numpy() for m in masks]
+            masks_segmt, masks_depth = masks
+        else:
+            masks_segmt = np.ones_like(targets_segmt)
+            masks_depth = np.ones_like(targets_depth)
 
         inv_preds_depth = np.copy(preds_depth)
         inv_targets_depth = np.copy(targets_depth)
@@ -302,7 +306,7 @@ class XTaskLoss(nn.Module):
         self.temp = float(temp)
         self.image_loss_type = image_loss_type
         self.grad_loss = grad_loss
-        self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=250, reduction='mean')
+        self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=-1, reduction='mean')
         self.t_depth_loss_type = t_depth_loss_type
 
         if image_loss_type == "L1":
@@ -388,8 +392,8 @@ class XTaskLoss(nn.Module):
 
     def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, log_vars=None):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
-        if mask_segmt is None:
-            mask_segmt = torch.ones_like(targ_segmt)
+        # if mask_segmt is None:
+        #     mask_segmt = torch.ones_like(targ_segmt)
         if mask_depth is None:
             mask_depth = torch.ones_like(targ_depth)
 

@@ -46,128 +46,80 @@ class NYUv2(Dataset):
     """
     From https://github.com/lorenmt/mtan
     """
-    def __init__(self, root_path, split='', transforms=None):
+    colors_13 = [  # [  0,   0,   0],
+        [128, 64, 128],
+        [244, 35, 232],
+        [70, 70, 70],
+        [102, 102, 156],
+        [190, 153, 153],
+        [153, 153, 153],
+        [250, 170, 30],
+        [220, 220, 0],
+        [107, 142, 35],
+        [152, 251, 152],
+        [0, 130, 180],
+        [220, 20, 60],
+        [255, 0, 0],
+    ]    
+
+    label_colors_13 = dict(zip(range(13), colors_13))
+
+    def __init__(self, root_path, split='', transforms=True):
         self.transforms = transforms
         self.data_path = os.path.join(root_path, split)
         
         # calculate data length
         self.data_len = len(fnmatch.filter(os.listdir(self.data_path + '/image'), '*.npy'))
 
+        self.scale = [1.0, 1.2, 1.5]
+
     def __getitem__(self, index):
         # load data from the pre-processed npy files
+        inputs = {}
         image = torch.from_numpy(np.moveaxis(np.load(self.data_path + '/image/{:d}.npy'.format(index)), -1, 0))
-        semantic = torch.from_numpy(np.load(self.data_path + '/label/{:d}.npy'.format(index)))
+        segmt = torch.from_numpy(np.load(self.data_path + '/label/{:d}.npy'.format(index)))
         depth = torch.from_numpy(np.moveaxis(np.load(self.data_path + '/depth/{:d}.npy'.format(index)), -1, 0))
 
         # apply data augmentation if required
         if self.transforms:
-            # image, semantic, depth, normal = RandomScaleCrop()(image, semantic, depth, normal)
-            # if torch.rand(1) < 0.5:
-            #     image = torch.flip(image, dims=[2])
-            #     semantic = torch.flip(semantic, dims=[1])
-            #     depth = torch.flip(depth, dims=[2])
-            #     normal = torch.flip(normal, dims=[2])
-            #     normal[0, :, :] = - normal[0, :, :]
-            pass
+            image, segmt, depth = self._random_scale_crop(image, segmt, depth)
+            if torch.rand(1) < 0.5:
+                image = torch.flip(image, dims=[2])
+                segmt = torch.flip(segmt, dims=[1])
+                depth = torch.flip(depth, dims=[2])
 
-        return image.float(), semantic.long(), depth.float()
+        return image.float(), segmt.long(), depth.float()
 
     def __len__(self):
         return self.data_len
 
-class NYUDataset(Dataset):
-    def __init__(self, root_path, height, width, split='', transform=None):
-        data_path = os.path.join(root_path, 'nyu_depth_v2_labeled.mat')
-        splits_path = os.path.join(root_path, 'splits.mat')
-        idxs = io.loadmat(splits_path)[split + 'Ndxs']
+    def _random_scale_crop(self, image, segmt, depth):
+        height, width = image.shape[-2:]
+        sc = self.scale[random.randint(0, len(self.scale) - 1)]
+        h, w = int(height / sc), int(width / sc)
+        i = random.randint(0, height - h)
+        j = random.randint(0, width - w)
+        img_ = F.interpolate(image[None, :, i:i + h, j:j + w], size=(height, width), mode='bilinear', align_corners=True).squeeze(0)
+        seg_ = F.interpolate(segmt[None, None, i:i + h, j:j + w], size=(height, width), mode='nearest').squeeze(0).squeeze(0)
+        dep_ = F.interpolate(depth[None, :, i:i + h, j:j + w], size=(height, width), mode='nearest').squeeze(0)
 
-        with h5py.File(data_path, 'r') as data:
-            self.images = data["images"][idxs - 1]
-            self.segmts = data["labels"][idxs - 1]
-            self.depths = data["depths"][idxs - 1]
-        self.height = height
-        self.width = width
+        return img_, seg_, dep_ / sc
 
-        if transform is None:
-            transform = []
-        self.random_crop = True if "random_crop" in transform else False
-        self.random_flip = True if "random_flip" in transform else False
-        self.random_flip_prob = 0.5
+    def decode_segmt(self, temp):
+        r = temp.copy()
+        g = temp.copy()
+        b = temp.copy()
+        for l in range(0, 13):
+            r[temp == l] = self.label_colors_13[l][0]
+            g[temp == l] = self.label_colors_13[l][1]
+            b[temp == l] = self.label_colors_13[l][2]
 
-        self.class_map = {
-            1: 11, 2: 4, 3: 5, 4: 0, 5: 3,
-            6: 8, 7: 9, 8: 11, 9: 12, 10: 5,
-            11: 7, 12: 5, 13: 12, 14: 9, 15: 5,
-            16: 12, 17: 5, 18: 6, 19: 6, 20: 4,
-            21: 6, 22: 2, 23: 1, 24: 5, 25: 10, 
-            26: 6, 27: 6, 28: 6, 29: 7, 30: 6,
-            31: 6, 32: 5, 33: 6, 34: 6, 35: 6,
-            36: 6, 37: 6, 38: 6, 39: 5, 40: 6
-        }
 
-    def __getitem__(self, index):
-        inputs = {}
-        inputs["image"] = self.images[index]
-        inputs["segmt"] = self.encode_segmt(self.segmts[index])
-        inputs["depth"] = np.array(self.depths[index]).astype(np.float32)
-        
-        self._transform(inputs)
-
-        image = inputs["image"]
-        semgt = inputs["semgt"]
-        depth = inputs["depth"]
-        
-        return image, segmt, depth
-
-    def _transform(self, inputs):
-        resize = transforms.Resize(size=(self.height, self.width), interpolation=cv2.INTER_NEAREST)
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-
-        # array -> PIL
-        for k in list(inputs):
-            print(k)
-            inputs[k] = TF.to_pil_image(inputs[k])
-
-        # resize
-        for k in list(inputs):
-            inputs[k] = resize(inputs[k])
-
-        # random transformation
-        if self.random_crop:
-            i, j, h, w = transforms.RandomCrop.get_params(inputs["image"], output_size=size)
-            for k in inputs.keys():
-                inputs[k] = TF.crop(inputs[k], i, j, h, w)
-
-        if self.random_flip:
-            if np.random.rand() > self.random_flip_prob:
-                for k in inputs.keys():
-                    inputs[k] = TF.hflip(inputs[k])
-
-        # PIL -> tensor
-        for k in list(inputs):
-            arr = np.array(inputs[k])
-            inputs[k] = TF.to_tensor(arr)
-
-        # normalize
-        inputs["image"] = normalize(inputs["image"])
-        inputs["segmt"] = inputs["segmt"].squeeze()
-        inputs["segmt"] *= 255
-
-        # change tensor type
-        for k in list(inputs):
-            if k == "segmt":
-                inputs[k] = inputs[k].type(torch.LongTensor)
-            else:
-                inputs[k] = inputs[k].type(torch.FloatTensor)
-    
-    def encode_segmt(self, mask):
-        for _validc in range(1, 41):
-            mask[mask == _validc] = self.class_map[_validc]
-        
-        return mask
-
-    def __len__(self):
-        return len(self.images)
+        rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
+        rgb[:, :, 0] = r / 255.0
+        rgb[:, :, 1] = g / 255.0
+        rgb[:, :, 2] = b / 255.0
+        return rgb
 
 class CityscapesDataset(Dataset):
     """

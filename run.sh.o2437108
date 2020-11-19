@@ -1,0 +1,23 @@
+Initializing...
+Parameters:
+   predicting at size [128*256]
+   # of classes: 7
+   using ResNet34, optimizer: Adam (lr=0.0001, beta=(0.9, 0.99)), scheduler: StepLR(15, 0.5)
+   loss function --- Lp_depth: L1, tsegmt: cross, tdepth: L1
+   hyperparameters --- alpha: 0.01, gamma: 0.01, temp:1, smoothing: 0.1
+   batch size: 6, train for 1 epochs
+   device: cuda
+TransferNet type:
+   Base Task TransferNet with skip-connection
+Options:
+   use uncertainty weights
+Loading dataset...
+=======================================
+Start training...
+Epoch 1/1 [4.4min] --- train loss: 0.05676 --- valid loss: 0.03222
+Uncertainty weights: segmt=0.97431, depth=0.97521
+Saving weights...
+Training done
+=======================================
+Pix Acc: 0.8275, mIoU: 0.4419
+Scores - RMSE: 47.7201, iRMSE: 0.0451, iRMSE log: 1.7615, Abs: 0.0440, Abs Rel: 0.7958, Sqrt Rel: 0.0764, delta1: 0.4113, delta2: 0.5977, delta3: 0.7056

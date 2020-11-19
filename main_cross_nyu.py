@@ -43,6 +43,8 @@ if __name__ == '__main__':
     torch.manual_seed(0)
     opt = nyu_xtask_parser()
     opt.betas = (opt.b1, opt.b2)
+    opt.num_classes = 13
+    opt.temp = 1
 
     print("Initializing...")
     if not os.path.exists(opt.save_path):
@@ -171,34 +173,31 @@ if __name__ == '__main__':
     if not opt.debug:
         model.load_state_dict(torch.load(weights_path, map_location=device))
 
-    logger = Logger(num_classes=opt.num_classes)
+    logger = Logger(num_classes=opt.num_classes, ignore_index=-1)
     best_loss = 1e5
 
     with torch.no_grad():
         for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
-            original, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
+            batch_X, batch_y_segmt, batch_y_depth = batch
             batch_X = batch_X.to(device, non_blocking=True)
             batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
             batch_y_depth = batch_y_depth.to(device, non_blocking=True)
-            batch_mask_segmt = batch_mask_segmt.to(device, non_blocking=True)
-            batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
 
             predicted = model(batch_X)
-            image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth,
-                                               batch_mask_segmt, batch_mask_depth)
+            image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth)
 
             pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
 
             preds = [pred_segmt, pred_depth]
             targets = [batch_y_segmt, batch_y_depth]
-            masks = [batch_mask_segmt, batch_mask_depth]
-            logger.log(preds, targets, masks)
+            logger.log(preds, targets)
 
             # use best results for final plot
             loss = compute_miou(pred_segmt, batch_y_segmt) - depth_error(pred_depth, batch_y_depth)[0]
             if i == 0 or loss < best_loss:
                 best_loss = loss
-                best_original = original
+                best_X = batch_X
+                beest_y_segmt = batch_y_segmt
                 best_y_depth = batch_y_depth
                 best_pred_segmt = pred_segmt
                 best_pred_depth = pred_depth
@@ -210,3 +209,88 @@ if __name__ == '__main__':
     if not opt.infer_only:
         write_results(logger, opt, model, exp_num=exp_num)
         write_indv_results(opt, model, folder_path=results_dir)
+
+    show = 1
+    if not opt.infer_only:
+        plt.figure(figsize=(14, 8))
+        plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
+        plt.plot(np.arange(opt.epochs), valid_losses, linestyle="--", label="valid")
+        plt.legend()
+        if not opt.view_only:
+            plt.savefig(os.path.join(results_dir, "output", "loss.png".format(opt.batch_size, opt.alpha, opt.gamma)))
+
+    plt.figure(figsize=(18, 10))
+    plt.subplot(3,3,1)
+    plt.imshow(best_X[show].permute(1,2,0).cpu().numpy())
+    plt.title("Image")
+
+    if not opt.infer_only:
+        plt.subplot(3,3,2)
+        plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
+        plt.plot(np.arange(opt.epochs), valid_losses, linestyle="--", label="valid")
+        plt.title("Loss")
+        plt.legend()
+        
+    plt.subplot(3,3,4)
+    plt.imshow(valid_data.decode_segmt(torch.argmax(best_pred_segmt, dim=1)[show].cpu().numpy()))
+    plt.title("Direct segmt. pred.")
+
+    plt.subplot(3,3,5)
+    plt.imshow(valid_data.decode_segmt(torch.argmax(best_pred_tsegmt, dim=1)[show].cpu().numpy()))
+    plt.title("Cross-task segmt. pred.")
+
+    plt.subplot(3,3,6)
+    plt.imshow(valid_data.decode_segmt(beest_y_segmt[show].cpu().numpy()))
+    plt.title("Segmt. target")
+
+    plt.subplot(3,3,7)
+    plt.imshow(best_pred_depth[show].squeeze().cpu().numpy())
+    plt.title("Direct depth pred.")
+
+    plt.subplot(3,3,8)
+    plt.imshow(best_pred_tdepth[show].squeeze().cpu().numpy())
+    plt.title("Cross-task depth pred.")
+
+    plt.subplot(3,3,9)
+    plt.imshow(best_y_depth[show].squeeze().cpu().numpy())
+    plt.title("Depth target")
+
+    plt.tight_layout()
+    ep_or_infer = "epoch{}-{}_".format(save_at_epoch, opt.epochs) if not opt.infer_only else "infer_"
+    if not opt.view_only:
+        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "results.png".format(opt.batch_size, opt.alpha, opt.gamma)))
+
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
+    img = ax1.imshow(np.abs((best_pred_depth[show] - best_y_depth[show]).squeeze().cpu().numpy()))
+    fig.colorbar(img, ax=ax1)
+    plt.title("Absolute error of depth (non-inverted)")
+
+    flat_pred = torch.flatten(best_pred_depth[show]).cpu().numpy()
+    flat_targ = torch.flatten(best_y_depth[show]).cpu().numpy()
+    # sns.histplot(1 / flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
+    # sns.histplot(1 / flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
+    # plt.title("Density plot of depth (non-inverted")
+    # plt.legend()
+
+    df = pd.DataFrame()
+    df["pred"] = flat_pred[flat_targ > 0]
+    df["targ"] = flat_targ[flat_targ > 0]
+    df["diff_abs"] = np.abs(df["pred"] - df["targ"])
+    bins = np.linspace(0, 130, 14)
+    df["targ_bin"] = np.digitize(np.round(df["targ"]), bins) - 1
+    sns.boxplot(x="targ_bin", y="diff_abs", data=df, ax=ax3)
+    ax3.set_xticklabels([int(t.get_text()) * 10  for t in ax3.get_xticklabels()])
+    ax3.set_title("Boxplot for absolute error for all non-nan pixels")
+
+    df["is_below_20"] = df["targ"] < 20
+    bins_20 = np.linspace(0, 20, 21)
+    df["targ_bin_20"] = np.digitize(np.round(df["targ"]), bins_20) - 1
+    sns.boxplot(x="targ_bin_20", y="diff_abs", data=df[df["is_below_20"] == True], ax=ax4)
+    ax4.set_xticklabels([int(t.get_text()) * 1  for t in ax4.get_xticklabels()])
+    ax4.set_title("Boxplot for absolute error for all pixels < 20m")
+    plt.tight_layout()
+    if not opt.view_only:
+        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png".format(opt.batch_size, opt.alpha, opt.gamma)))
+    
+    if not opt.run_only:
+        plt.show()
