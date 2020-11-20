@@ -99,10 +99,10 @@ def cityscapes_xtask_parser():
     parser.add_argument('--scheduler_gamma', type=float, default=0.5,
                         help='lr decay of scheduler (steplr)')
 
-    parser.add_argument('-a', '--alpha', type=float, default=0.4,
-                        help='alpha of loss function (default: 0.4)')
-    parser.add_argument('-g', '--gamma', type=float, default=0.0001,
-                        help='gamma of loss function (default: 0.0001')
+    parser.add_argument('-a', '--alpha', type=float, default=0.01,
+                        help='alpha of loss function (default: 0.01)')
+    parser.add_argument('-g', '--gamma', type=float, default=0.01,
+                        help='gamma of loss function (default: 0.01')
     parser.add_argument('-t', '--temp', type=int, default=1,
                         help='temperature of distillation (default: 1)')
     parser.add_argument('--label_smoothing', type=float, default=0.,
