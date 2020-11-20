@@ -69,6 +69,8 @@ class TaskTransferNet(nn.Module):
         
         self.name = "Base Task TransferNet"
 
+        self._init_weights()
+
     def forward(self, x):
         if self.out_features == 1:
             x = self.nonlinear(x)
@@ -80,6 +82,14 @@ class TaskTransferNet(nn.Module):
         out = self.dec3(out)
         out = self.final_conv(out)
         return out
+
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                torch.nn.init.xavier_normal_(m.weight)
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
 
 class TaskTransferNetWithSkipCN(nn.Module):
     """
@@ -101,6 +111,8 @@ class TaskTransferNetWithSkipCN(nn.Module):
 
         self.name = "Base Task TransferNet with skip-connection"
 
+        self._init_weights()
+
     def forward(self, x):
         if self.out_features == 1:
             x = self.nonlinear(x)
@@ -112,3 +124,11 @@ class TaskTransferNetWithSkipCN(nn.Module):
         out = self.dec3(torch.cat((out, e1), dim=1))
         out = self.final_conv(out)
         return out
+
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                torch.nn.init.xavier_normal_(m.weight)
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
