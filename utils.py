@@ -14,6 +14,7 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
         f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, alpha={}, gamma={}, temp:{}, smoothing={}\n".format(
             opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss, opt.alpha, opt.gamma, opt.temp, opt.label_smoothing
         ))
+        f.write("Use pretrained encoder: {} (if not written, then False)".format(opt.use_pretrain))
         f.write("Optimizer: Adam, Scheduler: StepLR(step size={}, gamma={})\n".format(opt.scheduler_step_size, opt.scheduler_gamma))
         if opt.num_classes != 19:
             f.write("# of classes: {}\n".format(opt.num_classes))
@@ -45,6 +46,7 @@ def write_indv_results(opt, model, folder_path):
             opt.enc_layers, opt.num_classes, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss,
             opt.alpha, opt.gamma, opt.label_smoothing
         ))
+        f.write("   use pretrained encoder: {} (if not written, then False)".format(opt.use_pretrain))
         f.write("   shallow decoder: {} (if not written, then True)\n".format(opt.is_shallow))
         f.write("   batch norm in ttnet: {} (if not written, then False)\n".format(opt.batch_norm))
         f.write("   transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(

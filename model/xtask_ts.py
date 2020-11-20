@@ -89,12 +89,13 @@ class DecoderSequential(nn.Module):
 class XTaskTSNet(nn.Module):
     def __init__(self, enc_layers, out_features_segmt=19, out_features_depth=1, 
                  decoder_in_features=256, decoder_mid_features=128,
-                 is_shallow=False, batch_norm=False):
+                 is_shallow=False, batch_norm=False, use_pretrain=False):
         super(XTaskTSNet, self).__init__()
 
         if enc_layers not in [18, 34, 50, 101, 152]:
             raise ValueError("{} is not a valid number of resnet layers".format(enc_layers))
 
+        self.use_pretrain = use_pretrain
         self.pretrained_encoder = self._load_encoder(enc_layers)
         enc_features = np.array([64, 64, 128, 256, 512])
         if enc_layers > 34:
@@ -108,10 +109,8 @@ class XTaskTSNet(nn.Module):
         self.trans_d2s = TaskTransferNetWithSkipCN(in_features=out_features_depth, out_features=out_features_segmt, batch_norm=batch_norm)
         self.trans_name = self.trans_s2d.name
 
-        self._init_weights()
-
     def _load_encoder(self, enc_layers):
-        backbone = torch.hub.load('pytorch/vision:v0.6.0', 'resnet' + str(enc_layers), pretrained=True)
+        backbone = torch.hub.load('pytorch/vision:v0.6.0', 'resnet' + str(enc_layers), pretrained=self.use_pretrain)
         pretrained = nn.Module()
         pretrained.layer0 = nn.Sequential(
                                 backbone.conv1,
