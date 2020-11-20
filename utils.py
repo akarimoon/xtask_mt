@@ -66,7 +66,8 @@ def make_results_dir(folder_path="./tmp"):
     return num, os.path.join(folder_path, num)
 
 def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses=None, valid_losses=None):
-    show = np.random.randint(best_set["pred_segmt"].shape[0])
+    best_set_size = best_set["pred_depth"].shape[0]
+    show = np.random.randint(best_set_size)
     if not opt.infer_only:
         plt.figure(figsize=(14, 8))
         plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
@@ -150,27 +151,26 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     if not opt.view_only:
         plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png"))
 
-    if best_set["pred_segmt"].shape[0] == opt.batch_size:
-        plt.figure(figsize=(24, 18))
-        for i in range(opt.batch_size):
-            plt.subplot(5, opt.batch_size, i + 1)
-            plt.imshow(best_set["original"][0][i].cpu().numpy())
-            plt.axis('off')
-            plt.subplot(5, opt.batch_size, i + 1 + opt.batch_size)
-            plt.imshow(valid_data.decode_segmt(best_set["targ_segmt"][i].cpu().numpy()))
-            plt.axis('off')
-            plt.subplot(5, opt.batch_size, i + 1 + 2 * opt.batch_size)
-            plt.imshow(valid_data.decode_segmt(torch.argmax(best_set["pred_segmt"], dim=1)[i].cpu().numpy()))
-            plt.axis('off')
-            plt.subplot(5, opt.batch_size, i + 1 + 3 * opt.batch_size)
-            plt.imshow(best_set["targ_depth"][i].squeeze().cpu().numpy())
-            plt.axis('off')
-            plt.subplot(5, opt.batch_size, i + 1 + 4 * opt.batch_size)
-            plt.imshow(pred_clamped[i].squeeze().cpu().numpy())
-            plt.axis('off')
-        plt.tight_layout()
-        if not opt.view_only:
-            plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "batch.png"), bbox_inches='tight')
+    plt.figure(figsize=(4 * best_set_size, 12))
+    for i in range(best_set_size):
+        plt.subplot(5, best_set_size, i + 1)
+        plt.imshow(best_set["original"][0][i].cpu().numpy())
+        plt.axis('off')
+        plt.subplot(5, best_set_size, i + 1 + best_set_size)
+        plt.imshow(valid_data.decode_segmt(best_set["targ_segmt"][i].cpu().numpy()))
+        plt.axis('off')
+        plt.subplot(5, best_set_size, i + 1 + 2 * best_set_size)
+        plt.imshow(valid_data.decode_segmt(torch.argmax(best_set["pred_segmt"], dim=1)[i].cpu().numpy()))
+        plt.axis('off')
+        plt.subplot(5, best_set_size, i + 1 + 3 * best_set_size)
+        plt.imshow(best_set["targ_depth"][i].squeeze().cpu().numpy())
+        plt.axis('off')
+        plt.subplot(5, best_set_size, i + 1 + 4 * best_set_size)
+        plt.imshow(pred_clamped[i].squeeze().cpu().numpy())
+        plt.axis('off')
+    plt.tight_layout()
+    if not opt.view_only:
+        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "batch.png"), bbox_inches='tight')
 
     plt.show()
 
