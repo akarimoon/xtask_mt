@@ -1,5 +1,9 @@
 import os
 from datetime import datetime
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 import torch
 
 def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=None):
@@ -61,6 +65,115 @@ def make_results_dir(folder_path="./tmp"):
 
     return num, os.path.join(folder_path, num)
 
+def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses=None, valid_losses=None):
+    show = np.random.randint(best_set["pred_segmt"].shape[0])
+    if not opt.infer_only:
+        plt.figure(figsize=(14, 8))
+        plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
+        plt.plot(np.arange(opt.epochs), valid_losses, linestyle="--", label="valid")
+        plt.legend()
+        if not opt.view_only:
+            plt.savefig(os.path.join(results_dir, "output", "loss.png"))
+
+    plt.figure(figsize=(18, 10))
+    plt.subplot(3,3,1)
+    plt.imshow(best_set["original"][0][show].cpu().numpy())
+    plt.title("Image")
+
+    if not opt.infer_only:
+        plt.subplot(3,3,2)
+        plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
+        plt.plot(np.arange(opt.epochs), valid_losses, linestyle="--", label="valid")
+        plt.title("Loss")
+        plt.legend()
+        
+    plt.subplot(3,3,4)
+    plt.imshow(valid_data.decode_segmt(torch.argmax(best_set["pred_segmt"], dim=1)[show].cpu().numpy()))
+    plt.title("Direct segmt. pred.")
+
+    plt.subplot(3,3,5)
+    plt.imshow(valid_data.decode_segmt(torch.argmax(best_set["pred_tsegmt"], dim=1)[show].cpu().numpy()))
+    plt.title("Cross-task segmt. pred.")
+
+    plt.subplot(3,3,6)
+    plt.imshow(valid_data.decode_segmt(best_set["targ_segmt"][show].cpu().numpy()))
+    plt.title("Segmt. target")
+
+    plt.subplot(3,3,7)
+    pred_clamped = torch.clamp(best_set["pred_depth"], min=1e-9, max=0.4922)
+    plt.imshow(pred_clamped[show].squeeze().cpu().numpy())
+    plt.title("Direct depth pred.")
+
+    plt.subplot(3,3,8)
+    pred_t_clamped = torch.clamp(best_set["pred_tdepth"], min=1e-9, max=0.4922)
+    plt.imshow(pred_t_clamped[show].squeeze().cpu().numpy())
+    plt.title("Cross-task depth pred.")
+
+    plt.subplot(3,3,9)
+    plt.imshow(best_set["targ_depth"][show].squeeze().cpu().numpy())
+    plt.title("Depth target")
+
+    plt.tight_layout()
+    ep_or_infer = "epoch{}-{}_".format(save_at_epoch, opt.epochs) if not opt.infer_only else "infer_"
+    if not opt.view_only:
+        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "results.png"))
+
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
+    img = ax1.imshow(np.abs((pred_clamped[show] - 1 / best_set["targ_depth"][show]).squeeze().cpu().numpy()))
+    fig.colorbar(img, ax=ax1)
+    plt.title("Absolute error of depth (non-inverted)")
+
+    flat_pred = torch.flatten(best_set["pred_depth"][show]).cpu().numpy()
+    flat_targ = torch.flatten(best_set["targ_depth"][show]).cpu().numpy()
+    # sns.histplot(flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
+    # sns.histplot(flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
+    # plt.title("Density plot of depth (non-inverted")
+    # plt.legend()
+
+    df = pd.DataFrame()
+    df["pred"] = (0.20 * 2262) / (256 * flat_pred[flat_targ > 0])
+    df["targ"] = (0.20 * 2262) / (256 * flat_targ[flat_targ > 0])
+    df["diff_abs"] = np.abs(df["pred"] - df["targ"])
+    bins = np.linspace(0, 500, 51)
+    df["targ_bin"] = np.digitize(np.round(df["targ"]), bins) - 1
+    sns.boxplot(x="targ_bin", y="diff_abs", data=df, ax=ax3)
+    ax3.set_xticklabels([int(t.get_text()) * 10  for t in ax3.get_xticklabels()])
+    ax3.set_title("Boxplot for absolute error for all non-nan pixels")
+
+    df["is_below_20"] = df["targ"] < 20
+    bins_20 = np.linspace(0, 20, 21)
+    df["targ_bin_20"] = np.digitize(np.round(df["targ"]), bins_20) - 1
+    sns.boxplot(x="targ_bin_20", y="diff_abs", data=df[df["is_below_20"] == True], ax=ax4)
+    ax4.set_xticklabels([int(t.get_text()) * 1  for t in ax4.get_xticklabels()])
+    ax4.set_title("Boxplot for absolute error for all pixels < 20m")
+    plt.tight_layout()
+    if not opt.view_only:
+        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png"))
+
+    if best_set["pred_segmt"].shape[0] == opt.batch_size:
+        plt.figure(figsize=(24, 18))
+        for i in range(opt.batch_size):
+            plt.subplot(5, opt.batch_size, i + 1)
+            plt.imshow(best_set["original"][0][i].cpu().numpy())
+            plt.axis('off')
+            plt.subplot(5, opt.batch_size, i + 1 + opt.batch_size)
+            plt.imshow(valid_data.decode_segmt(best_set["targ_segmt"][i].cpu().numpy()))
+            plt.axis('off')
+            plt.subplot(5, opt.batch_size, i + 1 + 2 * opt.batch_size)
+            plt.imshow(valid_data.decode_segmt(torch.argmax(best_set["pred_segmt"], dim=1)[i].cpu().numpy()))
+            plt.axis('off')
+            plt.subplot(5, opt.batch_size, i + 1 + 3 * opt.batch_size)
+            plt.imshow(best_set["targ_depth"][i].squeeze().cpu().numpy())
+            plt.axis('off')
+            plt.subplot(5, opt.batch_size, i + 1 + 4 * opt.batch_size)
+            plt.imshow(pred_clamped[i].squeeze().cpu().numpy())
+            plt.axis('off')
+        plt.tight_layout()
+        if not opt.view_only:
+            plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "batch.png"), bbox_inches='tight')
+
+    plt.show()
+
 """
 From MTAN
 https://github.com/lorenmt/mtan
@@ -113,3 +226,10 @@ def depth_error(x_pred, x_output):
     rel_err = torch.abs(x_pred_true - x_output_true) / x_output_true
     return (torch.sum(abs_err) / torch.nonzero(binary_mask, as_tuple=False).size(0)).item(), \
            (torch.sum(rel_err) / torch.nonzero(binary_mask, as_tuple=False).size(0)).item()
+
+def overall_score(x_preds, x_outputs, ignore_index=250):
+    miou = compute_miou(x_preds[0], x_outputs[0])
+    iou = compute_iou(x_preds[0], x_outputs[0])
+    abs_err = depth_error(x_preds[1], x_outputs[1])[0]
+    rel_err = depth_error(x_preds[1], x_outputs[1])[1]
+    return miou - abs_err

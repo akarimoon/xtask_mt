@@ -189,6 +189,9 @@ if __name__=='__main__':
         np.save(os.path.join(results_dir, "model", "va_losses.npy".format(opt.alpha, opt.gamma)), valid_losses)
 
     else:
+        train_losses = None
+        valid_losses = None
+        save_at_epoch = 0
         print("Infer only mode -> skip training...")
 
     if not opt.debug:
@@ -196,6 +199,7 @@ if __name__=='__main__':
 
     logger = Logger(num_classes=opt.num_classes)
     best_loss = 1e5
+    best_set = {}
 
     with torch.no_grad():
         for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
@@ -218,8 +222,17 @@ if __name__=='__main__':
             logger.log(preds, targets, masks)
 
             # use best results for final plot
-            loss = compute_miou(pred_segmt, batch_y_segmt) - depth_error(pred_depth, batch_y_depth)[0]
+            loss = overall_score(preds, targets)
             if i == 0 or loss < best_loss:
+                best_set["loss"] = loss
+                best_set["original"] = original
+                best_set["targ_segmt"] = batch_y_segmt
+                best_set["targ_depth"] = batch_y_depth
+                best_set["pred_segmt"] = pred_segmt
+                best_set["pred_depth"] = pred_depth
+                best_set["pred_tsegmt"] = pred_t_segmt
+                best_set["pred_tdepth"] = pred_t_depth
+
                 best_loss = loss
                 best_original = original
                 best_y_segmt = batch_y_segmt
@@ -235,89 +248,5 @@ if __name__=='__main__':
         write_results(logger, opt, model, exp_num=exp_num)
         write_indv_results(opt, model, folder_path=results_dir)
 
-    show = np.random.randint(best_pred_segmt.shape[0])
-    if not opt.infer_only:
-        plt.figure(figsize=(14, 8))
-        plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
-        plt.plot(np.arange(opt.epochs), valid_losses, linestyle="--", label="valid")
-        plt.legend()
-        if not opt.view_only:
-            plt.savefig(os.path.join(results_dir, "output", "loss.png".format(opt.batch_size, opt.alpha, opt.gamma)))
-
-    plt.figure(figsize=(18, 10))
-    plt.subplot(3,3,1)
-    plt.imshow(best_original[0][show].cpu().numpy())
-    plt.title("Image")
-
-    if not opt.infer_only:
-        plt.subplot(3,3,2)
-        plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
-        plt.plot(np.arange(opt.epochs), valid_losses, linestyle="--", label="valid")
-        plt.title("Loss")
-        plt.legend()
-        
-    plt.subplot(3,3,4)
-    plt.imshow(valid_data.decode_segmt(torch.argmax(best_pred_segmt, dim=1)[show].cpu().numpy()))
-    plt.title("Direct segmt. pred.")
-
-    plt.subplot(3,3,5)
-    plt.imshow(valid_data.decode_segmt(torch.argmax(best_pred_tsegmt, dim=1)[show].cpu().numpy()))
-    plt.title("Cross-task segmt. pred.")
-
-    plt.subplot(3,3,6)
-    plt.imshow(valid_data.decode_segmt(best_y_segmt[show].cpu().numpy()))
-    plt.title("Segmt. target")
-
-    plt.subplot(3,3,7)
-    pred_clamped = torch.clamp(best_pred_depth, min=1e-9, max=0.4922)
-    plt.imshow(pred_clamped[show].squeeze().cpu().numpy())
-    plt.title("Direct depth pred.")
-
-    plt.subplot(3,3,8)
-    pred_t_clamped = torch.clamp(best_pred_tdepth, min=1e-9, max=0.4922)
-    plt.imshow(pred_t_clamped[show].squeeze().cpu().numpy())
-    plt.title("Cross-task depth pred.")
-
-    plt.subplot(3,3,9)
-    plt.imshow(best_y_depth[show].squeeze().cpu().numpy())
-    plt.title("Depth target")
-
-    plt.tight_layout()
-    ep_or_infer = "epoch{}-{}_".format(save_at_epoch, opt.epochs) if not opt.infer_only else "infer_"
-    if not opt.view_only:
-        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "results.png".format(opt.batch_size, opt.alpha, opt.gamma)))
-
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
-    img = ax1.imshow(np.abs((pred_clamped[show] - 1 / best_y_depth[show]).squeeze().cpu().numpy()))
-    fig.colorbar(img, ax=ax1)
-    plt.title("Absolute error of depth (non-inverted)")
-
-    flat_pred = torch.flatten(best_pred_depth[show]).cpu().numpy()
-    flat_targ = torch.flatten(best_y_depth[show]).cpu().numpy()
-    # sns.histplot(flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
-    # sns.histplot(flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
-    # plt.title("Density plot of depth (non-inverted")
-    # plt.legend()
-
-    df = pd.DataFrame()
-    df["pred"] = (0.20 * 2262) / (256 * flat_pred[flat_targ > 0])
-    df["targ"] = (0.20 * 2262) / (256 * flat_targ[flat_targ > 0])
-    df["diff_abs"] = np.abs(df["pred"] - df["targ"])
-    bins = np.linspace(0, 500, 51)
-    df["targ_bin"] = np.digitize(np.round(df["targ"]), bins) - 1
-    sns.boxplot(x="targ_bin", y="diff_abs", data=df, ax=ax3)
-    ax3.set_xticklabels([int(t.get_text()) * 10  for t in ax3.get_xticklabels()])
-    ax3.set_title("Boxplot for absolute error for all non-nan pixels")
-
-    df["is_below_20"] = df["targ"] < 20
-    bins_20 = np.linspace(0, 20, 21)
-    df["targ_bin_20"] = np.digitize(np.round(df["targ"]), bins_20) - 1
-    sns.boxplot(x="targ_bin_20", y="diff_abs", data=df[df["is_below_20"] == True], ax=ax4)
-    ax4.set_xticklabels([int(t.get_text()) * 1  for t in ax4.get_xticklabels()])
-    ax4.set_title("Boxplot for absolute error for all pixels < 20m")
-    plt.tight_layout()
-    if not opt.view_only:
-        plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png".format(opt.batch_size, opt.alpha, opt.gamma)))
-
     if not opt.run_only:
-        plt.show()
+        make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses, valid_losses)
