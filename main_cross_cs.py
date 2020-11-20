@@ -115,7 +115,8 @@ if __name__=='__main__':
     train = DataLoader(train_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
     valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
 
-    criterion = XTaskLoss(num_classes=opt.num_classes, alpha=opt.alpha, gamma=opt.gamma, temp=opt.temp, label_smoothing=opt.label_smoothing,
+    criterion = XTaskLoss(num_classes=opt.num_classes, 
+                          alpha=opt.alpha, gamma=opt.gamma, temp=opt.temp, label_smoothing=opt.label_smoothing,
                           image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
                           grad_loss=opt.grad_loss).to(device)
     optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
@@ -160,14 +161,10 @@ if __name__=='__main__':
             elapsed_time = (time.time() - start) / 60
             print("Epoch {}/{} [{:.1f}min] --- train loss: {:.5f} --- valid loss: {:.5f}".format(
                         epoch, opt.epochs, elapsed_time, train_loss, valid_loss))
+
             if opt.uncertainty_weights:
-                if len(log_vars) == 2:
-                    print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
-                            (torch.exp(log_vars[1]) ** 0.5).item(), (torch.exp(log_vars[0]) ** 0.5).item()))
-                elif len(log_vars) == 4:
-                    print("Uncertainty weights: direct depth={:.5f}, cross depth={:.5f}, direct segmt={:.5f}, cross segmt={:.5f}".format(
-                            (torch.exp(log_vars[0]) ** 0.5).item(), (torch.exp(log_vars[1]) ** 0.5).item(),
-                            (torch.exp(log_vars[2]) ** 0.5).item(), (torch.exp(log_vars[3]) ** 0.5).item()))
+                print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
+                        (torch.exp(log_vars[1]) ** 0.5).item(), (torch.exp(log_vars[0]) ** 0.5).item()))
 
             if not opt.debug:
                 if epoch == 0 or valid_loss < best_valid_loss:
@@ -233,15 +230,6 @@ if __name__=='__main__':
                 best_set["pred_tsegmt"] = pred_t_segmt
                 best_set["pred_tdepth"] = pred_t_depth
 
-                best_loss = loss
-                best_original = original
-                best_y_segmt = batch_y_segmt
-                best_y_depth = batch_y_depth
-                best_pred_segmt = pred_segmt
-                best_pred_depth = pred_depth
-                best_pred_tsegmt = pred_t_segmt
-                best_pred_tdepth = pred_t_depth
-            
     logger.get_scores()
 
     if not opt.infer_only:
