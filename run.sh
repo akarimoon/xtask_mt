@@ -6,4 +6,4 @@
 cd $PBS_O_WORKDIR
 source /lustre/po9025/o09025/.bashrc
 conda activate pytorch
-python main_cross_nyu.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm -j 32
+python main_cross_nyu.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm -j 32 -e 70

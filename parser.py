@@ -28,9 +28,9 @@ def nyu_xtask_parser():
                         help='lr decay of scheduler (steplr)')
 
     parser.add_argument('-a', '--alpha', type=float, default=0.001,
-                        help='alpha of loss function (default: 0.4)')
+                        help='alpha of loss function (default: 0.001)')
     parser.add_argument('-g', '--gamma', type=float, default=0.001,
-                        help='gamma of loss function (default: 0.1')
+                        help='gamma of loss function (default: 0.001')
     parser.add_argument('--label_smoothing', type=float, default=0.,
                         help='label smoothing when calculating KL loss')
     parser.add_argument('--lp', default="L1", choices=["MSE", "L1", "logL1"],
