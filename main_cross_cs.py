@@ -241,5 +241,4 @@ if __name__=='__main__':
         write_results(logger, opt, model, exp_num=exp_num)
         write_indv_results(opt, model, folder_path=results_dir)
 
-    if not opt.run_only:
-        make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses, valid_losses)
+    make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses, valid_losses)

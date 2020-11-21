@@ -10,6 +10,6 @@ python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only -
 python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm --enc_layers 50
 python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm --enc_layers 101
 
-# (iii)
+# (iv)
 python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm --temp 5
 python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm --temp 5 --alpha 0.05 --gamma 0.05
