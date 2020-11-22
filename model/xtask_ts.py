@@ -151,11 +151,3 @@ class XTaskTSNet(nn.Module):
         seg_tout = self.trans_d2s(dep_out)
 
         return seg_out, seg_tout, dep_out, dep_tout
-
-    def _init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                torch.nn.init.xavier_normal_(m.weight)
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
