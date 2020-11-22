@@ -203,6 +203,7 @@ if __name__=='__main__':
     best_loss = 1e5
     best_set = {}
 
+    model.eval()
     with torch.no_grad():
         for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
             original, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
