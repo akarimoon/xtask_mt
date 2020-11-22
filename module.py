@@ -70,7 +70,7 @@ class Logger():
         batch_size = x_pred.size(0)
         pixel_acc = 0
         for i in range(batch_size):
-            pixel_acc +=torch.div(
+            pixel_acc += torch.div(
                             torch.sum(torch.eq(x_pred_label[i], x_output_label[i]).float()),
                             torch.sum((x_output_label[i] != self.ignore_index).float())
                         )
