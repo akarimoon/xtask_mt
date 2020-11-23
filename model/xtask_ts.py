@@ -150,8 +150,12 @@ class XTaskTSNet(nn.Module):
         dep0 = self.decoder_depth.conv5(torch.cat((dep1, enc0), dim=1))
         dep_out = self.decoder_depth.conv6(dep0)
 
-        dep_tout = self.trans_s2d(seg_out)
-        seg_tout = self.trans_d2s(dep_out)
+        # dep_tout = self.trans_s2d(seg_out)
+        # seg_tout = self.trans_d2s(dep_out)
+        dep_tout_tmp = self.trans_s2d(seg_out)
+        seg_tout = self.trans_d2s(dep_tout_tmp)
+        seg_tout_tmp = self.trans_d2s(dep_out)
+        dep_tout = self.trans_s2d(seg_tout_tmp)
 
         return seg_out, seg_tout, dep_out, dep_tout
 

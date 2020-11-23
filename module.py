@@ -191,55 +191,6 @@ class Logger():
             self.rmse, self.irmse, self.irmse_log, self.abs, self.abs_rel, self.sqrt_rel, self.delta1, self.delta2, self.delta3
         ))
 
-class EarlyStopping(object):
-    def __init__(self, mode='min', min_delta=0, patience=10, percentage=False):
-        self.mode = mode
-        self.min_delta = min_delta
-        self.patience = patience
-        self.best = None
-        self.num_bad_epochs = 0
-        self.is_better = None
-        self._init_is_better(mode, min_delta, percentage)
-
-        if patience == 0:
-            self.is_better = lambda a, b: True
-            self.step = lambda a: False
-
-    def step(self, metrics):
-        if self.best is None:
-            self.best = metrics
-            return False
-
-        if np.isnan(metrics):
-            return True
-
-        if self.is_better(metrics, self.best):
-            self.num_bad_epochs = 0
-            self.best = metrics
-        else:
-            self.num_bad_epochs += 1
-
-        if self.num_bad_epochs >= self.patience:
-            return True
-
-        return False
-
-    def _init_is_better(self, mode, min_delta, percentage):
-        if mode not in {'min', 'max'}:
-            raise ValueError('mode ' + mode + ' is unknown!')
-        if not percentage:
-            if mode == 'min':
-                self.is_better = lambda a, best: a < best - min_delta
-            if mode == 'max':
-                self.is_better = lambda a, best: a > best + min_delta
-        else:
-            if mode == 'min':
-                self.is_better = lambda a, best: a < best - (
-                            best * min_delta / 100)
-            if mode == 'max':
-                self.is_better = lambda a, best: a > best + (
-                            best * min_delta / 100)
-
 class MaskedKLLoss(nn.Module):
     def __init__(self, n_classes, label_smoothing):
         """
@@ -252,7 +203,7 @@ class MaskedKLLoss(nn.Module):
         self.label_smoothing = label_smoothing
         self.confidence = 1.0 - label_smoothing
         self.n_classes = n_classes
-        smoothing_value = self.label_smoothing / (self.n_classes - 2)
+        smoothing_value = self.label_smoothing / (self.n_classes - 1)
         self.one_hot = torch.full((self.n_classes, ), smoothing_value)
         self.one_hot = self.one_hot.unsqueeze(0)
         self.loss_fn = nn.KLDivLoss(reduction='batchmean')
@@ -297,7 +248,7 @@ class LabelSmoothingLoss(nn.Module):
         return torch.mean(torch.sum(-true_dist * F.log_softmax(predicted, dim=self.dim), dim=self.dim))
 
 class XTaskLoss(nn.Module):
-    def __init__(self, num_classes=19, alpha=0.2, gamma=0., temp=1, label_smoothing=0.,
+    def __init__(self, num_classes=19, alpha=0.2, gamma=0., temp=1, label_smoothing=0., ignore_index=250,
                  image_loss_type="MSE", t_segmt_loss_type="cross", t_depth_loss_type="ssim",
                  grad_loss=False):
         super(XTaskLoss, self).__init__()
@@ -306,7 +257,7 @@ class XTaskLoss(nn.Module):
         self.temp = float(temp)
         self.image_loss_type = image_loss_type
         self.grad_loss = grad_loss
-        self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=-1, reduction='mean')
+        self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=ignore_index, reduction='mean')
         self.t_depth_loss_type = t_depth_loss_type
 
         if image_loss_type == "L1":
@@ -403,10 +354,12 @@ class XTaskLoss(nn.Module):
             grad_loss = 0
 
         depth_loss = self.image_loss(pred_depth, targ_depth, mask_depth)
-        tdep_loss = self.tdep_loss(pred_t_depth.clone(), pred_depth.clone(), mask_depth)
+        tdep_loss = self.tdep_loss(pred_t_depth.clone(), pred_depth.clone().detach(), mask_depth)
+        # tdep_loss = self.tdep_loss(pred_t_depth.clone(), targ_depth.clone(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
         tseg_loss = self.tseg_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone().detach(), dim=1), mask_segmt)
+        # tseg_loss = self.tseg_loss(pred_t_segmt.clone(), targ_segmt.clone(), mask=targ_segmt != -1)
         
         if log_vars is None:
             image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp

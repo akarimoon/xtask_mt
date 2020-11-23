@@ -8,17 +8,21 @@ import torch
 from torch import optim
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from tqdm import tqdm
+import horovod as hvd
 
-from dataloader import NYUv2
-from parser import nyu_xtask_parser
+from dataloader import CityscapesDataset
+from parser import cityscapes_xtask_parser
 from module import Logger, XTaskLoss
 from model.xtask_ts import XTaskTSNet
 from utils import *
 
+DEPTH_CORRECTION = 2.1116e-09
+
 def compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
+                 batch_mask_segmt, batch_mask_depth, 
                  model, log_vars=None,
                  criterion=None, optimizer=None, is_train=True):
 
@@ -27,9 +31,12 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
     batch_X = batch_X.to(device, non_blocking=True)
     batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
     batch_y_depth = batch_y_depth.to(device, non_blocking=True)
+    batch_mask_segmt = batch_mask_segmt.to(device, non_blocking=True)
+    batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
 
     output = model(batch_X)
-    image_loss, label_loss = criterion(output, batch_y_segmt, batch_y_depth, log_vars=log_vars)
+    image_loss, label_loss = criterion(output, batch_y_segmt, batch_y_depth,
+                                       batch_mask_segmt, batch_mask_depth, log_vars=log_vars)
 
     if is_train:
         optimizer.zero_grad()
@@ -39,12 +46,12 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
 
     return image_loss.item() + label_loss.item()
 
-if __name__ == '__main__':
+if __name__=='__main__':
+    hvd.init()
+
     torch.manual_seed(0)
-    opt = nyu_xtask_parser()
+    opt = cityscapes_xtask_parser()
     opt.betas = (opt.b1, opt.b2)
-    opt.num_classes = 13
-    opt.temp = 1
 
     print("Initializing...")
     if not os.path.exists(opt.save_path):
@@ -65,17 +72,22 @@ if __name__ == '__main__':
 
     print("Parameters:")
     print("   predicting at size [{}*{}]".format(opt.height, opt.width))
+    if opt.num_classes != 19:
+        print("   # of classes: {}".format(opt.num_classes))
     print("   using ResNet{}, optimizer: Adam (lr={}, beta={}), scheduler: StepLR({}, {})".format(
         opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
-    print("   loss function --- Lp_depth: {}, tsegmt: {}, alpha: {}, gamma: {}, smoothing: {}".format(
-        opt.lp, opt.tseg_loss, opt.alpha, opt.gamma, opt.label_smoothing))
+    print("   loss function --- Lp_depth: {}, tsegmt: {}, tdepth: {}".format(
+        opt.lp, opt.tseg_loss, opt.tdep_loss))
+    print("   hyperparameters --- alpha: {}, gamma: {}, temp:{}, smoothing: {}".format(
+        opt.alpha, opt.gamma, opt.temp, opt.label_smoothing))
     print("   batch size: {}, train for {} epochs".format(
         opt.batch_size, opt.epochs))
 
     device_name = "cpu" if opt.cpu else "cuda"
+    torch.cuda.set_device(hvd.local_rank())
     device = torch.device(device_name)
-    print("   device: {}".format(device))
-    model = XTaskTSNet(enc_layers=opt.enc_layers, out_features_segmt=13)
+    # print("   device: {}".format(device))
+    model = XTaskTSNet(enc_layers=opt.enc_layers, out_features_segmt=opt.num_classes, is_shallow=opt.is_shallow, batch_norm=opt.batch_norm)
     model.to(device)
     parameters_to_train = [p for p in model.parameters()]
     print("TransferNet type:")
@@ -83,6 +95,8 @@ if __name__ == '__main__':
     
     print("Options:")
     log_vars = None
+    if opt.is_shallow:
+        print("   shallow decoder")
     if opt.uncertainty_weights:
         print("   use uncertainty weights")
         """
@@ -97,15 +111,24 @@ if __name__ == '__main__':
         print("   use grad loss (k=1), no scaling")
 
     print("Loading dataset...")
-    train_data = NYUv2(root_path=opt.input_path, split='train')
-    valid_data = NYUv2(root_path=opt.input_path, split='val')
+    train_data = CityscapesDataset(root_path=opt.input_path, height=opt.height, width=opt.width, num_classes=opt.num_classes,
+                                   split='train', transform=["random_flip", "random_crop"])
+    valid_data = CityscapesDataset(root_path=opt.input_path, height=opt.height, width=opt.width, num_classes=opt.num_classes,
+                                   split='val', transform=None)
+    # test_data = CityscapesDataset('./data/cityscapes', split='train', transform=transform)
+    train_sampler = torch.utils.data.distributed.DistributedSampler(train_data, num_replicas=hvd.size(), rank=hvd.rank())
+    valid_sampler = torch.utils.data.distributed.DistributedSampler(valid_data, num_replicas=hvd.size(), rank=hvd.rank())
 
-    train = DataLoader(train_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
-    valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
-    criterion = XTaskLoss(num_classes=13, alpha=opt.alpha, gamma=opt.gamma, label_smoothing=opt.label_smoothing, ignore_index=-1,
-                          image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, grad_loss=opt.grad_loss).to(device)
+    train = DataLoader(train_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers, sampler=train_sampler)
+    valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers, sampler=valid_sampler)
+
+    criterion = XTaskLoss(num_classes=opt.num_classes, alpha=opt.alpha, gamma=opt.gamma, temp=opt.temp, label_smoothing=opt.label_smoothing,
+                          image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
+                          grad_loss=opt.grad_loss).to(device)
     optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, opt.scheduler_step_size, opt.scheduler_gamma)
+    # scheduler = optim.lr_scheduler.StepLR(optimizer, opt.scheduler_step_size, opt.scheduler_gamma)
+    optimzer = hvd.DistributedOptimizer(optimizer, named_parameters=model.named_parameters())
+    hvd.broadcast_parameters(model.state_dict(), root_rank=0)
 
     if not opt.infer_only:
         print("=======================================")
@@ -122,15 +145,17 @@ if __name__ == '__main__':
             valid_loss = 0.
 
             for i, batch in enumerate(tqdm(train, disable=opt.notqdm)):
-                batch_X, batch_y_segmt, batch_y_depth = batch
+                _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
+                                    batch_mask_segmt, batch_mask_depth, 
                                     model, log_vars=log_vars,
                                     criterion=criterion, optimizer=optimizer, is_train=True)
                 train_loss += loss
 
             for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
-                batch_X, batch_y_segmt, batch_y_depth = batch
+                _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
+                                    batch_mask_segmt, batch_mask_depth, 
                                     model, log_vars=log_vars,
                                     criterion=criterion, optimizer=optimizer, is_train=False)
                 valid_loss += loss
@@ -145,8 +170,13 @@ if __name__ == '__main__':
             print("Epoch {}/{} [{:.1f}min] --- train loss: {:.5f} --- valid loss: {:.5f}".format(
                         epoch, opt.epochs, elapsed_time, train_loss, valid_loss))
             if opt.uncertainty_weights:
-                print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
-                        (torch.exp(log_vars[1]) ** 0.5).item(), (torch.exp(log_vars[0]) ** 0.5).item()))
+                if len(log_vars) == 2:
+                    print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
+                            (torch.exp(log_vars[1]) ** 0.5).item(), (torch.exp(log_vars[0]) ** 0.5).item()))
+                elif len(log_vars) == 4:
+                    print("Uncertainty weights: direct depth={:.5f}, cross depth={:.5f}, direct segmt={:.5f}, cross segmt={:.5f}".format(
+                            (torch.exp(log_vars[0]) ** 0.5).item(), (torch.exp(log_vars[1]) ** 0.5).item(),
+                            (torch.exp(log_vars[2]) ** 0.5).item(), (torch.exp(log_vars[3]) ** 0.5).item()))
 
             if not opt.debug:
                 if epoch == 0 or valid_loss < best_valid_loss:
@@ -156,7 +186,7 @@ if __name__ == '__main__':
                     best_valid_loss = valid_loss
                     save_at_epoch = epoch
 
-            scheduler.step()
+            # scheduler.step()
 
         print("Training done")
         print("=======================================")
@@ -173,31 +203,35 @@ if __name__ == '__main__':
     if not opt.debug:
         model.load_state_dict(torch.load(weights_path, map_location=device))
 
-    logger = Logger(num_classes=opt.num_classes, ignore_index=-1)
+    logger = Logger(num_classes=opt.num_classes)
     best_loss = 1e5
 
     with torch.no_grad():
         for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
-            batch_X, batch_y_segmt, batch_y_depth = batch
+            original, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
             batch_X = batch_X.to(device, non_blocking=True)
             batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
             batch_y_depth = batch_y_depth.to(device, non_blocking=True)
+            batch_mask_segmt = batch_mask_segmt.to(device, non_blocking=True)
+            batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
 
             predicted = model(batch_X)
-            image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth)
+            image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth,
+                                               batch_mask_segmt, batch_mask_depth)
 
             pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
 
             preds = [pred_segmt, pred_depth]
             targets = [batch_y_segmt, batch_y_depth]
-            logger.log(preds, targets)
+            masks = [batch_mask_segmt, batch_mask_depth]
+            logger.log(preds, targets, masks)
 
             # use best results for final plot
             loss = compute_miou(pred_segmt, batch_y_segmt) - depth_error(pred_depth, batch_y_depth)[0]
             if i == 0 or loss < best_loss:
                 best_loss = loss
-                best_X = batch_X
-                beest_y_segmt = batch_y_segmt
+                best_original = original
+                best_y_segmt = batch_y_segmt
                 best_y_depth = batch_y_depth
                 best_pred_segmt = pred_segmt
                 best_pred_depth = pred_depth
@@ -210,7 +244,7 @@ if __name__ == '__main__':
         write_results(logger, opt, model, exp_num=exp_num)
         write_indv_results(opt, model, folder_path=results_dir)
 
-    show = 1
+    show = np.random.randint(best_pred_segmt.shape[0])
     if not opt.infer_only:
         plt.figure(figsize=(14, 8))
         plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
@@ -221,7 +255,7 @@ if __name__ == '__main__':
 
     plt.figure(figsize=(18, 10))
     plt.subplot(3,3,1)
-    plt.imshow(best_X[show].permute(1,2,0).cpu().numpy())
+    plt.imshow(best_original[0][show].cpu().numpy())
     plt.title("Image")
 
     if not opt.infer_only:
@@ -240,15 +274,17 @@ if __name__ == '__main__':
     plt.title("Cross-task segmt. pred.")
 
     plt.subplot(3,3,6)
-    plt.imshow(valid_data.decode_segmt(beest_y_segmt[show].cpu().numpy()))
+    plt.imshow(valid_data.decode_segmt(best_y_segmt[show].cpu().numpy()))
     plt.title("Segmt. target")
 
     plt.subplot(3,3,7)
-    plt.imshow(best_pred_depth[show].squeeze().cpu().numpy())
+    pred_clamped = torch.clamp(best_pred_depth, min=1e-9, max=0.4922)
+    plt.imshow(pred_clamped[show].squeeze().cpu().numpy())
     plt.title("Direct depth pred.")
 
     plt.subplot(3,3,8)
-    plt.imshow(best_pred_tdepth[show].squeeze().cpu().numpy())
+    pred_t_clamped = torch.clamp(best_pred_tdepth, min=1e-9, max=0.4922)
+    plt.imshow(pred_t_clamped[show].squeeze().cpu().numpy())
     plt.title("Cross-task depth pred.")
 
     plt.subplot(3,3,9)
@@ -261,22 +297,22 @@ if __name__ == '__main__':
         plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "results.png".format(opt.batch_size, opt.alpha, opt.gamma)))
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
-    img = ax1.imshow(np.abs((best_pred_depth[show] - best_y_depth[show]).squeeze().cpu().numpy()))
+    img = ax1.imshow(np.abs((pred_clamped[show] - 1 / best_y_depth[show]).squeeze().cpu().numpy()))
     fig.colorbar(img, ax=ax1)
     plt.title("Absolute error of depth (non-inverted)")
 
     flat_pred = torch.flatten(best_pred_depth[show]).cpu().numpy()
     flat_targ = torch.flatten(best_y_depth[show]).cpu().numpy()
-    # sns.histplot(1 / flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
-    # sns.histplot(1 / flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
+    # sns.histplot(flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
+    # sns.histplot(flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
     # plt.title("Density plot of depth (non-inverted")
     # plt.legend()
 
     df = pd.DataFrame()
-    df["pred"] = flat_pred[flat_targ > 0]
-    df["targ"] = flat_targ[flat_targ > 0]
+    df["pred"] = (0.20 * 2262) / (256 * flat_pred[flat_targ > 0])
+    df["targ"] = (0.20 * 2262) / (256 * flat_targ[flat_targ > 0])
     df["diff_abs"] = np.abs(df["pred"] - df["targ"])
-    bins = np.linspace(0, 130, 14)
+    bins = np.linspace(0, 500, 51)
     df["targ_bin"] = np.digitize(np.round(df["targ"]), bins) - 1
     sns.boxplot(x="targ_bin", y="diff_abs", data=df, ax=ax3)
     ax3.set_xticklabels([int(t.get_text()) * 10  for t in ax3.get_xticklabels()])
@@ -291,6 +327,6 @@ if __name__ == '__main__':
     plt.tight_layout()
     if not opt.view_only:
         plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png".format(opt.batch_size, opt.alpha, opt.gamma)))
-    
+
     if not opt.run_only:
         plt.show()
