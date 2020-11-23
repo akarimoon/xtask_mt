@@ -350,7 +350,7 @@ class XTaskLoss(nn.Module):
             grad_loss = 0
 
         depth_loss = self.image_loss(pred_depth, targ_depth, mask_depth)
-        tdep_loss = self.tdep_loss(pred_t_depth.clone(), pred_depth.clone(), mask_depth)
+        tdep_loss = self.tdep_loss(pred_t_depth.clone(), pred_depth.clone().detach(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
         tseg_loss = self.tseg_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone().detach(), dim=1), mask_segmt)
