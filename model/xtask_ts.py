@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.models as models
 from .transfer_net import TaskTransferNet, TaskTransferNetWithSkipCN
 
 class ConvBlock(nn.Module):
@@ -110,7 +111,8 @@ class XTaskTSNet(nn.Module):
         self.trans_name = self.trans_s2d.name
 
     def _load_encoder(self, enc_layers):
-        backbone = torch.hub.load('pytorch/vision:v0.6.0', 'resnet' + str(enc_layers), pretrained=self.use_pretrain)
+        backbone = models.resnet34(pretrained=False)
+        backbone.load_state_dict(torch.load('./model/resnet34-333f7ec4.pth'))
         pretrained = nn.Module()
         pretrained.layer0 = nn.Sequential(
                                 backbone.conv1,
