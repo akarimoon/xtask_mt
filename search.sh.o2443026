@@ -1,0 +1,1262 @@
+Initializing...
+Parameters:
+   predicting at size [128*256]
+   # of classes: 7
+   using ResNet34, optimizer: Adam (lr=0.0002, beta=(0.9, 0.99)), scheduler: StepLR(60, 0.5)
+   loss function --- Lp_depth: L1, tsegmt: cross, tdepth: L1
+   hyperparameters --- alpha: 0.0, gamma: 0.0, temp:1, smoothing: 0.1
+   batch size: 12, train for 250 epochs
+   device: cuda
+TransferNet type:
+   Base Task TransferNet with skip-connection
+Options:
+   use uncertainty weights
+Loading dataset...
+=======================================
+Start training...
+Epoch 1/250 [2.4min] --- train loss: 0.02299 --- valid loss: 0.00734
+Uncertainty weights: segmt=0.97412, depth=0.97494
+Saving weights...
+Epoch 2/250 [2.3min] --- train loss: 0.00262 --- valid loss: -0.00204
+Uncertainty weights: segmt=0.94979, depth=0.95097
+Saving weights...
+Epoch 3/250 [2.2min] --- train loss: -0.00695 --- valid loss: -0.01125
+Uncertainty weights: segmt=0.92639, depth=0.92766
+Saving weights...
+Epoch 4/250 [2.2min] --- train loss: -0.01552 --- valid loss: -0.01862
+Uncertainty weights: segmt=0.90367, depth=0.90493
+Saving weights...
+Epoch 5/250 [2.2min] --- train loss: -0.02382 --- valid loss: -0.02749
+Uncertainty weights: segmt=0.88154, depth=0.88276
+Saving weights...
+Epoch 6/250 [2.2min] --- train loss: -0.03205 --- valid loss: -0.03570
+Uncertainty weights: segmt=0.85997, depth=0.86114
+Saving weights...
+Epoch 7/250 [2.2min] --- train loss: -0.04012 --- valid loss: -0.04257
+Uncertainty weights: segmt=0.83894, depth=0.84005
+Saving weights...
+Epoch 8/250 [2.2min] --- train loss: -0.04799 --- valid loss: -0.05168
+Uncertainty weights: segmt=0.81843, depth=0.81947
+Saving weights...
+Epoch 9/250 [2.2min] --- train loss: -0.05597 --- valid loss: -0.05976
+Uncertainty weights: segmt=0.79841, depth=0.79940
+Saving weights...
+Epoch 10/250 [2.2min] --- train loss: -0.06384 --- valid loss: -0.06671
+Uncertainty weights: segmt=0.77890, depth=0.77983
+Saving weights...
+Epoch 11/250 [2.3min] --- train loss: -0.07153 --- valid loss: -0.07449
+Uncertainty weights: segmt=0.75987, depth=0.76073
+Saving weights...
+Epoch 12/250 [2.2min] --- train loss: -0.07937 --- valid loss: -0.08222
+Uncertainty weights: segmt=0.74131, depth=0.74210
+Saving weights...
+Epoch 13/250 [2.2min] --- train loss: -0.08728 --- valid loss: -0.08968
+Uncertainty weights: segmt=0.72318, depth=0.72392
+Saving weights...
+Epoch 14/250 [2.2min] --- train loss: -0.09457 --- valid loss: -0.09575
+Uncertainty weights: segmt=0.70555, depth=0.70620
+Saving weights...
+Epoch 15/250 [2.2min] --- train loss: -0.10206 --- valid loss: -0.10463
+Uncertainty weights: segmt=0.68834, depth=0.68890
+Saving weights...
+Epoch 16/250 [2.3min] --- train loss: -0.10996 --- valid loss: -0.11223
+Uncertainty weights: segmt=0.67153, depth=0.67203
+Saving weights...
+Epoch 17/250 [2.2min] --- train loss: -0.11748 --- valid loss: -0.11932
+Uncertainty weights: segmt=0.65514, depth=0.65557
+Saving weights...
+Epoch 18/250 [2.2min] --- train loss: -0.12496 --- valid loss: -0.12677
+Uncertainty weights: segmt=0.63917, depth=0.63952
+Saving weights...
+Epoch 19/250 [2.2min] --- train loss: -0.13240 --- valid loss: -0.13433
+Uncertainty weights: segmt=0.62359, depth=0.62386
+Saving weights...
+Epoch 20/250 [2.2min] --- train loss: -0.13985 --- valid loss: -0.14121
+Uncertainty weights: segmt=0.60840, depth=0.60859
+Saving weights...
+Epoch 21/250 [2.2min] --- train loss: -0.14718 --- valid loss: -0.14704
+Uncertainty weights: segmt=0.59354, depth=0.59368
+Saving weights...
+Epoch 22/250 [2.2min] --- train loss: -0.15441 --- valid loss: -0.15541
+Uncertainty weights: segmt=0.57911, depth=0.57915
+Saving weights...
+Epoch 23/250 [2.3min] --- train loss: -0.16141 --- valid loss: -0.16186
+Uncertainty weights: segmt=0.56504, depth=0.56497
+Saving weights...
+Epoch 24/250 [2.2min] --- train loss: -0.16934 --- valid loss: -0.16918
+Uncertainty weights: segmt=0.55123, depth=0.55113
+Saving weights...
+Epoch 25/250 [2.2min] --- train loss: -0.17622 --- valid loss: -0.17581
+Uncertainty weights: segmt=0.53784, depth=0.53764
+Saving weights...
+Epoch 26/250 [2.2min] --- train loss: -0.18298 --- valid loss: -0.18303
+Uncertainty weights: segmt=0.52479, depth=0.52448
+Saving weights...
+Epoch 27/250 [2.3min] --- train loss: -0.19023 --- valid loss: -0.18971
+Uncertainty weights: segmt=0.51203, depth=0.51163
+Saving weights...
+Epoch 28/250 [2.3min] --- train loss: -0.19681 --- valid loss: -0.19585
+Uncertainty weights: segmt=0.49964, depth=0.49911
+Saving weights...
+Epoch 29/250 [2.2min] --- train loss: -0.20446 --- valid loss: -0.20334
+Uncertainty weights: segmt=0.48746, depth=0.48688
+Saving weights...
+Epoch 30/250 [2.2min] --- train loss: -0.21080 --- valid loss: -0.20822
+Uncertainty weights: segmt=0.47566, depth=0.47497
+Saving weights...
+Epoch 31/250 [2.2min] --- train loss: -0.21755 --- valid loss: -0.21563
+Uncertainty weights: segmt=0.46417, depth=0.46334
+Saving weights...
+Epoch 32/250 [2.3min] --- train loss: -0.22461 --- valid loss: -0.22264
+Uncertainty weights: segmt=0.45289, depth=0.45200
+Saving weights...
+Epoch 33/250 [2.2min] --- train loss: -0.23172 --- valid loss: -0.22866
+Uncertainty weights: segmt=0.44192, depth=0.44093
+Saving weights...
+Epoch 34/250 [2.2min] --- train loss: -0.23746 --- valid loss: -0.23419
+Uncertainty weights: segmt=0.43131, depth=0.43014
+Saving weights...
+Epoch 35/250 [2.3min] --- train loss: -0.24434 --- valid loss: -0.23971
+Uncertainty weights: segmt=0.42089, depth=0.41961
+Saving weights...
+Epoch 36/250 [2.3min] --- train loss: -0.25072 --- valid loss: -0.24568
+Uncertainty weights: segmt=0.41075, depth=0.40934
+Saving weights...
+Epoch 37/250 [2.2min] --- train loss: -0.25737 --- valid loss: -0.25128
+Uncertainty weights: segmt=0.40087, depth=0.39932
+Saving weights...
+Epoch 38/250 [2.2min] --- train loss: -0.26334 --- valid loss: -0.25597
+Uncertainty weights: segmt=0.39126, depth=0.38954
+Saving weights...
+Epoch 39/250 [2.2min] --- train loss: -0.26936 --- valid loss: -0.26176
+Uncertainty weights: segmt=0.38190, depth=0.38001
+Saving weights...
+Epoch 40/250 [2.2min] --- train loss: -0.27512 --- valid loss: -0.26607
+Uncertainty weights: segmt=0.37283, depth=0.37071
+Saving weights...
+Epoch 41/250 [2.3min] --- train loss: -0.28114 --- valid loss: -0.27428
+Uncertainty weights: segmt=0.36397, depth=0.36164
+Saving weights...
+Epoch 42/250 [2.2min] --- train loss: -0.28741 --- valid loss: -0.27827
+Uncertainty weights: segmt=0.35530, depth=0.35279
+Saving weights...
+Epoch 43/250 [2.2min] --- train loss: -0.29233 --- valid loss: -0.28157
+Uncertainty weights: segmt=0.34709, depth=0.34416
+Saving weights...
+Epoch 44/250 [2.2min] --- train loss: -0.29876 --- valid loss: -0.28754
+Uncertainty weights: segmt=0.33890, depth=0.33574
+Saving weights...
+Epoch 45/250 [2.2min] --- train loss: -0.30462 --- valid loss: -0.28896
+Uncertainty weights: segmt=0.33101, depth=0.32752
+Saving weights...
+Epoch 46/250 [2.3min] --- train loss: -0.30953 --- valid loss: -0.29593
+Uncertainty weights: segmt=0.32339, depth=0.31951
+Saving weights...
+Epoch 47/250 [2.2min] --- train loss: -0.31445 --- valid loss: -0.29880
+Uncertainty weights: segmt=0.31618, depth=0.31170
+Saving weights...
+Epoch 48/250 [2.2min] --- train loss: -0.31976 --- valid loss: -0.30119
+Uncertainty weights: segmt=0.30917, depth=0.30407
+Saving weights...
+Epoch 49/250 [2.2min] --- train loss: -0.32440 --- valid loss: -0.30836
+Uncertainty weights: segmt=0.30256, depth=0.29663
+Saving weights...
+Epoch 50/250 [2.2min] --- train loss: -0.33003 --- valid loss: -0.31277
+Uncertainty weights: segmt=0.29628, depth=0.28938
+Saving weights...
+Epoch 51/250 [2.3min] --- train loss: -0.33371 --- valid loss: -0.31489
+Uncertainty weights: segmt=0.29064, depth=0.28230
+Saving weights...
+Epoch 52/250 [2.2min] --- train loss: -0.33854 --- valid loss: -0.31628
+Uncertainty weights: segmt=0.28558, depth=0.27540
+Saving weights...
+Epoch 53/250 [2.2min] --- train loss: -0.34248 --- valid loss: -0.32013
+Uncertainty weights: segmt=0.28146, depth=0.26867
+Saving weights...
+Epoch 54/250 [2.2min] --- train loss: -0.34682 --- valid loss: -0.32445
+Uncertainty weights: segmt=0.27815, depth=0.26210
+Saving weights...
+Epoch 55/250 [2.3min] --- train loss: -0.35061 --- valid loss: -0.32785
+Uncertainty weights: segmt=0.27586, depth=0.25569
+Saving weights...
+Epoch 56/250 [2.2min] --- train loss: -0.35450 --- valid loss: -0.33234
+Uncertainty weights: segmt=0.27432, depth=0.24944
+Saving weights...
+Epoch 57/250 [2.2min] --- train loss: -0.35897 --- valid loss: -0.33526
+Uncertainty weights: segmt=0.27274, depth=0.24334
+Saving weights...
+Epoch 58/250 [2.2min] --- train loss: -0.36314 --- valid loss: -0.33669
+Uncertainty weights: segmt=0.27156, depth=0.23740
+Saving weights...
+Epoch 59/250 [2.2min] --- train loss: -0.36752 --- valid loss: -0.34388
+Uncertainty weights: segmt=0.27017, depth=0.23160
+Saving weights...
+Epoch 60/250 [2.3min] --- train loss: -0.37097 --- valid loss: -0.34474
+Uncertainty weights: segmt=0.26952, depth=0.22593
+Saving weights...
+Epoch 61/250 [2.2min] --- train loss: -0.37699 --- valid loss: -0.35009
+Uncertainty weights: segmt=0.26836, depth=0.22315
+Saving weights...
+Epoch 62/250 [2.3min] --- train loss: -0.37945 --- valid loss: -0.35049
+Uncertainty weights: segmt=0.26725, depth=0.22041
+Saving weights...
+Epoch 63/250 [2.2min] --- train loss: -0.38198 --- valid loss: -0.35252
+Uncertainty weights: segmt=0.26604, depth=0.21769
+Saving weights...
+Epoch 64/250 [2.3min] --- train loss: -0.38453 --- valid loss: -0.35499
+Uncertainty weights: segmt=0.26493, depth=0.21501
+Saving weights...
+Epoch 65/250 [2.2min] --- train loss: -0.38694 --- valid loss: -0.35465
+Uncertainty weights: segmt=0.26387, depth=0.21237
+Epoch 66/250 [2.2min] --- train loss: -0.38892 --- valid loss: -0.35687
+Uncertainty weights: segmt=0.26291, depth=0.20976
+Saving weights...
+Epoch 67/250 [2.2min] --- train loss: -0.39124 --- valid loss: -0.35874
+Uncertainty weights: segmt=0.26200, depth=0.20718
+Saving weights...
+Epoch 68/250 [2.2min] --- train loss: -0.39266 --- valid loss: -0.35927
+Uncertainty weights: segmt=0.26145, depth=0.20463
+Saving weights...
+Epoch 69/250 [2.2min] --- train loss: -0.39518 --- valid loss: -0.36187
+Uncertainty weights: segmt=0.26068, depth=0.20211
+Saving weights...
+Epoch 70/250 [2.2min] --- train loss: -0.39685 --- valid loss: -0.36264
+Uncertainty weights: segmt=0.26005, depth=0.19963
+Saving weights...
+Epoch 71/250 [2.2min] --- train loss: -0.39883 --- valid loss: -0.36394
+Uncertainty weights: segmt=0.25954, depth=0.19717
+Saving weights...
+Epoch 72/250 [2.2min] --- train loss: -0.40148 --- valid loss: -0.36603
+Uncertainty weights: segmt=0.25889, depth=0.19475
+Saving weights...
+Epoch 73/250 [2.2min] --- train loss: -0.40371 --- valid loss: -0.36836
+Uncertainty weights: segmt=0.25823, depth=0.19235
+Saving weights...
+Epoch 74/250 [2.2min] --- train loss: -0.40502 --- valid loss: -0.36810
+Uncertainty weights: segmt=0.25785, depth=0.18999
+Epoch 75/250 [2.2min] --- train loss: -0.40715 --- valid loss: -0.37171
+Uncertainty weights: segmt=0.25745, depth=0.18765
+Saving weights...
+Epoch 76/250 [2.3min] --- train loss: -0.40930 --- valid loss: -0.37246
+Uncertainty weights: segmt=0.25698, depth=0.18534
+Saving weights...
+Epoch 77/250 [2.2min] --- train loss: -0.41190 --- valid loss: -0.37196
+Uncertainty weights: segmt=0.25632, depth=0.18306
+Epoch 78/250 [2.3min] --- train loss: -0.41284 --- valid loss: -0.37091
+Uncertainty weights: segmt=0.25602, depth=0.18081
+Epoch 79/250 [2.2min] --- train loss: -0.41434 --- valid loss: -0.37756
+Uncertainty weights: segmt=0.25589, depth=0.17859
+Saving weights...
+Epoch 80/250 [2.3min] --- train loss: -0.41693 --- valid loss: -0.37686
+Uncertainty weights: segmt=0.25545, depth=0.17639
+Epoch 81/250 [2.3min] --- train loss: -0.41897 --- valid loss: -0.37783
+Uncertainty weights: segmt=0.25506, depth=0.17423
+Saving weights...
+Epoch 82/250 [2.2min] --- train loss: -0.42029 --- valid loss: -0.37705
+Uncertainty weights: segmt=0.25476, depth=0.17208
+Epoch 83/250 [2.2min] --- train loss: -0.42241 --- valid loss: -0.38278
+Uncertainty weights: segmt=0.25443, depth=0.16997
+Saving weights...
+Epoch 84/250 [2.2min] --- train loss: -0.42453 --- valid loss: -0.38208
+Uncertainty weights: segmt=0.25408, depth=0.16788
+Epoch 85/250 [2.2min] --- train loss: -0.42666 --- valid loss: -0.38282
+Uncertainty weights: segmt=0.25367, depth=0.16582
+Saving weights...
+Epoch 86/250 [2.2min] --- train loss: -0.42819 --- valid loss: -0.38410
+Uncertainty weights: segmt=0.25324, depth=0.16378
+Saving weights...
+Epoch 87/250 [2.2min] --- train loss: -0.43031 --- valid loss: -0.38471
+Uncertainty weights: segmt=0.25285, depth=0.16177
+Saving weights...
+Epoch 88/250 [2.2min] --- train loss: -0.43155 --- valid loss: -0.38901
+Uncertainty weights: segmt=0.25263, depth=0.15979
+Saving weights...
+Epoch 89/250 [2.3min] --- train loss: -0.43338 --- valid loss: -0.39125
+Uncertainty weights: segmt=0.25241, depth=0.15782
+Saving weights...
+Epoch 90/250 [2.2min] --- train loss: -0.43601 --- valid loss: -0.39007
+Uncertainty weights: segmt=0.25189, depth=0.15588
+Epoch 91/250 [2.2min] --- train loss: -0.43725 --- valid loss: -0.39280
+Uncertainty weights: segmt=0.25175, depth=0.15397
+Saving weights...
+Epoch 92/250 [2.3min] --- train loss: -0.43847 --- valid loss: -0.39318
+Uncertainty weights: segmt=0.25150, depth=0.15208
+Saving weights...
+Epoch 93/250 [2.3min] --- train loss: -0.44093 --- valid loss: -0.39460
+Uncertainty weights: segmt=0.25110, depth=0.15022
+Saving weights...
+Epoch 94/250 [2.2min] --- train loss: -0.44211 --- valid loss: -0.39234
+Uncertainty weights: segmt=0.25085, depth=0.14838
+Epoch 95/250 [2.2min] --- train loss: -0.44364 --- valid loss: -0.39619
+Uncertainty weights: segmt=0.25075, depth=0.14656
+Saving weights...
+Epoch 96/250 [2.3min] --- train loss: -0.44589 --- valid loss: -0.39839
+Uncertainty weights: segmt=0.25045, depth=0.14476
+Saving weights...
+Epoch 97/250 [2.2min] --- train loss: -0.44723 --- valid loss: -0.40005
+Uncertainty weights: segmt=0.25030, depth=0.14298
+Saving weights...
+Epoch 98/250 [2.2min] --- train loss: -0.44943 --- valid loss: -0.40245
+Uncertainty weights: segmt=0.24988, depth=0.14123
+Saving weights...
+Epoch 99/250 [2.2min] --- train loss: -0.45021 --- valid loss: -0.40196
+Uncertainty weights: segmt=0.24977, depth=0.13950
+Epoch 100/250 [2.3min] --- train loss: -0.45328 --- valid loss: -0.40459
+Uncertainty weights: segmt=0.24931, depth=0.13779
+Saving weights...
+Epoch 101/250 [2.2min] --- train loss: -0.45432 --- valid loss: -0.40385
+Uncertainty weights: segmt=0.24904, depth=0.13610
+Epoch 102/250 [2.2min] --- train loss: -0.45596 --- valid loss: -0.40875
+Uncertainty weights: segmt=0.24871, depth=0.13444
+Saving weights...
+Epoch 103/250 [2.2min] --- train loss: -0.45720 --- valid loss: -0.40748
+Uncertainty weights: segmt=0.24854, depth=0.13279
+Epoch 104/250 [2.2min] --- train loss: -0.45898 --- valid loss: -0.40864
+Uncertainty weights: segmt=0.24835, depth=0.13116
+Epoch 105/250 [2.2min] --- train loss: -0.46050 --- valid loss: -0.40925
+Uncertainty weights: segmt=0.24815, depth=0.12956
+Saving weights...
+Epoch 106/250 [2.2min] --- train loss: -0.46280 --- valid loss: -0.41098
+Uncertainty weights: segmt=0.24776, depth=0.12797
+Saving weights...
+Epoch 107/250 [2.2min] --- train loss: -0.46375 --- valid loss: -0.41140
+Uncertainty weights: segmt=0.24746, depth=0.12641
+Saving weights...
+Epoch 108/250 [2.2min] --- train loss: -0.46538 --- valid loss: -0.40923
+Uncertainty weights: segmt=0.24717, depth=0.12487
+Epoch 109/250 [2.2min] --- train loss: -0.46599 --- valid loss: -0.41266
+Uncertainty weights: segmt=0.24706, depth=0.12334
+Saving weights...
+Epoch 110/250 [2.2min] --- train loss: -0.46827 --- valid loss: -0.41318
+Uncertainty weights: segmt=0.24681, depth=0.12183
+Saving weights...
+Epoch 111/250 [2.3min] --- train loss: -0.46903 --- valid loss: -0.41612
+Uncertainty weights: segmt=0.24670, depth=0.12035
+Saving weights...
+Epoch 112/250 [2.2min] --- train loss: -0.47096 --- valid loss: -0.41519
+Uncertainty weights: segmt=0.24661, depth=0.11888
+Epoch 113/250 [2.3min] --- train loss: -0.47223 --- valid loss: -0.41974
+Uncertainty weights: segmt=0.24647, depth=0.11743
+Saving weights...
+Epoch 114/250 [2.3min] --- train loss: -0.47361 --- valid loss: -0.42047
+Uncertainty weights: segmt=0.24625, depth=0.11600
+Saving weights...
+Epoch 115/250 [2.2min] --- train loss: -0.47454 --- valid loss: -0.42079
+Uncertainty weights: segmt=0.24621, depth=0.11459
+Saving weights...
+Epoch 116/250 [2.3min] --- train loss: -0.47623 --- valid loss: -0.42233
+Uncertainty weights: segmt=0.24593, depth=0.11320
+Saving weights...
+Epoch 117/250 [2.2min] --- train loss: -0.47794 --- valid loss: -0.42373
+Uncertainty weights: segmt=0.24566, depth=0.11182
+Saving weights...
+Epoch 118/250 [2.3min] --- train loss: -0.47887 --- valid loss: -0.42448
+Uncertainty weights: segmt=0.24550, depth=0.11047
+Saving weights...
+Epoch 119/250 [2.3min] --- train loss: -0.48038 --- valid loss: -0.42654
+Uncertainty weights: segmt=0.24535, depth=0.10913
+Saving weights...
+Epoch 120/250 [2.2min] --- train loss: -0.48218 --- valid loss: -0.42508
+Uncertainty weights: segmt=0.24503, depth=0.10780
+Epoch 121/250 [2.2min] --- train loss: -0.48435 --- valid loss: -0.42627
+Uncertainty weights: segmt=0.24477, depth=0.10714
+Epoch 122/250 [2.2min] --- train loss: -0.48625 --- valid loss: -0.42654
+Uncertainty weights: segmt=0.24436, depth=0.10649
+Saving weights...
+Epoch 123/250 [2.2min] --- train loss: -0.48716 --- valid loss: -0.42766
+Uncertainty weights: segmt=0.24404, depth=0.10584
+Saving weights...
+Epoch 124/250 [2.2min] --- train loss: -0.48737 --- valid loss: -0.42648
+Uncertainty weights: segmt=0.24376, depth=0.10519
+Epoch 125/250 [2.3min] --- train loss: -0.48730 --- valid loss: -0.42808
+Uncertainty weights: segmt=0.24351, depth=0.10456
+Saving weights...
+Epoch 126/250 [2.2min] --- train loss: -0.48922 --- valid loss: -0.42620
+Uncertainty weights: segmt=0.24323, depth=0.10392
+Epoch 127/250 [2.2min] --- train loss: -0.48873 --- valid loss: -0.42750
+Uncertainty weights: segmt=0.24303, depth=0.10329
+Epoch 128/250 [2.2min] --- train loss: -0.49006 --- valid loss: -0.42717
+Uncertainty weights: segmt=0.24280, depth=0.10266
+Epoch 129/250 [2.2min] --- train loss: -0.49111 --- valid loss: -0.42908
+Uncertainty weights: segmt=0.24257, depth=0.10203
+Saving weights...
+Epoch 130/250 [2.3min] --- train loss: -0.49234 --- valid loss: -0.42739
+Uncertainty weights: segmt=0.24229, depth=0.10141
+Epoch 131/250 [2.2min] --- train loss: -0.49180 --- valid loss: -0.42894
+Uncertainty weights: segmt=0.24209, depth=0.10081
+Epoch 132/250 [2.3min] --- train loss: -0.49240 --- valid loss: -0.42824
+Uncertainty weights: segmt=0.24191, depth=0.10020
+Epoch 133/250 [2.2min] --- train loss: -0.49353 --- valid loss: -0.42864
+Uncertainty weights: segmt=0.24164, depth=0.09959
+Epoch 134/250 [2.2min] --- train loss: -0.49394 --- valid loss: -0.43134
+Uncertainty weights: segmt=0.24142, depth=0.09899
+Saving weights...
+Epoch 135/250 [2.3min] --- train loss: -0.49497 --- valid loss: -0.43066
+Uncertainty weights: segmt=0.24128, depth=0.09839
+Epoch 136/250 [2.3min] --- train loss: -0.49588 --- valid loss: -0.43054
+Uncertainty weights: segmt=0.24102, depth=0.09780
+Epoch 137/250 [2.2min] --- train loss: -0.49549 --- valid loss: -0.42978
+Uncertainty weights: segmt=0.24084, depth=0.09721
+Epoch 138/250 [2.2min] --- train loss: -0.49688 --- valid loss: -0.43018
+Uncertainty weights: segmt=0.24067, depth=0.09662
+Epoch 139/250 [2.2min] --- train loss: -0.49661 --- valid loss: -0.42997
+Uncertainty weights: segmt=0.24052, depth=0.09605
+Epoch 140/250 [2.3min] --- train loss: -0.49706 --- valid loss: -0.42932
+Uncertainty weights: segmt=0.24045, depth=0.09547
+Epoch 141/250 [2.3min] --- train loss: -0.49819 --- valid loss: -0.42752
+Uncertainty weights: segmt=0.24035, depth=0.09489
+Epoch 142/250 [2.3min] --- train loss: -0.49885 --- valid loss: -0.42987
+Uncertainty weights: segmt=0.24023, depth=0.09432
+Epoch 143/250 [2.3min] --- train loss: -0.49871 --- valid loss: -0.42943
+Uncertainty weights: segmt=0.24012, depth=0.09376
+Epoch 144/250 [2.2min] --- train loss: -0.50037 --- valid loss: -0.43063
+Uncertainty weights: segmt=0.23997, depth=0.09320
+Epoch 145/250 [2.2min] --- train loss: -0.49924 --- valid loss: -0.43128
+Uncertainty weights: segmt=0.23994, depth=0.09264
+Epoch 146/250 [2.2min] --- train loss: -0.50068 --- valid loss: -0.43103
+Uncertainty weights: segmt=0.23984, depth=0.09209
+Epoch 147/250 [2.2min] --- train loss: -0.50139 --- valid loss: -0.43251
+Uncertainty weights: segmt=0.23971, depth=0.09154
+Saving weights...
+Epoch 148/250 [2.2min] --- train loss: -0.50154 --- valid loss: -0.43076
+Uncertainty weights: segmt=0.23952, depth=0.09101
+Epoch 149/250 [2.3min] --- train loss: -0.50209 --- valid loss: -0.43158
+Uncertainty weights: segmt=0.23944, depth=0.09046
+Epoch 150/250 [2.2min] --- train loss: -0.50310 --- valid loss: -0.43094
+Uncertainty weights: segmt=0.23928, depth=0.08993
+Epoch 151/250 [2.2min] --- train loss: -0.50352 --- valid loss: -0.43396
+Uncertainty weights: segmt=0.23915, depth=0.08940
+Saving weights...
+Epoch 152/250 [2.2min] --- train loss: -0.50449 --- valid loss: -0.42989
+Uncertainty weights: segmt=0.23896, depth=0.08888
+Epoch 153/250 [2.2min] --- train loss: -0.50459 --- valid loss: -0.43103
+Uncertainty weights: segmt=0.23884, depth=0.08835
+Epoch 154/250 [2.2min] --- train loss: -0.50454 --- valid loss: -0.43227
+Uncertainty weights: segmt=0.23876, depth=0.08784
+Epoch 155/250 [2.3min] --- train loss: -0.50525 --- valid loss: -0.43255
+Uncertainty weights: segmt=0.23864, depth=0.08733
+Epoch 156/250 [2.2min] --- train loss: -0.50622 --- valid loss: -0.43437
+Uncertainty weights: segmt=0.23857, depth=0.08681
+Saving weights...
+Epoch 157/250 [2.2min] --- train loss: -0.50553 --- valid loss: -0.43418
+Uncertainty weights: segmt=0.23850, depth=0.08632
+Epoch 158/250 [2.3min] --- train loss: -0.50688 --- valid loss: -0.43185
+Uncertainty weights: segmt=0.23832, depth=0.08583
+Epoch 159/250 [2.2min] --- train loss: -0.50686 --- valid loss: -0.43682
+Uncertainty weights: segmt=0.23824, depth=0.08534
+Saving weights...
+Epoch 160/250 [2.2min] --- train loss: -0.50676 --- valid loss: -0.43552
+Uncertainty weights: segmt=0.23821, depth=0.08487
+Epoch 161/250 [2.2min] --- train loss: -0.50791 --- valid loss: -0.43470
+Uncertainty weights: segmt=0.23807, depth=0.08438
+Epoch 162/250 [2.2min] --- train loss: -0.50839 --- valid loss: -0.43462
+Uncertainty weights: segmt=0.23787, depth=0.08391
+Epoch 163/250 [2.2min] --- train loss: -0.50753 --- valid loss: -0.43234
+Uncertainty weights: segmt=0.23784, depth=0.08345
+Epoch 164/250 [2.3min] --- train loss: -0.50960 --- valid loss: -0.43300
+Uncertainty weights: segmt=0.23766, depth=0.08297
+Epoch 165/250 [2.2min] --- train loss: -0.50918 --- valid loss: -0.43517
+Uncertainty weights: segmt=0.23762, depth=0.08252
+Epoch 166/250 [2.2min] --- train loss: -0.51002 --- valid loss: -0.43424
+Uncertainty weights: segmt=0.23749, depth=0.08207
+Epoch 167/250 [2.2min] --- train loss: -0.50982 --- valid loss: -0.43043
+Uncertainty weights: segmt=0.23739, depth=0.08163
+Epoch 168/250 [2.2min] --- train loss: -0.51086 --- valid loss: -0.43582
+Uncertainty weights: segmt=0.23728, depth=0.08118
+Epoch 169/250 [2.2min] --- train loss: -0.51063 --- valid loss: -0.43248
+Uncertainty weights: segmt=0.23722, depth=0.08075
+Epoch 170/250 [2.2min] --- train loss: -0.51076 --- valid loss: -0.43234
+Uncertainty weights: segmt=0.23712, depth=0.08032
+Epoch 171/250 [2.2min] --- train loss: -0.51162 --- valid loss: -0.43109
+Uncertainty weights: segmt=0.23697, depth=0.07991
+Epoch 172/250 [2.2min] --- train loss: -0.51178 --- valid loss: -0.43315
+Uncertainty weights: segmt=0.23682, depth=0.07951
+Epoch 173/250 [2.2min] --- train loss: -0.51315 --- valid loss: -0.43467
+Uncertainty weights: segmt=0.23669, depth=0.07910
+Epoch 174/250 [2.2min] --- train loss: -0.51040 --- valid loss: -0.43293
+Uncertainty weights: segmt=0.23670, depth=0.07874
+Epoch 175/250 [2.3min] --- train loss: -0.51140 --- valid loss: -0.43211
+Uncertainty weights: segmt=0.23668, depth=0.07837
+Epoch 176/250 [2.2min] --- train loss: -0.51239 --- valid loss: -0.43252
+Uncertainty weights: segmt=0.23655, depth=0.07800
+Epoch 177/250 [2.2min] --- train loss: -0.51324 --- valid loss: -0.43155
+Uncertainty weights: segmt=0.23641, depth=0.07765
+Epoch 178/250 [2.2min] --- train loss: -0.51285 --- valid loss: -0.43185
+Uncertainty weights: segmt=0.23639, depth=0.07730
+Epoch 179/250 [2.2min] --- train loss: -0.51289 --- valid loss: -0.43219
+Uncertainty weights: segmt=0.23632, depth=0.07696
+Epoch 180/250 [2.2min] --- train loss: -0.51417 --- valid loss: -0.43121
+Uncertainty weights: segmt=0.23621, depth=0.07661
+Epoch 181/250 [2.3min] --- train loss: -0.51438 --- valid loss: -0.43278
+Uncertainty weights: segmt=0.23617, depth=0.07645
+Epoch 182/250 [2.2min] --- train loss: -0.51466 --- valid loss: -0.43172
+Uncertainty weights: segmt=0.23611, depth=0.07629
+Epoch 183/250 [2.2min] --- train loss: -0.51532 --- valid loss: -0.43329
+Uncertainty weights: segmt=0.23604, depth=0.07613
+Epoch 184/250 [2.3min] --- train loss: -0.51759 --- valid loss: -0.43306
+Uncertainty weights: segmt=0.23596, depth=0.07595
+Epoch 185/250 [2.3min] --- train loss: -0.51547 --- valid loss: -0.43253
+Uncertainty weights: segmt=0.23590, depth=0.07579
+Epoch 186/250 [2.2min] --- train loss: -0.51684 --- valid loss: -0.43319
+Uncertainty weights: segmt=0.23583, depth=0.07562
+Epoch 187/250 [2.2min] --- train loss: -0.51731 --- valid loss: -0.43166
+Uncertainty weights: segmt=0.23573, depth=0.07546
+Epoch 188/250 [2.2min] --- train loss: -0.51664 --- valid loss: -0.43466
+Uncertainty weights: segmt=0.23567, depth=0.07530
+Epoch 189/250 [2.3min] --- train loss: -0.51656 --- valid loss: -0.43361
+Uncertainty weights: segmt=0.23560, depth=0.07515
+Epoch 190/250 [2.2min] --- train loss: -0.51738 --- valid loss: -0.43385
+Uncertainty weights: segmt=0.23552, depth=0.07501
+Epoch 191/250 [2.3min] --- train loss: -0.51702 --- valid loss: -0.43241
+Uncertainty weights: segmt=0.23546, depth=0.07486
+Epoch 192/250 [2.2min] --- train loss: -0.51726 --- valid loss: -0.43028
+Uncertainty weights: segmt=0.23534, depth=0.07472
+Epoch 193/250 [2.2min] --- train loss: -0.51697 --- valid loss: -0.42999
+Uncertainty weights: segmt=0.23527, depth=0.07459
+Epoch 194/250 [2.2min] --- train loss: -0.51682 --- valid loss: -0.43286
+Uncertainty weights: segmt=0.23523, depth=0.07445
+Epoch 195/250 [2.2min] --- train loss: -0.51736 --- valid loss: -0.43164
+Uncertainty weights: segmt=0.23516, depth=0.07432
+Epoch 196/250 [2.2min] --- train loss: -0.51693 --- valid loss: -0.43134
+Uncertainty weights: segmt=0.23507, depth=0.07420
+Epoch 197/250 [2.2min] --- train loss: -0.51630 --- valid loss: -0.43328
+Uncertainty weights: segmt=0.23502, depth=0.07409
+Epoch 198/250 [2.3min] --- train loss: -0.51681 --- valid loss: -0.43244
+Uncertainty weights: segmt=0.23501, depth=0.07397
+Epoch 199/250 [2.2min] --- train loss: -0.51666 --- valid loss: -0.43363
+Uncertainty weights: segmt=0.23497, depth=0.07386
+Epoch 200/250 [2.2min] --- train loss: -0.51740 --- valid loss: -0.43249
+Uncertainty weights: segmt=0.23492, depth=0.07374
+Epoch 201/250 [2.3min] --- train loss: -0.51821 --- valid loss: -0.43081
+Uncertainty weights: segmt=0.23482, depth=0.07363
+Epoch 202/250 [2.2min] --- train loss: -0.51863 --- valid loss: -0.43022
+Uncertainty weights: segmt=0.23476, depth=0.07350
+Epoch 203/250 [2.2min] --- train loss: -0.51974 --- valid loss: -0.43127
+Uncertainty weights: segmt=0.23467, depth=0.07337
+Epoch 204/250 [2.3min] --- train loss: -0.51757 --- valid loss: -0.43106
+Uncertainty weights: segmt=0.23461, depth=0.07327
+Epoch 205/250 [2.2min] --- train loss: -0.51935 --- valid loss: -0.43132
+Uncertainty weights: segmt=0.23454, depth=0.07315
+Epoch 206/250 [2.2min] --- train loss: -0.51902 --- valid loss: -0.42884
+Uncertainty weights: segmt=0.23445, depth=0.07305
+Epoch 207/250 [2.2min] --- train loss: -0.51748 --- valid loss: -0.43036
+Uncertainty weights: segmt=0.23445, depth=0.07295
+Epoch 208/250 [2.2min] --- train loss: -0.51820 --- valid loss: -0.43116
+Uncertainty weights: segmt=0.23440, depth=0.07285
+Epoch 209/250 [2.2min] --- train loss: -0.51807 --- valid loss: -0.43090
+Uncertainty weights: segmt=0.23433, depth=0.07277
+Epoch 210/250 [2.3min] --- train loss: -0.51861 --- valid loss: -0.43109
+Uncertainty weights: segmt=0.23426, depth=0.07267
+Epoch 211/250 [2.3min] --- train loss: -0.52032 --- valid loss: -0.43087
+Uncertainty weights: segmt=0.23417, depth=0.07257
+Epoch 212/250 [2.2min] --- train loss: -0.51897 --- valid loss: -0.42872
+Uncertainty weights: segmt=0.23413, depth=0.07248
+Epoch 213/250 [2.2min] --- train loss: -0.51947 --- valid loss: -0.42989
+Uncertainty weights: segmt=0.23404, depth=0.07239
+Epoch 214/250 [2.2min] --- train loss: -0.51980 --- valid loss: -0.43235
+Uncertainty weights: segmt=0.23401, depth=0.07230
+Epoch 215/250 [2.2min] --- train loss: -0.51947 --- valid loss: -0.43047
+Uncertainty weights: segmt=0.23395, depth=0.07221
+Epoch 216/250 [2.2min] --- train loss: -0.51928 --- valid loss: -0.43031
+Uncertainty weights: segmt=0.23393, depth=0.07212
+Epoch 217/250 [2.2min] --- train loss: -0.51978 --- valid loss: -0.43092
+Uncertainty weights: segmt=0.23387, depth=0.07204
+Epoch 218/250 [2.2min] --- train loss: -0.51990 --- valid loss: -0.42992
+Uncertainty weights: segmt=0.23380, depth=0.07197
+Epoch 219/250 [2.2min] --- train loss: -0.51981 --- valid loss: -0.43126
+Uncertainty weights: segmt=0.23376, depth=0.07189
+Epoch 220/250 [2.2min] --- train loss: -0.52177 --- valid loss: -0.42906
+Uncertainty weights: segmt=0.23366, depth=0.07179
+Epoch 221/250 [2.2min] --- train loss: -0.52070 --- valid loss: -0.42835
+Uncertainty weights: segmt=0.23356, depth=0.07171
+Epoch 222/250 [2.2min] --- train loss: -0.51955 --- valid loss: -0.42857
+Uncertainty weights: segmt=0.23353, depth=0.07165
+Epoch 223/250 [2.3min] --- train loss: -0.52133 --- valid loss: -0.42790
+Uncertainty weights: segmt=0.23344, depth=0.07156
+Epoch 224/250 [2.2min] --- train loss: -0.52210 --- valid loss: -0.42892
+Uncertainty weights: segmt=0.23336, depth=0.07148
+Epoch 225/250 [2.2min] --- train loss: -0.51931 --- valid loss: -0.42890
+Uncertainty weights: segmt=0.23333, depth=0.07142
+Epoch 226/250 [2.3min] --- train loss: -0.52060 --- valid loss: -0.42931
+Uncertainty weights: segmt=0.23328, depth=0.07136
+Epoch 227/250 [2.2min] --- train loss: -0.51966 --- valid loss: -0.42881
+Uncertainty weights: segmt=0.23326, depth=0.07130
+Epoch 228/250 [2.3min] --- train loss: -0.52101 --- valid loss: -0.42871
+Uncertainty weights: segmt=0.23319, depth=0.07124
+Epoch 229/250 [2.2min] --- train loss: -0.51913 --- valid loss: -0.42705
+Uncertainty weights: segmt=0.23319, depth=0.07119
+Epoch 230/250 [2.2min] --- train loss: -0.52076 --- valid loss: -0.42805
+Uncertainty weights: segmt=0.23314, depth=0.07115
+Epoch 231/250 [2.3min] --- train loss: -0.52125 --- valid loss: -0.42777
+Uncertainty weights: segmt=0.23308, depth=0.07109
+Epoch 232/250 [2.2min] --- train loss: -0.52141 --- valid loss: -0.42714
+Uncertainty weights: segmt=0.23304, depth=0.07103
+Epoch 233/250 [2.2min] --- train loss: -0.52076 --- valid loss: -0.43024
+Uncertainty weights: segmt=0.23301, depth=0.07097
+Epoch 234/250 [2.2min] --- train loss: -0.52198 --- valid loss: -0.42885
+Uncertainty weights: segmt=0.23296, depth=0.07090
+Epoch 235/250 [2.3min] --- train loss: -0.52048 --- valid loss: -0.42754
+Uncertainty weights: segmt=0.23292, depth=0.07086
+Epoch 236/250 [2.3min] --- train loss: -0.51980 --- valid loss: -0.42524
+Uncertainty weights: segmt=0.23291, depth=0.07082
+Epoch 237/250 [2.2min] --- train loss: -0.52171 --- valid loss: -0.42776
+Uncertainty weights: segmt=0.23286, depth=0.07078
+Epoch 238/250 [2.2min] --- train loss: -0.52082 --- valid loss: -0.42862
+Uncertainty weights: segmt=0.23282, depth=0.07073
+Epoch 239/250 [2.2min] --- train loss: -0.52153 --- valid loss: -0.42790
+Uncertainty weights: segmt=0.23276, depth=0.07069
+Epoch 240/250 [2.3min] --- train loss: -0.52147 --- valid loss: -0.42654
+Uncertainty weights: segmt=0.23273, depth=0.07064
+Epoch 241/250 [2.2min] --- train loss: -0.52252 --- valid loss: -0.42727
+Uncertainty weights: segmt=0.23269, depth=0.07061
+Epoch 242/250 [2.3min] --- train loss: -0.52257 --- valid loss: -0.42877
+Uncertainty weights: segmt=0.23266, depth=0.07059
+Epoch 243/250 [2.2min] --- train loss: -0.52219 --- valid loss: -0.42692
+Uncertainty weights: segmt=0.23263, depth=0.07056
+Epoch 244/250 [2.2min] --- train loss: -0.52274 --- valid loss: -0.42493
+Uncertainty weights: segmt=0.23261, depth=0.07053
+Epoch 245/250 [2.2min] --- train loss: -0.52142 --- valid loss: -0.42706
+Uncertainty weights: segmt=0.23257, depth=0.07052
+Epoch 246/250 [2.2min] --- train loss: -0.52344 --- valid loss: -0.42710
+Uncertainty weights: segmt=0.23252, depth=0.07049
+Epoch 247/250 [2.2min] --- train loss: -0.52409 --- valid loss: -0.42756
+Uncertainty weights: segmt=0.23248, depth=0.07045
+Epoch 248/250 [2.2min] --- train loss: -0.52338 --- valid loss: -0.42714
+Uncertainty weights: segmt=0.23243, depth=0.07042
+Epoch 249/250 [2.3min] --- train loss: -0.52266 --- valid loss: -0.42723
+Uncertainty weights: segmt=0.23239, depth=0.07040
+Epoch 250/250 [2.2min] --- train loss: -0.52252 --- valid loss: -0.42628
+Uncertainty weights: segmt=0.23237, depth=0.07038
+Training done
+=======================================
+Pix Acc: 0.9360, mIoU: 0.6657
+Scores - RMSE: 169.9195, iRMSE: 0.0117, iRMSE log: 0.4542, Abs: 0.0116, Abs Rel: 0.1889, Sqrt Rel: 0.0106, delta1: 0.7763, delta2: 0.8967, delta3: 0.9396
+Initializing...
+Parameters:
+   predicting at size [128*256]
+   # of classes: 7
+   using ResNet34, optimizer: Adam (lr=0.0002, beta=(0.9, 0.99)), scheduler: StepLR(60, 0.5)
+   loss function --- Lp_depth: L1, tsegmt: cross, tdepth: L1
+   hyperparameters --- alpha: 0.01, gamma: 0.0, temp:1, smoothing: 0.1
+   batch size: 12, train for 250 epochs
+   device: cuda
+TransferNet type:
+   Base Task TransferNet with skip-connection
+Options:
+   use uncertainty weights
+Loading dataset...
+=======================================
+Start training...
+Epoch 1/250 [2.3min] --- train loss: 0.02304 --- valid loss: 0.00740
+Uncertainty weights: segmt=0.97339, depth=0.97471
+Saving weights...
+Epoch 2/250 [2.2min] --- train loss: 0.00255 --- valid loss: -0.00135
+Uncertainty weights: segmt=0.94909, depth=0.95072
+Saving weights...
+Epoch 3/250 [2.3min] --- train loss: -0.00699 --- valid loss: -0.01133
+Uncertainty weights: segmt=0.92573, depth=0.92742
+Saving weights...
+Epoch 4/250 [2.2min] --- train loss: -0.01593 --- valid loss: -0.01989
+Uncertainty weights: segmt=0.90298, depth=0.90470
+Saving weights...
+Epoch 5/250 [2.2min] --- train loss: -0.02394 --- valid loss: -0.02748
+Uncertainty weights: segmt=0.88090, depth=0.88254
+Saving weights...
+Epoch 6/250 [2.2min] --- train loss: -0.03228 --- valid loss: -0.03565
+Uncertainty weights: segmt=0.85932, depth=0.86092
+Saving weights...
+Epoch 7/250 [2.2min] --- train loss: -0.04032 --- valid loss: -0.04319
+Uncertainty weights: segmt=0.83829, depth=0.83983
+Saving weights...
+Epoch 8/250 [2.2min] --- train loss: -0.04822 --- valid loss: -0.04891
+Uncertainty weights: segmt=0.81779, depth=0.81926
+Saving weights...
+Epoch 9/250 [2.3min] --- train loss: -0.05586 --- valid loss: -0.05926
+Uncertainty weights: segmt=0.79783, depth=0.79920
+Saving weights...
+Epoch 10/250 [2.2min] --- train loss: -0.06387 --- valid loss: -0.06712
+Uncertainty weights: segmt=0.77830, depth=0.77963
+Saving weights...
+Epoch 11/250 [2.3min] --- train loss: -0.07156 --- valid loss: -0.07414
+Uncertainty weights: segmt=0.75930, depth=0.76053
+Saving weights...
+Epoch 12/250 [2.3min] --- train loss: -0.07928 --- valid loss: -0.08276
+Uncertainty weights: segmt=0.74076, depth=0.74191
+Saving weights...
+Epoch 13/250 [2.2min] --- train loss: -0.08723 --- valid loss: -0.09013
+Uncertainty weights: segmt=0.72265, depth=0.72374
+Saving weights...
+Epoch 14/250 [2.2min] --- train loss: -0.09458 --- valid loss: -0.09739
+Uncertainty weights: segmt=0.70504, depth=0.70601
+Saving weights...
+Epoch 15/250 [2.3min] --- train loss: -0.10224 --- valid loss: -0.10462
+Uncertainty weights: segmt=0.68783, depth=0.68873
+Saving weights...
+Epoch 16/250 [2.3min] --- train loss: -0.11002 --- valid loss: -0.11219
+Uncertainty weights: segmt=0.67102, depth=0.67186
+Saving weights...
+Epoch 17/250 [2.2min] --- train loss: -0.11753 --- valid loss: -0.11925
+Uncertainty weights: segmt=0.65466, depth=0.65540
+Saving weights...
+Epoch 18/250 [2.2min] --- train loss: -0.12486 --- valid loss: -0.12573
+Uncertainty weights: segmt=0.63871, depth=0.63936
+Saving weights...
+Epoch 19/250 [2.3min] --- train loss: -0.13259 --- valid loss: -0.13446
+Uncertainty weights: segmt=0.62309, depth=0.62370
+Saving weights...
+Epoch 20/250 [2.3min] --- train loss: -0.13939 --- valid loss: -0.14123
+Uncertainty weights: segmt=0.60798, depth=0.60843
+Saving weights...
+Epoch 21/250 [2.2min] --- train loss: -0.14722 --- valid loss: -0.14940
+Uncertainty weights: segmt=0.59311, depth=0.59353
+Saving weights...
+Epoch 22/250 [2.2min] --- train loss: -0.15472 --- valid loss: -0.15608
+Uncertainty weights: segmt=0.57866, depth=0.57900
+Saving weights...
+Epoch 23/250 [2.2min] --- train loss: -0.16176 --- valid loss: -0.16252
+Uncertainty weights: segmt=0.56459, depth=0.56482
+Saving weights...
+Epoch 24/250 [2.3min] --- train loss: -0.16855 --- valid loss: -0.16317
+Uncertainty weights: segmt=0.55089, depth=0.55099
+Saving weights...
+Epoch 25/250 [2.3min] --- train loss: -0.17578 --- valid loss: -0.17698
+Uncertainty weights: segmt=0.53747, depth=0.53750
+Saving weights...
+Epoch 26/250 [2.3min] --- train loss: -0.18295 --- valid loss: -0.18277
+Uncertainty weights: segmt=0.52442, depth=0.52434
+Saving weights...
+Epoch 27/250 [2.2min] --- train loss: -0.18993 --- valid loss: -0.18933
+Uncertainty weights: segmt=0.51168, depth=0.51150
+Saving weights...
+Epoch 28/250 [2.2min] --- train loss: -0.19669 --- valid loss: -0.19539
+Uncertainty weights: segmt=0.49927, depth=0.49898
+Saving weights...
+Epoch 29/250 [2.2min] --- train loss: -0.20411 --- valid loss: -0.20302
+Uncertainty weights: segmt=0.48715, depth=0.48676
+Saving weights...
+Epoch 30/250 [2.2min] --- train loss: -0.21099 --- valid loss: -0.20885
+Uncertainty weights: segmt=0.47534, depth=0.47485
+Saving weights...
+Epoch 31/250 [2.2min] --- train loss: -0.21769 --- valid loss: -0.21561
+Uncertainty weights: segmt=0.46383, depth=0.46322
+Saving weights...
+Epoch 32/250 [2.2min] --- train loss: -0.22445 --- valid loss: -0.22278
+Uncertainty weights: segmt=0.45259, depth=0.45189
+Saving weights...
+Epoch 33/250 [2.2min] --- train loss: -0.23130 --- valid loss: -0.22560
+Uncertainty weights: segmt=0.44161, depth=0.44082
+Saving weights...
+Epoch 34/250 [2.3min] --- train loss: -0.23772 --- valid loss: -0.23447
+Uncertainty weights: segmt=0.43099, depth=0.43003
+Saving weights...
+Epoch 35/250 [2.2min] --- train loss: -0.24456 --- valid loss: -0.24041
+Uncertainty weights: segmt=0.42058, depth=0.41951
+Saving weights...
+Epoch 36/250 [2.2min] --- train loss: -0.25026 --- valid loss: -0.24505
+Uncertainty weights: segmt=0.41048, depth=0.40924
+Saving weights...
+Epoch 37/250 [2.3min] --- train loss: -0.25690 --- valid loss: -0.25231
+Uncertainty weights: segmt=0.40062, depth=0.39922
+Saving weights...
+Epoch 38/250 [2.2min] --- train loss: -0.26337 --- valid loss: -0.25654
+Uncertainty weights: segmt=0.39098, depth=0.38945
+Saving weights...
+Epoch 39/250 [2.2min] --- train loss: -0.26939 --- valid loss: -0.26226
+Uncertainty weights: segmt=0.38164, depth=0.37992
+Saving weights...
+Epoch 40/250 [2.3min] --- train loss: -0.27499 --- valid loss: -0.26717
+Uncertainty weights: segmt=0.37256, depth=0.37063
+Saving weights...
+Epoch 41/250 [2.3min] --- train loss: -0.28101 --- valid loss: -0.27235
+Uncertainty weights: segmt=0.36373, depth=0.36156
+Saving weights...
+Epoch 42/250 [2.2min] --- train loss: -0.28777 --- valid loss: -0.27647
+Uncertainty weights: segmt=0.35506, depth=0.35270
+Saving weights...
+Epoch 43/250 [2.2min] --- train loss: -0.29234 --- valid loss: -0.28272
+Uncertainty weights: segmt=0.34683, depth=0.34408
+Saving weights...
+Epoch 44/250 [2.2min] --- train loss: -0.29863 --- valid loss: -0.28766
+Uncertainty weights: segmt=0.33869, depth=0.33566
+Saving weights...
+Epoch 45/250 [2.3min] --- train loss: -0.30430 --- valid loss: -0.29355
+Uncertainty weights: segmt=0.33080, depth=0.32744
+Saving weights...
+Epoch 46/250 [2.3min] --- train loss: -0.30886 --- valid loss: -0.29640
+Uncertainty weights: segmt=0.32338, depth=0.31944
+Saving weights...
+Epoch 47/250 [2.2min] --- train loss: -0.31467 --- valid loss: -0.30051
+Uncertainty weights: segmt=0.31596, depth=0.31162
+Saving weights...
+Epoch 48/250 [2.2min] --- train loss: -0.31995 --- valid loss: -0.30488
+Uncertainty weights: segmt=0.30897, depth=0.30400
+Saving weights...
+Epoch 49/250 [2.3min] --- train loss: -0.32448 --- valid loss: -0.30690
+Uncertainty weights: segmt=0.30244, depth=0.29656
+Saving weights...
+Epoch 50/250 [2.3min] --- train loss: -0.32917 --- valid loss: -0.31087
+Uncertainty weights: segmt=0.29616, depth=0.28931
+Saving weights...
+Epoch 51/250 [2.3min] --- train loss: -0.33318 --- valid loss: -0.31305
+Uncertainty weights: segmt=0.29075, depth=0.28223
+Saving weights...
+Epoch 52/250 [2.2min] --- train loss: -0.33846 --- valid loss: -0.31877
+Uncertainty weights: segmt=0.28556, depth=0.27533
+Saving weights...
+Epoch 53/250 [2.2min] --- train loss: -0.34324 --- valid loss: -0.31768
+Uncertainty weights: segmt=0.28106, depth=0.26860
+Epoch 54/250 [2.2min] --- train loss: -0.34714 --- valid loss: -0.32387
+Uncertainty weights: segmt=0.27767, depth=0.26204
+Saving weights...
+Epoch 55/250 [2.2min] --- train loss: -0.35055 --- valid loss: -0.32881
+Uncertainty weights: segmt=0.27543, depth=0.25563
+Saving weights...
+Epoch 56/250 [2.3min] --- train loss: -0.35540 --- valid loss: -0.32890
+Uncertainty weights: segmt=0.27311, depth=0.24938
+Saving weights...
+Epoch 57/250 [2.2min] --- train loss: -0.35845 --- valid loss: -0.33115
+Uncertainty weights: segmt=0.27229, depth=0.24329
+Saving weights...
+Epoch 58/250 [2.3min] --- train loss: -0.36379 --- valid loss: -0.33645
+Uncertainty weights: segmt=0.27069, depth=0.23734
+Saving weights...
+Epoch 59/250 [2.3min] --- train loss: -0.36708 --- valid loss: -0.34046
+Uncertainty weights: segmt=0.26973, depth=0.23155
+Saving weights...
+Epoch 60/250 [2.3min] --- train loss: -0.37168 --- valid loss: -0.34381
+Uncertainty weights: segmt=0.26870, depth=0.22589
+Saving weights...
+Epoch 61/250 [2.3min] --- train loss: -0.37671 --- valid loss: -0.34842
+Uncertainty weights: segmt=0.26770, depth=0.22310
+Saving weights...
+Epoch 62/250 [2.2min] --- train loss: -0.37960 --- valid loss: -0.35027
+Uncertainty weights: segmt=0.26666, depth=0.22035
+Saving weights...
+Epoch 63/250 [2.2min] --- train loss: -0.38300 --- valid loss: -0.34925
+Uncertainty weights: segmt=0.26539, depth=0.21764
+Epoch 64/250 [2.3min] --- train loss: -0.38476 --- valid loss: -0.35269
+Uncertainty weights: segmt=0.26425, depth=0.21497
+Saving weights...
+Epoch 65/250 [2.3min] --- train loss: -0.38712 --- valid loss: -0.35385
+Uncertainty weights: segmt=0.26327, depth=0.21232
+Saving weights...
+Epoch 66/250 [2.2min] --- train loss: -0.38845 --- valid loss: -0.35525
+Uncertainty weights: segmt=0.26255, depth=0.20971
+Saving weights...
+Epoch 67/250 [2.2min] --- train loss: -0.39163 --- valid loss: -0.35612
+Uncertainty weights: segmt=0.26158, depth=0.20713
+Saving weights...
+Epoch 68/250 [2.2min] --- train loss: -0.39312 --- valid loss: -0.35700
+Uncertainty weights: segmt=0.26087, depth=0.20458
+Saving weights...
+Epoch 69/250 [2.2min] --- train loss: -0.39553 --- valid loss: -0.35969
+Uncertainty weights: segmt=0.26013, depth=0.20206
+Saving weights...
+Epoch 70/250 [2.2min] --- train loss: -0.39699 --- valid loss: -0.36417
+Uncertainty weights: segmt=0.25965, depth=0.19958
+Saving weights...
+Epoch 71/250 [2.3min] --- train loss: -0.39939 --- valid loss: -0.36426
+Uncertainty weights: segmt=0.25905, depth=0.19712
+Saving weights...
+Epoch 72/250 [2.3min] --- train loss: -0.40123 --- valid loss: -0.36613
+Uncertainty weights: segmt=0.25849, depth=0.19470
+Saving weights...
+Epoch 73/250 [2.2min] --- train loss: -0.40364 --- valid loss: -0.36735
+Uncertainty weights: segmt=0.25790, depth=0.19230
+Saving weights...
+Epoch 74/250 [2.3min] --- train loss: -0.40510 --- valid loss: -0.36670
+Uncertainty weights: segmt=0.25758, depth=0.18994
+Epoch 75/250 [2.3min] --- train loss: -0.40783 --- valid loss: -0.36698
+Uncertainty weights: segmt=0.25696, depth=0.18760
+Epoch 76/250 [2.2min] --- train loss: -0.40949 --- valid loss: -0.36432
+Uncertainty weights: segmt=0.25649, depth=0.18530
+Epoch 77/250 [2.3min] --- train loss: -0.41061 --- valid loss: -0.37080
+Uncertainty weights: segmt=0.25619, depth=0.18302
+Saving weights...
+Epoch 78/250 [2.3min] --- train loss: -0.41337 --- valid loss: -0.37529
+Uncertainty weights: segmt=0.25580, depth=0.18077
+Saving weights...
+Epoch 79/250 [2.2min] --- train loss: -0.41512 --- valid loss: -0.37635
+Uncertainty weights: segmt=0.25542, depth=0.17855
+Saving weights...
+Epoch 80/250 [2.3min] --- train loss: -0.41659 --- valid loss: -0.37394
+Uncertainty weights: segmt=0.25521, depth=0.17635
+Epoch 81/250 [2.3min] --- train loss: -0.41948 --- valid loss: -0.37889
+Uncertainty weights: segmt=0.25470, depth=0.17418
+Saving weights...
+Epoch 82/250 [2.3min] --- train loss: -0.42021 --- valid loss: -0.37879
+Uncertainty weights: segmt=0.25445, depth=0.17205
+Epoch 83/250 [2.3min] --- train loss: -0.42303 --- valid loss: -0.38109
+Uncertainty weights: segmt=0.25414, depth=0.16993
+Saving weights...
+Epoch 84/250 [2.3min] --- train loss: -0.42484 --- valid loss: -0.38136
+Uncertainty weights: segmt=0.25367, depth=0.16784
+Saving weights...
+Epoch 85/250 [2.3min] --- train loss: -0.42630 --- valid loss: -0.38298
+Uncertainty weights: segmt=0.25335, depth=0.16578
+Saving weights...
+Epoch 86/250 [2.2min] --- train loss: -0.42782 --- valid loss: -0.38368
+Uncertainty weights: segmt=0.25319, depth=0.16375
+Saving weights...
+Epoch 87/250 [2.3min] --- train loss: -0.43001 --- valid loss: -0.38293
+Uncertainty weights: segmt=0.25287, depth=0.16173
+Epoch 88/250 [2.3min] --- train loss: -0.43143 --- valid loss: -0.38697
+Uncertainty weights: segmt=0.25260, depth=0.15975
+Saving weights...
+Epoch 89/250 [2.2min] --- train loss: -0.43376 --- valid loss: -0.38936
+Uncertainty weights: segmt=0.25223, depth=0.15779
+Saving weights...
+Epoch 90/250 [2.3min] --- train loss: -0.43564 --- valid loss: -0.38948
+Uncertainty weights: segmt=0.25185, depth=0.15585
+Saving weights...
+Epoch 91/250 [2.3min] --- train loss: -0.43710 --- valid loss: -0.39154
+Uncertainty weights: segmt=0.25153, depth=0.15394
+Saving weights...
+Epoch 92/250 [2.2min] --- train loss: -0.43942 --- valid loss: -0.39273
+Uncertainty weights: segmt=0.25119, depth=0.15205
+Saving weights...
+Epoch 93/250 [2.2min] --- train loss: -0.44109 --- valid loss: -0.39264
+Uncertainty weights: segmt=0.25080, depth=0.15018
+Epoch 94/250 [2.2min] --- train loss: -0.44159 --- valid loss: -0.39265
+Uncertainty weights: segmt=0.25076, depth=0.14834
+Epoch 95/250 [2.2min] --- train loss: -0.44349 --- valid loss: -0.39590
+Uncertainty weights: segmt=0.25066, depth=0.14652
+Saving weights...
+Epoch 96/250 [2.3min] --- train loss: -0.44572 --- valid loss: -0.39928
+Uncertainty weights: segmt=0.25043, depth=0.14473
+Saving weights...
+Epoch 97/250 [2.2min] --- train loss: -0.44687 --- valid loss: -0.39917
+Uncertainty weights: segmt=0.25017, depth=0.14295
+Epoch 98/250 [2.3min] --- train loss: -0.44910 --- valid loss: -0.39915
+Uncertainty weights: segmt=0.24993, depth=0.14120
+Epoch 99/250 [2.2min] --- train loss: -0.45104 --- valid loss: -0.40076
+Uncertainty weights: segmt=0.24952, depth=0.13947
+Saving weights...
+Epoch 100/250 [2.2min] --- train loss: -0.45259 --- valid loss: -0.40116
+Uncertainty weights: segmt=0.24928, depth=0.13776
+Saving weights...
+Epoch 101/250 [2.2min] --- train loss: -0.45404 --- valid loss: -0.40384
+Uncertainty weights: segmt=0.24911, depth=0.13607
+Saving weights...
+Epoch 102/250 [2.3min] --- train loss: -0.45563 --- valid loss: -0.40607
+Uncertainty weights: segmt=0.24889, depth=0.13441
+Saving weights...
+Epoch 103/250 [2.3min] --- train loss: -0.45757 --- valid loss: -0.40511
+Uncertainty weights: segmt=0.24860, depth=0.13276
+Epoch 104/250 [2.2min] --- train loss: -0.45847 --- valid loss: -0.40734
+Uncertainty weights: segmt=0.24827, depth=0.13114
+Saving weights...
+Epoch 105/250 [2.2min] --- train loss: -0.46007 --- valid loss: -0.40490
+Uncertainty weights: segmt=0.24808, depth=0.12954
+Epoch 106/250 [2.2min] --- train loss: -0.46216 --- valid loss: -0.40809
+Uncertainty weights: segmt=0.24781, depth=0.12795
+Saving weights...
+Epoch 107/250 [2.2min] --- train loss: -0.46334 --- valid loss: -0.40988
+Uncertainty weights: segmt=0.24759, depth=0.12638
+Saving weights...
+Epoch 108/250 [2.2min] --- train loss: -0.46605 --- valid loss: -0.41431
+Uncertainty weights: segmt=0.24721, depth=0.12484
+Saving weights...
+Epoch 109/250 [2.2min] --- train loss: -0.46545 --- valid loss: -0.41163
+Uncertainty weights: segmt=0.24716, depth=0.12332
+Epoch 110/250 [2.3min] --- train loss: -0.46813 --- valid loss: -0.41357
+Uncertainty weights: segmt=0.24680, depth=0.12182
+Epoch 111/250 [2.2min] --- train loss: -0.46875 --- valid loss: -0.41271
+Uncertainty weights: segmt=0.24675, depth=0.12033
+Epoch 112/250 [2.3min] --- train loss: -0.46994 --- valid loss: -0.41642
+Uncertainty weights: segmt=0.24668, depth=0.11886
+Saving weights...
+Epoch 113/250 [2.3min] --- train loss: -0.47197 --- valid loss: -0.41662
+Uncertainty weights: segmt=0.24647, depth=0.11741
+Saving weights...
+Epoch 114/250 [2.3min] --- train loss: -0.47361 --- valid loss: -0.41716
+Uncertainty weights: segmt=0.24628, depth=0.11598
+Saving weights...
+Epoch 115/250 [2.3min] --- train loss: -0.47529 --- valid loss: -0.41853
+Uncertainty weights: segmt=0.24592, depth=0.11457
+Saving weights...
+Epoch 116/250 [2.3min] --- train loss: -0.47550 --- valid loss: -0.41926
+Uncertainty weights: segmt=0.24578, depth=0.11319
+Saving weights...
+Epoch 117/250 [2.2min] --- train loss: -0.47795 --- valid loss: -0.42152
+Uncertainty weights: segmt=0.24547, depth=0.11181
+Saving weights...
+Epoch 118/250 [2.3min] --- train loss: -0.47848 --- valid loss: -0.42079
+Uncertainty weights: segmt=0.24536, depth=0.11045
+Epoch 119/250 [2.3min] --- train loss: -0.48004 --- valid loss: -0.41908
+Uncertainty weights: segmt=0.24513, depth=0.10912
+Epoch 120/250 [2.2min] --- train loss: -0.48135 --- valid loss: -0.42298
+Uncertainty weights: segmt=0.24495, depth=0.10779
+Saving weights...
+Epoch 121/250 [2.2min] --- train loss: -0.48474 --- valid loss: -0.42513
+Uncertainty weights: segmt=0.24466, depth=0.10713
+Saving weights...
+Epoch 122/250 [2.3min] --- train loss: -0.48562 --- valid loss: -0.42134
+Uncertainty weights: segmt=0.24432, depth=0.10648
+Epoch 123/250 [2.3min] --- train loss: -0.48713 --- valid loss: -0.42404
+Uncertainty weights: segmt=0.24395, depth=0.10583
+Epoch 124/250 [2.3min] --- train loss: -0.48750 --- valid loss: -0.42368
+Uncertainty weights: segmt=0.24370, depth=0.10518
+Epoch 125/250 [2.3min] --- train loss: -0.48789 --- valid loss: -0.42398
+Uncertainty weights: segmt=0.24342, depth=0.10455
+Epoch 126/250 [2.3min] --- train loss: -0.48832 --- valid loss: -0.42376
+Uncertainty weights: segmt=0.24317, depth=0.10391
+Epoch 127/250 [2.2min] --- train loss: -0.48974 --- valid loss: -0.42558
+Uncertainty weights: segmt=0.24291, depth=0.10328
+Saving weights...
+Epoch 128/250 [2.2min] --- train loss: -0.48999 --- valid loss: -0.42344
+Uncertainty weights: segmt=0.24267, depth=0.10265
+Epoch 129/250 [2.2min] --- train loss: -0.49050 --- valid loss: -0.42674
+Uncertainty weights: segmt=0.24246, depth=0.10203
+Saving weights...
+Epoch 130/250 [2.2min] --- train loss: -0.49107 --- valid loss: -0.42863
+Uncertainty weights: segmt=0.24222, depth=0.10141
+Saving weights...
+Epoch 131/250 [2.3min] --- train loss: -0.49162 --- valid loss: -0.42762
+Uncertainty weights: segmt=0.24205, depth=0.10080
+Epoch 132/250 [2.2min] --- train loss: -0.49292 --- valid loss: -0.42628
+Uncertainty weights: segmt=0.24186, depth=0.10018
+Epoch 133/250 [2.2min] --- train loss: -0.49347 --- valid loss: -0.42656
+Uncertainty weights: segmt=0.24164, depth=0.09958
+Epoch 134/250 [2.2min] --- train loss: -0.49481 --- valid loss: -0.42763
+Uncertainty weights: segmt=0.24141, depth=0.09897
+Epoch 135/250 [2.3min] --- train loss: -0.49425 --- valid loss: -0.42759
+Uncertainty weights: segmt=0.24125, depth=0.09838
+Epoch 136/250 [2.3min] --- train loss: -0.49464 --- valid loss: -0.42737
+Uncertainty weights: segmt=0.24108, depth=0.09779
+Epoch 137/250 [2.3min] --- train loss: -0.49556 --- valid loss: -0.42590
+Uncertainty weights: segmt=0.24094, depth=0.09719
+Epoch 138/250 [2.2min] --- train loss: -0.49692 --- valid loss: -0.42698
+Uncertainty weights: segmt=0.24072, depth=0.09660
+Epoch 139/250 [2.3min] --- train loss: -0.49609 --- valid loss: -0.42786
+Uncertainty weights: segmt=0.24068, depth=0.09603
+Epoch 140/250 [2.3min] --- train loss: -0.49818 --- valid loss: -0.42667
+Uncertainty weights: segmt=0.24048, depth=0.09545
+Epoch 141/250 [2.2min] --- train loss: -0.49838 --- valid loss: -0.42784
+Uncertainty weights: segmt=0.24033, depth=0.09488
+Epoch 142/250 [2.2min] --- train loss: -0.49791 --- valid loss: -0.42705
+Uncertainty weights: segmt=0.24021, depth=0.09431
+Epoch 143/250 [2.2min] --- train loss: -0.49864 --- valid loss: -0.42718
+Uncertainty weights: segmt=0.24008, depth=0.09375
+Epoch 144/250 [2.2min] --- train loss: -0.50010 --- valid loss: -0.42559
+Uncertainty weights: segmt=0.23992, depth=0.09319
+Epoch 145/250 [2.3min] --- train loss: -0.50020 --- valid loss: -0.42939
+Uncertainty weights: segmt=0.23978, depth=0.09263
+Saving weights...
+Epoch 146/250 [2.3min] --- train loss: -0.50053 --- valid loss: -0.42776
+Uncertainty weights: segmt=0.23964, depth=0.09209
+Epoch 147/250 [2.2min] --- train loss: -0.50256 --- valid loss: -0.42669
+Uncertainty weights: segmt=0.23940, depth=0.09153
+Epoch 148/250 [2.2min] --- train loss: -0.50128 --- valid loss: -0.42871
+Uncertainty weights: segmt=0.23931, depth=0.09100
+Epoch 149/250 [2.3min] --- train loss: -0.50244 --- valid loss: -0.42832
+Uncertainty weights: segmt=0.23917, depth=0.09046
+Epoch 150/250 [2.2min] --- train loss: -0.50205 --- valid loss: -0.42411
+Uncertainty weights: segmt=0.23908, depth=0.08993
+Epoch 151/250 [2.3min] --- train loss: -0.50328 --- valid loss: -0.42729
+Uncertainty weights: segmt=0.23896, depth=0.08940
+Epoch 152/250 [2.3min] --- train loss: -0.50313 --- valid loss: -0.42868
+Uncertainty weights: segmt=0.23893, depth=0.08888
+Epoch 153/250 [2.2min] --- train loss: -0.50397 --- valid loss: -0.43080
+Uncertainty weights: segmt=0.23881, depth=0.08836
+Saving weights...
+Epoch 154/250 [2.3min] --- train loss: -0.50432 --- valid loss: -0.43224
+Uncertainty weights: segmt=0.23876, depth=0.08785
+Saving weights...
+Epoch 155/250 [2.3min] --- train loss: -0.50422 --- valid loss: -0.43047
+Uncertainty weights: segmt=0.23869, depth=0.08734
+Epoch 156/250 [2.2min] --- train loss: -0.50600 --- valid loss: -0.43062
+Uncertainty weights: segmt=0.23855, depth=0.08683
+Epoch 157/250 [2.3min] --- train loss: -0.50561 --- valid loss: -0.42945
+Uncertainty weights: segmt=0.23845, depth=0.08633
+Epoch 158/250 [2.2min] --- train loss: -0.50570 --- valid loss: -0.43039
+Uncertainty weights: segmt=0.23830, depth=0.08585
+Epoch 159/250 [2.2min] --- train loss: -0.50633 --- valid loss: -0.43142
+Uncertainty weights: segmt=0.23822, depth=0.08535
+Epoch 160/250 [2.2min] --- train loss: -0.50652 --- valid loss: -0.43014
+Uncertainty weights: segmt=0.23812, depth=0.08487
+Epoch 161/250 [2.2min] --- train loss: -0.50756 --- valid loss: -0.43323
+Uncertainty weights: segmt=0.23804, depth=0.08439
+Saving weights...
+Epoch 162/250 [2.3min] --- train loss: -0.50807 --- valid loss: -0.42888
+Uncertainty weights: segmt=0.23798, depth=0.08391
+Epoch 163/250 [2.3min] --- train loss: -0.50848 --- valid loss: -0.43083
+Uncertainty weights: segmt=0.23788, depth=0.08345
+Epoch 164/250 [2.2min] --- train loss: -0.50864 --- valid loss: -0.42936
+Uncertainty weights: segmt=0.23780, depth=0.08298
+Epoch 165/250 [2.2min] --- train loss: -0.50858 --- valid loss: -0.42901
+Uncertainty weights: segmt=0.23772, depth=0.08254
+Epoch 166/250 [2.3min] --- train loss: -0.50860 --- valid loss: -0.42631
+Uncertainty weights: segmt=0.23763, depth=0.08209
+Epoch 167/250 [2.3min] --- train loss: -0.50945 --- valid loss: -0.42962
+Uncertainty weights: segmt=0.23756, depth=0.08164
+Epoch 168/250 [2.2min] --- train loss: -0.50985 --- valid loss: -0.42823
+Uncertainty weights: segmt=0.23745, depth=0.08121
+Epoch 169/250 [2.2min] --- train loss: -0.51044 --- valid loss: -0.42923
+Uncertainty weights: segmt=0.23732, depth=0.08078
+Epoch 170/250 [2.3min] --- train loss: -0.51115 --- valid loss: -0.42704
+Uncertainty weights: segmt=0.23717, depth=0.08035
+Epoch 171/250 [2.2min] --- train loss: -0.51073 --- valid loss: -0.42946
+Uncertainty weights: segmt=0.23711, depth=0.07995
+Epoch 172/250 [2.2min] --- train loss: -0.51010 --- valid loss: -0.42959
+Uncertainty weights: segmt=0.23706, depth=0.07956
+Epoch 173/250 [2.2min] --- train loss: -0.51102 --- valid loss: -0.42824
+Uncertainty weights: segmt=0.23694, depth=0.07917
+Epoch 174/250 [2.2min] --- train loss: -0.51096 --- valid loss: -0.42925
+Uncertainty weights: segmt=0.23686, depth=0.07879
+Epoch 175/250 [2.2min] --- train loss: -0.51179 --- valid loss: -0.42655
+Uncertainty weights: segmt=0.23675, depth=0.07840
+Epoch 176/250 [2.2min] --- train loss: -0.51240 --- valid loss: -0.42741
+Uncertainty weights: segmt=0.23662, depth=0.07804
+Epoch 177/250 [2.2min] --- train loss: -0.51175 --- valid loss: -0.42720
+Uncertainty weights: segmt=0.23654, depth=0.07770
+Epoch 178/250 [2.2min] --- train loss: -0.51248 --- valid loss: -0.42825
+Uncertainty weights: segmt=0.23647, depth=0.07735
+Epoch 179/250 [2.2min] --- train loss: -0.51201 --- valid loss: -0.42584
+Uncertainty weights: segmt=0.23647, depth=0.07701
+Epoch 180/250 [2.2min] --- train loss: -0.51254 --- valid loss: -0.42995
+Uncertainty weights: segmt=0.23640, depth=0.07669
+Epoch 181/250 [2.2min] --- train loss: -0.51470 --- valid loss: -0.42976
+Uncertainty weights: segmt=0.23633, depth=0.07652
+Epoch 182/250 [2.2min] --- train loss: -0.51456 --- valid loss: -0.42917
+Uncertainty weights: segmt=0.23626, depth=0.07636
+Epoch 183/250 [2.3min] --- train loss: -0.51468 --- valid loss: -0.43011
+Uncertainty weights: segmt=0.23624, depth=0.07619
+Epoch 184/250 [2.2min] --- train loss: -0.51520 --- valid loss: -0.42716
+Uncertainty weights: segmt=0.23615, depth=0.07602
+Epoch 185/250 [2.2min] --- train loss: -0.51590 --- valid loss: -0.43002
+Uncertainty weights: segmt=0.23602, depth=0.07586
+Epoch 186/250 [2.2min] --- train loss: -0.51579 --- valid loss: -0.42791
+Uncertainty weights: segmt=0.23594, depth=0.07570
+Epoch 187/250 [2.2min] --- train loss: -0.51670 --- valid loss: -0.42622
+Uncertainty weights: segmt=0.23586, depth=0.07554
+Epoch 188/250 [2.2min] --- train loss: -0.51659 --- valid loss: -0.42756
+Uncertainty weights: segmt=0.23581, depth=0.07538
+Epoch 189/250 [2.2min] --- train loss: -0.51696 --- valid loss: -0.42597
+Uncertainty weights: segmt=0.23572, depth=0.07521
+Epoch 190/250 [2.3min] --- train loss: -0.51577 --- valid loss: -0.42807
+Uncertainty weights: segmt=0.23565, depth=0.07508
+Epoch 191/250 [2.3min] --- train loss: -0.51781 --- valid loss: -0.42988
+Uncertainty weights: segmt=0.23554, depth=0.07493
+Epoch 192/250 [2.2min] --- train loss: -0.51669 --- valid loss: -0.42751
+Uncertainty weights: segmt=0.23548, depth=0.07478
+Epoch 193/250 [2.2min] --- train loss: -0.51631 --- valid loss: -0.42591
+Uncertainty weights: segmt=0.23543, depth=0.07466
+Epoch 194/250 [2.3min] --- train loss: -0.51661 --- valid loss: -0.42627
+Uncertainty weights: segmt=0.23533, depth=0.07452
+Epoch 195/250 [2.2min] --- train loss: -0.51708 --- valid loss: -0.42595
+Uncertainty weights: segmt=0.23526, depth=0.07438
+Epoch 196/250 [2.2min] --- train loss: -0.51719 --- valid loss: -0.42659
+Uncertainty weights: segmt=0.23519, depth=0.07425
+Epoch 197/250 [2.2min] --- train loss: -0.51773 --- valid loss: -0.42781
+Uncertainty weights: segmt=0.23510, depth=0.07412
+Epoch 198/250 [2.3min] --- train loss: -0.51836 --- valid loss: -0.42743
+Uncertainty weights: segmt=0.23500, depth=0.07399
+Epoch 199/250 [2.2min] --- train loss: -0.51675 --- valid loss: -0.42724
+Uncertainty weights: segmt=0.23495, depth=0.07388
+Epoch 200/250 [2.3min] --- train loss: -0.51764 --- valid loss: -0.42402
+Uncertainty weights: segmt=0.23488, depth=0.07376
+Epoch 201/250 [2.3min] --- train loss: -0.51827 --- valid loss: -0.42520
+Uncertainty weights: segmt=0.23478, depth=0.07364
+Epoch 202/250 [2.2min] --- train loss: -0.51761 --- valid loss: -0.42420
+Uncertainty weights: segmt=0.23474, depth=0.07353
+Epoch 203/250 [2.2min] --- train loss: -0.51870 --- valid loss: -0.42528
+Uncertainty weights: segmt=0.23464, depth=0.07341
+Epoch 204/250 [2.2min] --- train loss: -0.51839 --- valid loss: -0.42541
+Uncertainty weights: segmt=0.23459, depth=0.07330
+Epoch 205/250 [2.2min] --- train loss: -0.51846 --- valid loss: -0.42363
+Uncertainty weights: segmt=0.23456, depth=0.07319
+Epoch 206/250 [2.3min] --- train loss: -0.51792 --- valid loss: -0.42690
+Uncertainty weights: segmt=0.23449, depth=0.07309
+Epoch 207/250 [2.2min] --- train loss: -0.51881 --- valid loss: -0.42536
+Uncertainty weights: segmt=0.23439, depth=0.07299
+Epoch 208/250 [2.2min] --- train loss: -0.51896 --- valid loss: -0.42291
+Uncertainty weights: segmt=0.23433, depth=0.07289
+Epoch 209/250 [2.2min] --- train loss: -0.51792 --- valid loss: -0.42564
+Uncertainty weights: segmt=0.23424, depth=0.07281
+Epoch 210/250 [2.2min] --- train loss: -0.51919 --- valid loss: -0.42635
+Uncertainty weights: segmt=0.23418, depth=0.07271
+Epoch 211/250 [2.3min] --- train loss: -0.51881 --- valid loss: -0.42444
+Uncertainty weights: segmt=0.23413, depth=0.07262
+Epoch 212/250 [2.2min] --- train loss: -0.51814 --- valid loss: -0.42426
+Uncertainty weights: segmt=0.23411, depth=0.07254
+Epoch 213/250 [2.2min] --- train loss: -0.51892 --- valid loss: -0.42482
+Uncertainty weights: segmt=0.23407, depth=0.07245
+Epoch 214/250 [2.3min] --- train loss: -0.51813 --- valid loss: -0.42403
+Uncertainty weights: segmt=0.23401, depth=0.07237
+Epoch 215/250 [2.2min] --- train loss: -0.51811 --- valid loss: -0.42409
+Uncertainty weights: segmt=0.23401, depth=0.07230
+Epoch 216/250 [2.2min] --- train loss: -0.51940 --- valid loss: -0.42471
+Uncertainty weights: segmt=0.23392, depth=0.07222
+Epoch 217/250 [2.2min] --- train loss: -0.51840 --- valid loss: -0.42109
+Uncertainty weights: segmt=0.23386, depth=0.07216
+Epoch 218/250 [2.3min] --- train loss: -0.51906 --- valid loss: -0.42308
+Uncertainty weights: segmt=0.23380, depth=0.07209
+Epoch 219/250 [2.2min] --- train loss: -0.52044 --- valid loss: -0.42484
+Uncertainty weights: segmt=0.23375, depth=0.07200
+Epoch 220/250 [2.2min] --- train loss: -0.51932 --- valid loss: -0.42397
+Uncertainty weights: segmt=0.23370, depth=0.07192
+Epoch 221/250 [2.3min] --- train loss: -0.51933 --- valid loss: -0.42494
+Uncertainty weights: segmt=0.23366, depth=0.07185
+Epoch 222/250 [2.2min] --- train loss: -0.51977 --- valid loss: -0.42420
+Uncertainty weights: segmt=0.23364, depth=0.07178
+Epoch 223/250 [2.2min] --- train loss: -0.52024 --- valid loss: -0.42429
+Uncertainty weights: segmt=0.23360, depth=0.07170
+Epoch 224/250 [2.2min] --- train loss: -0.51972 --- valid loss: -0.42279
+Uncertainty weights: segmt=0.23355, depth=0.07163
+Epoch 225/250 [2.2min] --- train loss: -0.51991 --- valid loss: -0.42401
+Uncertainty weights: segmt=0.23349, depth=0.07157
+Epoch 226/250 [2.3min] --- train loss: -0.51988 --- valid loss: -0.42410
+Uncertainty weights: segmt=0.23343, depth=0.07150
+Epoch 227/250 [2.2min] --- train loss: -0.51973 --- valid loss: -0.42310
+Uncertainty weights: segmt=0.23338, depth=0.07145
+Epoch 228/250 [2.2min] --- train loss: -0.51926 --- valid loss: -0.42374
+Uncertainty weights: segmt=0.23338, depth=0.07140
+Epoch 229/250 [2.3min] --- train loss: -0.52003 --- valid loss: -0.42410
+Uncertainty weights: segmt=0.23337, depth=0.07134
+Epoch 230/250 [2.3min] --- train loss: -0.51953 --- valid loss: -0.42460
+Uncertainty weights: segmt=0.23333, depth=0.07129
+Epoch 231/250 [2.2min] --- train loss: -0.52071 --- valid loss: -0.42176
+Uncertainty weights: segmt=0.23327, depth=0.07123
+Epoch 232/250 [2.2min] --- train loss: -0.51866 --- valid loss: -0.42406
+Uncertainty weights: segmt=0.23325, depth=0.07119
+Epoch 233/250 [2.3min] --- train loss: -0.52079 --- valid loss: -0.42193
+Uncertainty weights: segmt=0.23321, depth=0.07113
+Epoch 234/250 [2.3min] --- train loss: -0.52211 --- valid loss: -0.42569
+Uncertainty weights: segmt=0.23313, depth=0.07106
+Epoch 235/250 [2.2min] --- train loss: -0.51935 --- valid loss: -0.42260
+Uncertainty weights: segmt=0.23314, depth=0.07103
+Epoch 236/250 [2.2min] --- train loss: -0.51991 --- valid loss: -0.42412
+Uncertainty weights: segmt=0.23309, depth=0.07099
+Epoch 237/250 [2.2min] --- train loss: -0.52012 --- valid loss: -0.42139
+Uncertainty weights: segmt=0.23305, depth=0.07094
+Epoch 238/250 [2.3min] --- train loss: -0.52173 --- valid loss: -0.42279
+Uncertainty weights: segmt=0.23301, depth=0.07088
+Epoch 239/250 [2.3min] --- train loss: -0.52071 --- valid loss: -0.42352
+Uncertainty weights: segmt=0.23296, depth=0.07084
+Epoch 240/250 [2.2min] --- train loss: -0.52003 --- valid loss: -0.42376
+Uncertainty weights: segmt=0.23290, depth=0.07081
+Epoch 241/250 [2.3min] --- train loss: -0.52184 --- valid loss: -0.42209
+Uncertainty weights: segmt=0.23288, depth=0.07078
+Epoch 242/250 [2.3min] --- train loss: -0.52363 --- valid loss: -0.42276
+Uncertainty weights: segmt=0.23284, depth=0.07074
+Epoch 243/250 [2.2min] --- train loss: -0.52300 --- valid loss: -0.42179
+Uncertainty weights: segmt=0.23279, depth=0.07071
+Epoch 244/250 [2.2min] --- train loss: -0.52163 --- valid loss: -0.42401
+Uncertainty weights: segmt=0.23276, depth=0.07069
+Epoch 245/250 [2.3min] --- train loss: -0.52294 --- valid loss: -0.42202
+Uncertainty weights: segmt=0.23271, depth=0.07066
+Epoch 246/250 [2.2min] --- train loss: -0.52139 --- valid loss: -0.42294
+Uncertainty weights: segmt=0.23268, depth=0.07064
+Epoch 247/250 [2.2min] --- train loss: -0.52290 --- valid loss: -0.42402
+Uncertainty weights: segmt=0.23264, depth=0.07061
+Epoch 248/250 [2.2min] --- train loss: -0.52184 --- valid loss: -0.42159
+Uncertainty weights: segmt=0.23260, depth=0.07059
+Epoch 249/250 [2.2min] --- train loss: -0.52304 --- valid loss: -0.42383
+Uncertainty weights: segmt=0.23257, depth=0.07057
+Epoch 250/250 [2.2min] --- train loss: -0.52292 --- valid loss: -0.42341
+Uncertainty weights: segmt=0.23254, depth=0.07054
+Training done
+=======================================
+Pix Acc: 0.9353, mIoU: 0.6616
+Scores - RMSE: 175.6856, iRMSE: 0.0119, iRMSE log: 0.4523, Abs: 0.0118, Abs Rel: 0.1862, Sqrt Rel: 0.0108, delta1: 0.7711, delta2: 0.8961, delta3: 0.9402

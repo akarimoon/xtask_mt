@@ -46,7 +46,6 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
     return image_loss.item() + label_loss.item()
 
 if __name__=='__main__':
-    torch.multiprocessing.set_sharing_strategy('file_system')
     # torch.manual_seed(0)
     opt = cityscapes_xtask_parser()
     opt.betas = (opt.b1, opt.b2)
