@@ -256,6 +256,8 @@ class XTaskLoss(nn.Module):
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=250, reduction='mean')
         self.t_depth_loss_type = t_depth_loss_type
 
+        self.nonlinear = nn.LogSoftmax(dim=1)
+
         if image_loss_type == "L1":
             self.image_loss = self.masked_L1_loss
         elif image_loss_type == "MSE":
@@ -350,10 +352,10 @@ class XTaskLoss(nn.Module):
             grad_loss = 0
 
         depth_loss = self.image_loss(pred_depth, targ_depth, mask_depth)
-        tdep_loss = self.tdep_loss(pred_t_depth.clone(), pred_depth.clone().detach(), mask_depth)
+        tdep_loss = self.tdep_loss(pred_t_depth, pred_depth.clone().detach(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
-        tseg_loss = self.tseg_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone().detach(), dim=1), mask_segmt)
+        tseg_loss = self.tseg_loss(pred_t_segmt, torch.argmax(self.nonlinear(pred_segmt.clone().detach()), dim=1), mask_segmt)
         
         if log_vars is None:
             image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp

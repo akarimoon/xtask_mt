@@ -91,12 +91,12 @@ if __name__=='__main__':
                     )
     model.to(device)
 
-    model = torch.nn.DataParallel(model) # make parallel
-    # cudnn.benchmark = True
+    # model = torch.nn.DataParallel(model) # make parallel
+    # # cudnn.benchmark = True
 
     parameters_to_train = [p for p in model.parameters()]
     print("TransferNet type:")
-    print("   {}".format(model.module.trans_name))
+    print("   {}".format(model.trans_name))
     
     print("Options:")
     log_vars = None
@@ -178,7 +178,7 @@ if __name__=='__main__':
             if not opt.debug:
                 if epoch == 0 or valid_loss < best_valid_loss:
                     print("Saving weights...")
-                    weights = model.module.state_dict()
+                    weights = model.state_dict()
                     torch.save(weights, weights_path)
                     best_valid_loss = valid_loss
                     save_at_epoch = epoch
@@ -201,7 +201,7 @@ if __name__=='__main__':
         print("Infer only mode -> skip training...")
 
     if not opt.debug:
-        model.module.load_state_dict(torch.load(weights_path, map_location=device))
+        model.load_state_dict(torch.load(weights_path, map_location=device))
 
     logger = Logger(num_classes=opt.num_classes)
     best_loss = 1e5
@@ -243,7 +243,7 @@ if __name__=='__main__':
     logger.get_scores()
 
     if not opt.infer_only:
-        write_results(logger, opt, model.module, exp_num=exp_num)
-        write_indv_results(opt, model.module, folder_path=results_dir)
+        write_results(logger, opt, model, exp_num=exp_num)
+        write_indv_results(opt, model, folder_path=results_dir)
 
     make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses, valid_losses)

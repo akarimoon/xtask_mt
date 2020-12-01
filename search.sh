@@ -6,7 +6,7 @@
 cd $PBS_O_WORKDIR
 source /lustre/po9025/o09025/.bashrc
 conda activate pytorch
-export CUDA_VISIBLE_DEVICES=0,1
+export CUDA_VISIBLE_DEVICES=0 
 
-python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm -b 12 --lr 0.0002 -j 8 --gamma 0.0 --alpha 0.0
-python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm -b 12 --lr 0.0002 -j 8 --gamma 0.0
+python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm -e 200 --use_pretrain
+python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm -e 200 --use_pretrain --alpha 0.0 --gamma 0.0
