@@ -1,10 +1,10 @@
 #!/bin/bash
 
-python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm
+# python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --run_only --notqdm
 
 # (i)
 python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --alpha 0.0 --run_only --notqdm
-python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --gamma 0.0  --run_only --notqdm
+python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --gamma 0.0 --run_only --notqdm
 python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights --alpha 0.0 --gamma 0.0 --run_only --notqdm
 
 # (ii)
