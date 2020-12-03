@@ -112,7 +112,8 @@ class XTaskTSNet(nn.Module):
 
     def _load_encoder(self, enc_layers):
         backbone = models.resnet34(pretrained=False)
-        backbone.load_state_dict(torch.load('./model/resnet34-333f7ec4.pth'))
+        if self.use_pretrain:
+            backbone.load_state_dict(torch.load('./model/resnet34-333f7ec4.pth'))
         pretrained = nn.Module()
         pretrained.layer0 = nn.Sequential(
                                 backbone.conv1,
