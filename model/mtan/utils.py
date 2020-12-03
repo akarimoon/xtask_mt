@@ -7,7 +7,6 @@ import numpy as np
 Define task metrics, loss functions and model trainer here.
 """
 
-
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -109,7 +108,7 @@ def normal_error(x_pred, x_output):
 """
 
 
-def multi_task_trainer(train_loader, test_loader, multi_task_model, device, optimizer, scheduler, opt, total_epoch=200, is_cs=False):
+def multi_task_trainer(train_loader, test_loader, multi_task_model, device, optimizer, scheduler, opt, total_epoch=200, is_cs=False, num_tasks=2):
     train_batch = len(train_loader)
     test_batch = len(test_loader)
     T = opt.temp
@@ -130,20 +129,24 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                 lambda_weight[1, index] = 3 * np.exp(w_2 / T) / (np.exp(w_1 / T) + np.exp(w_2 / T) + np.exp(w_3 / T))
 
         # iteration for all batches
-        if is_cs:
+        if num_tasks == 2:
             # iteration for all batches
             multi_task_model.train()
             train_dataset = iter(train_loader)
             for k in range(train_batch):
-                train_data, train_label, train_depth = train_dataset.next()
+                if is_cs:
+                    train_data, train_label, train_depth = train_dataset.next()
+                else:
+                    train_data, train_label, train_depth, _ = train_dataset.next()
+
                 train_data, train_label = train_data.to(device), train_label.long().to(device)
                 train_depth = train_depth.to(device)
 
                 train_pred, logsigma = multi_task_model(train_data)
 
                 optimizer.zero_grad()
-                train_loss = [model_fit(train_pred[0], train_label, 'semantic', is_cs=True),
-                            model_fit(train_pred[1], train_depth, 'depth', is_cs=True)]
+                train_loss = [model_fit(train_pred[0], train_label, 'semantic', is_cs=is_cs),
+                            model_fit(train_pred[1], train_depth, 'depth', is_cs=is_cs)]
 
                 if opt.weight == 'equal' or opt.weight == 'dwa':
                     loss = sum([lambda_weight[i, index] * train_loss[i] for i in range(2)])
@@ -154,8 +157,8 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                 optimizer.step()
 
                 cost[0] = train_loss[0].item()
-                cost[1] = compute_miou(train_pred[0], train_label, is_cs=True).item()
-                cost[2] = compute_iou(train_pred[0], train_label, is_cs=True).item()
+                cost[1] = compute_miou(train_pred[0], train_label, is_cs=is_cs).item()
+                cost[2] = compute_iou(train_pred[0], train_label, is_cs=is_cs).item()
                 cost[3] = train_loss[1].item()
                 cost[4], cost[5] = depth_error(train_pred[1], train_depth)
                 avg_cost[index, :6] += cost[:6] / train_batch
@@ -165,17 +168,20 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
             with torch.no_grad():  # operations inside don't track history
                 test_dataset = iter(test_loader)
                 for k in range(test_batch):
-                    test_data, test_label, test_depth = test_dataset.next()
+                    if is_cs:
+                        test_data, test_label, test_depth = test_dataset.next()
+                    else:
+                        test_data, test_label, test_depth, _ = test_dataset.next()
                     test_data, test_label = test_data.to(device), test_label.long().to(device)
                     test_depth = test_depth.to(device)
 
                     test_pred, _ = multi_task_model(test_data)
-                    test_loss = [model_fit(test_pred[0], test_label, 'semantic', is_cs=True),
-                                model_fit(test_pred[1], test_depth, 'depth', is_cs=True)]
+                    test_loss = [model_fit(test_pred[0], test_label, 'semantic', is_cs=is_cs),
+                                model_fit(test_pred[1], test_depth, 'depth', is_cs=is_cs)]
 
                     cost[6] = test_loss[0].item()
-                    cost[7] = compute_miou(test_pred[0], test_label, is_cs=True).item()
-                    cost[8] = compute_iou(test_pred[0], test_label, is_cs=True).item()
+                    cost[7] = compute_miou(test_pred[0], test_label, is_cs=is_cs).item()
+                    cost[8] = compute_iou(test_pred[0], test_label, is_cs=is_cs).item()
                     cost[9] = test_loss[1].item()
                     cost[10], cost[11] = depth_error(test_pred[1], test_depth)
 
