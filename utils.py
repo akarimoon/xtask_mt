@@ -181,6 +181,9 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
 From MTAN
 https://github.com/lorenmt/mtan
 """
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 def compute_miou(x_pred, x_output, ignore_index=250):
     _, x_pred_label = torch.max(x_pred, dim=1)
     x_output_label = x_output
