@@ -14,6 +14,7 @@ class Logger():
     """
     def __init__(self, num_classes=19, ignore_index=250):
         self.pixel_acc = 0
+        self.iou = []
         self.miou = 0
         self.rmse = 0
         self.irmse = 0
@@ -40,10 +41,12 @@ class Logger():
         device = x_pred.device
 
         batch_avg = 0
+        ious = []
         for i in range(batch_size):
             true_class = 0
             class_prob = 0
             mask = (x_output[i] != self.ignore_index).float()
+            batch_ious = []
 
             for j in range(self.num_classes):
                 pred_mask = torch.eq(x_pred_label[i], j * torch.ones(x_pred_label[i].shape).long().to(device))
@@ -52,11 +55,18 @@ class Logger():
                 union = torch.sum((mask_comb > 0).float() * mask)  # remove non-defined pixel predictions
                 intsec = torch.sum((mask_comb > 1).float())
                 if union == 0:
+                    batch_ious.append(np.nan)
                     continue
                 class_prob += intsec / union
                 true_class += 1
+                batch_ious.append((intsec / union).item())
                 
             batch_avg += class_prob / true_class
+            ious.append(batch_ious)
+        
+        ious = np.array(ious)
+        self.iou.append(np.nanmean(ious, axis=0))
+
         return batch_avg / batch_size
 
     def _compute_pixacc(self, x_pred, x_output):
@@ -165,6 +175,7 @@ class Logger():
 
     def get_scores(self):
         self.pixel_acc /= self.count
+        print(np.mean(self.iou, axis=0))
         self.miou /= self.count
         self.rmse /= self.count
         self.irmse /= self.count
@@ -256,6 +267,8 @@ class XTaskLoss(nn.Module):
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=250, reduction='mean')
         self.t_depth_loss_type = t_depth_loss_type
 
+        self.nonlinear = nn.LogSoftmax(dim=1)
+
         if image_loss_type == "L1":
             self.image_loss = self.masked_L1_loss
         elif image_loss_type == "MSE":
@@ -344,23 +357,22 @@ class XTaskLoss(nn.Module):
         if mask_depth is None:
             mask_depth = torch.ones_like(targ_depth)
 
-        if self.grad_loss:
-            grad_loss = self.depth_grad_loss(pred_depth, targ_depth, mask_depth)
-        else:
-            grad_loss = 0
-
         depth_loss = self.image_loss(pred_depth, targ_depth, mask_depth)
-        tdep_loss = self.tdep_loss(pred_t_depth.clone(), pred_depth.clone().detach(), mask_depth)
+        tdep_loss = self.tdep_loss(pred_t_depth, pred_depth.detach().clone(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
-        tseg_loss = self.tseg_loss(pred_t_segmt.clone(), torch.argmax(pred_segmt.clone().detach(), dim=1), mask_segmt)
-        
-        if log_vars is None:
-            image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp
-            label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss / self.temp
+        tseg_loss = self.tseg_loss(pred_t_segmt, torch.argmax(self.nonlinear(pred_segmt.detach().clone()), dim=1), mask_segmt)
 
-        elif len(log_vars) == 2:
-            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp + grad_loss
+        if log_vars is None:
+            # image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp
+            # label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss / self.temp
+            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp
+            label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss / self.temp
+            image_loss = image_loss_tmp.item() / (image_loss_tmp.item() + label_loss_tmp.item()) * image_loss_tmp
+            label_loss = label_loss_tmp.item() / (image_loss_tmp.item() + label_loss_tmp.item()) * label_loss_tmp
+
+        else:
+            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp
             label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss / self.temp
             image_loss = 0.5 * torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
             label_loss = 0.5 * torch.exp(-log_vars[1]) * label_loss_tmp + log_vars[1]
