@@ -8,4 +8,5 @@ source /lustre/po9025/o09025/.bashrc
 conda activate pytorch
 export CUDA_VISIBLE_DEVICES=0, 1 
 
-python main_cross_cs.py --uncertainty_weights --run_only --notqdm -e 200 --alpha 0.0 --gamma 0.0 -j 8
+python main_cross_cs.py --uncertainty_weights --run_only --notqdm -e 200 -j 8
+python main_cross_cs.py --uncertainty_weights --label_smoothing 0.1 --run_only --notqdm -e 200 -j 8

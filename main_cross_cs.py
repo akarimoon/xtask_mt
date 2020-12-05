@@ -46,7 +46,7 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
     return image_loss.item() + label_loss.item()
 
 if __name__=='__main__':
-    torch.manual_seed(0)
+    torch.manual_seed(42)
     opt = cityscapes_xtask_parser()
     opt.betas = (opt.b1, opt.b2)
 
