@@ -73,6 +73,8 @@ def nyu_xtask_parser():
                         help='flag: debug mode, dont save weights')
     parser.add_argument('--notqdm', action='store_true',
                         help='flag: disable tqdm')
+    parser.add_argument('--multiple_gpu', action='store_true',
+                        help='flag: run on multiple gpus')
 
     args = parser.parse_args()
 
@@ -154,6 +156,8 @@ def cityscapes_xtask_parser():
                         help='flag: debug mode, dont save weights')
     parser.add_argument('--notqdm', action='store_true',
                         help='flag: disable tqdm')
+    parser.add_argument('--multiple_gpu', action='store_true',
+                        help='flag: run on multiple gpus')
 
     args = parser.parse_args()
 

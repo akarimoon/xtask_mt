@@ -9,7 +9,6 @@ from torch import optim
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
 from tqdm import tqdm
 
 from dataloader import CityscapesDataset
@@ -98,6 +97,9 @@ if __name__=='__main__':
     
     print("Options:")
     log_vars = None
+    if opt.multiple_gpu:
+        print("   multiple GPUs")
+        model = torch.nn.DataParallel(model)
     if opt.uncertainty_weights:
         print("   use uncertainty weights")
         """
@@ -172,7 +174,10 @@ if __name__=='__main__':
             if not opt.debug:
                 if epoch == 0 or valid_loss < best_valid_loss:
                     print("Saving weights...")
-                    weights = model.state_dict()
+                    if not opt.multiple_gpu:
+                        weights = model.state_dict()
+                    else:
+                        weights = model.module.state_dict()
                     torch.save(weights, weights_path)
                     best_valid_loss = valid_loss
                     save_at_epoch = epoch
@@ -195,7 +200,10 @@ if __name__=='__main__':
         print("Infer only mode -> skip training...")
 
     if not opt.debug:
-        model.load_state_dict(torch.load(weights_path, map_location=device))
+        if not opt.multiple_gpu:
+            model.load_state_dict(torch.load(weights_path, map_location=device))
+        else:
+            model.module.load_state_dict(torch.load(weights_path, map_location=device))
 
     logger = Logger(num_classes=opt.num_classes, ignore_index=opt.ignore_index)
     best_loss = 1e5
@@ -237,7 +245,11 @@ if __name__=='__main__':
     logger.get_scores()
 
     if not opt.infer_only:
-        write_results(logger, opt, model, exp_num=exp_num)
-        write_indv_results(opt, model, folder_path=results_dir)
+        if not opt.multiple_gpu:
+            write_results(logger, opt, model, exp_num=exp_num)
+            write_indv_results(opt, model, folder_path=results_dir)
+        else:
+            write_results(logger, opt, model.module, exp_num=exp_num)
+            write_indv_results(opt, model.module, folder_path=results_dir)
 
     make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses, valid_losses)
