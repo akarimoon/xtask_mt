@@ -144,10 +144,14 @@ class Logger():
         """
         preds = [p.cpu().numpy() for p in preds]
         targets = [t.cpu().numpy() for t in targets]
-        masks = [m.cpu().numpy() for m in masks]
         preds_segmt, preds_depth = preds
         targets_segmt, targets_depth = targets
-        masks_segmt, masks_depth = masks
+        if masks is not None:
+            masks = [m.cpu().numpy() for m in masks]
+            masks_segmt, masks_depth = masks
+        else:
+            masks_segmt = np.ones_like(targets_segmt)
+            masks_depth = np.ones_like(targets_depth)
 
         inv_preds_depth = np.copy(preds_depth)
         inv_targets_depth = np.copy(targets_depth)
@@ -170,7 +174,7 @@ class Logger():
 
     def get_scores(self):
         self.pixel_acc /= self.count
-        print("IoU: ", np.mean(self.iou, axis=0))
+        print("IoU: ", np.around(np.mean(self.iou, axis=0), decimals=5))
         self.miou /= self.count
         self.rmse /= self.count
         self.irmse /= self.count
@@ -254,6 +258,7 @@ class XTaskLoss(nn.Module):
                  image_loss_type="MSE", t_segmt_loss_type="cross", t_depth_loss_type="ssim",
                  ignore_index=250):
         super(XTaskLoss, self).__init__()
+        self.num_classes = num_classes
         self.alpha = alpha
         self.gamma = gamma
         self.image_loss_type = image_loss_type
@@ -327,7 +332,7 @@ class XTaskLoss(nn.Module):
 
     def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, log_vars=None):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
-        if mask_segmt is None:
+        if self.num_classes != 13 and mask_segmt is None:
             mask_segmt = torch.ones_like(targ_segmt)
         if mask_depth is None:
             mask_depth = torch.ones_like(targ_depth)

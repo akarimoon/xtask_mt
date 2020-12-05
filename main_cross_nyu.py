@@ -43,6 +43,7 @@ if __name__ == '__main__':
     torch.manual_seed(0)
     opt = nyu_xtask_parser()
     opt.betas = (opt.b1, opt.b2)
+    opt.num_classes = 13
 
     print("Initializing...")
     if not os.path.exists(opt.save_path):
@@ -65,17 +66,26 @@ if __name__ == '__main__':
     print("   predicting at size [{}*{}]".format(opt.height, opt.width))
     print("   using ResNet{}, optimizer: Adam (lr={}, beta={}), scheduler: StepLR({}, {})".format(
         opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
-    print("   loss function --- Lp_depth: {}, tsegmt: {}, alpha: {}, gamma: {}, smoothing: {}".format(
-        opt.lp, opt.tseg_loss, opt.alpha, opt.gamma, opt.label_smoothing))
+    print("   loss function --- Lp_depth: {}, tsegmt: {}, tdepth: {}".format(
+        opt.lp, opt.tseg_loss, opt.tdep_loss))
+    print("   hyperparameters --- alpha: {}, gamma: {}, smoothing: {}".format(
+        opt.alpha, opt.gamma, opt.label_smoothing))
     print("   batch size: {}, train for {} epochs".format(
         opt.batch_size, opt.epochs))
+    print("   batch_norm={}, wider_ttnet={}".format(
+        opt.batch_norm, opt.wider_ttnet))
 
     device_name = "cpu" if opt.cpu else "cuda"
     device = torch.device(device_name)
     print("   device: {}".format(device))
-    model = XTaskTSNet(enc_layers=opt.enc_layers, out_features_segmt=13)
+    model = XTaskTSNet(enc_layers=opt.enc_layers, 
+                        out_features_segmt=opt.num_classes,
+                        batch_norm=opt.batch_norm, wider_ttnet=opt.wider_ttnet,
+                        use_pretrain=opt.use_pretrain
+                        )
     model.to(device)
     parameters_to_train = [p for p in model.parameters()]
+    print("Parameter Space: {}".format(count_parameters(model)))
     print("TransferNet type:")
     print("   {}".format(model.trans_name))
     
@@ -91,8 +101,6 @@ if __name__ == '__main__':
         log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
         log_vars = [log_var_a, log_var_b]
         parameters_to_train += log_vars
-    if opt.grad_loss:
-        print("   use grad loss (k=1), no scaling")
 
     print("Loading dataset...")
     train_data = NYUv2(root_path=opt.input_path, split='train')
@@ -100,8 +108,10 @@ if __name__ == '__main__':
 
     train = DataLoader(train_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
     valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
-    criterion = XTaskLoss(num_classes=13, alpha=opt.alpha, gamma=opt.gamma, label_smoothing=opt.label_smoothing,
-                          image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, grad_loss=opt.grad_loss).to(device)
+    criterion = XTaskLoss(num_classes=opt.num_classes, 
+                          alpha=opt.alpha, gamma=opt.gamma, label_smoothing=opt.label_smoothing,
+                          image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
+                          ignore_index=opt.ignore_index).to(device)
     optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
     scheduler = optim.lr_scheduler.StepLR(optimizer, opt.scheduler_step_size, opt.scheduler_gamma)
 
@@ -166,47 +176,51 @@ if __name__ == '__main__':
         np.save(os.path.join(results_dir, "model", "va_losses.npy".format(opt.alpha, opt.gamma)), valid_losses)
 
     else:
+        train_losses = None
+        valid_losses = None
+        save_at_epoch = 0
         print("Infer only mode -> skip training...")
 
     if not opt.debug:
         model.load_state_dict(torch.load(weights_path, map_location=device))
 
-    logger = Logger(num_classes=opt.num_classes)
+    logger = Logger(num_classes=opt.num_classes, ignore_index=opt.ignore_index)
     best_loss = 1e5
+    best_set = {}
 
+    model.eval()
     with torch.no_grad():
         for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
-            original, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
+            batch_X, batch_y_segmt, batch_y_depth = batch
             batch_X = batch_X.to(device, non_blocking=True)
             batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
             batch_y_depth = batch_y_depth.to(device, non_blocking=True)
-            batch_mask_segmt = batch_mask_segmt.to(device, non_blocking=True)
-            batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
 
             predicted = model(batch_X)
-            image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth,
-                                               batch_mask_segmt, batch_mask_depth)
+            image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth)
 
             pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
 
             preds = [pred_segmt, pred_depth]
             targets = [batch_y_segmt, batch_y_depth]
-            masks = [batch_mask_segmt, batch_mask_depth]
-            logger.log(preds, targets, masks)
+            logger.log(preds, targets)
 
             # use best results for final plot
-            loss = compute_miou(pred_segmt, batch_y_segmt) - depth_error(pred_depth, batch_y_depth)[0]
+            loss = overall_score(preds, targets)
             if i == 0 or loss < best_loss:
-                best_loss = loss
-                best_original = original
-                best_y_depth = batch_y_depth
-                best_pred_segmt = pred_segmt
-                best_pred_depth = pred_depth
-                best_pred_tsegmt = pred_t_segmt
-                best_pred_tdepth = pred_t_depth
-            
+                best_set["loss"] = loss
+                best_set["original"] = batch_X
+                best_set["targ_segmt"] = batch_y_segmt
+                best_set["targ_depth"] = batch_y_depth
+                best_set["pred_segmt"] = pred_segmt
+                best_set["pred_depth"] = pred_depth
+                best_set["pred_tsegmt"] = pred_t_segmt
+                best_set["pred_tdepth"] = pred_t_depth
+
     logger.get_scores()
 
     if not opt.infer_only:
         write_results(logger, opt, model, exp_num=exp_num)
         write_indv_results(opt, model, folder_path=results_dir)
+
+    make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses, valid_losses, is_nyu=True)
