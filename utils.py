@@ -11,17 +11,17 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
         f.write("=" * 10 + "\n")
         if exp_num is not None:
             f.write("Experiment #{}\n".format(exp_num))
-        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, alpha={}, gamma={}, temp:{}, smoothing={}\n".format(
-            opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss, opt.alpha, opt.gamma, opt.temp, opt.label_smoothing
+        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, alpha={}, gamma={}, smoothing={}\n".format(
+            opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss, opt.alpha, opt.gamma, opt.label_smoothing
         ))
         f.write("Use pretrained encoder: {} (if not written, then False)\n".format(opt.use_pretrain))
         f.write("Optimizer: Adam, Scheduler: StepLR(step size={}, gamma={})\n".format(opt.scheduler_step_size, opt.scheduler_gamma))
         if opt.num_classes != 19:
             f.write("# of classes: {}\n".format(opt.num_classes))
-        f.write("shallow decoder: {} (if not written, then True)\n".format(opt.is_shallow))
         f.write("   batch norm in ttnet: {} (if not written, then False)\n".format(opt.batch_norm))
-        f.write("transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(
-            model.trans_name, opt.uncertainty_weights, opt.grad_loss))
+        f.write("   wider ttnet: {} (if not written, then False)\n".format(opt.wider_ttnet))
+        f.write("transfernet type: {}, use_uncertainty: {}\n".format(
+            model.trans_name, opt.uncertainty_weights))
             
         print_segmt_str = "Pix Acc: {:.4f}, mIoU: {:.4f}\n"
         f.write(print_segmt_str.format(
@@ -47,10 +47,10 @@ def write_indv_results(opt, model, folder_path):
             opt.alpha, opt.gamma, opt.label_smoothing
         ))
         f.write("   use pretrained encoder: {} (if not written, then False)\n".format(opt.use_pretrain))
-        f.write("   shallow decoder: {} (if not written, then True)\n".format(opt.is_shallow))
         f.write("   batch norm in ttnet: {} (if not written, then False)\n".format(opt.batch_norm))
-        f.write("   transfernet type: {}, use_uncertainty: {}, use gradloss: {}\n".format(
-            model.trans_name, opt.uncertainty_weights, opt.grad_loss))
+        f.write("   wider ttnet: {} (if not written, then False)\n".format(opt.wider_ttnet))
+        f.write("   transfernet type: {}, use_uncertainty: {}\n".format(
+            model.trans_name, opt.uncertainty_weights))
 
 def make_results_dir(folder_path="./tmp"):
     i = 1
@@ -208,7 +208,6 @@ def compute_miou(x_pred, x_output, ignore_index=250):
         
         batch_avg += class_prob / true_class
     return batch_avg / batch_size
-
 
 def compute_iou(x_pred, x_output, ignore_index=250):
     _, x_pred_label = torch.max(x_pred, dim=1)
