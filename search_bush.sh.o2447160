@@ -1,0 +1,248 @@
+Downloading: "https://github.com/pytorch/vision/archive/v0.6.0.zip" to /home/po9025/o09025/.cache/torch/hub/v0.6.0.zip
+Initializing...
+Parameters:
+   predicting at size [128*256]
+   # of classes: 7
+   using ResNet34, optimizer: Adam (lr=0.0001, beta=(0.9, 0.99)), scheduler: StepLR(60, 0.5)
+   loss function --- Lp_depth: L1, tsegmt: cross, tdepth: L1
+   hyperparameters --- alpha: 0.01, gamma: 0.01, smoothing: 0.0
+   batch size: 6, train for 200 epochs
+   batch_norm=False, wider_ttnet=False
+   device: cuda
+Traceback (most recent call last):
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1319, in do_open
+    encode_chunked=req.has_header('Transfer-encoding'))
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1262, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1308, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1257, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1028, in _send_output
+    self.send(msg)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 968, in send
+    self.connect()
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1424, in connect
+    super().connect()
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 940, in connect
+    (self.host,self.port), self.timeout, self.source_address)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/socket.py", line 707, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/socket.py", line 752, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "main_cross_cs.py", line 90, in <module>
+    use_pretrain=opt.use_pretrain
+  File "/lustre/po9025/o09025/xtask_mt/model/xtask_ts.py", line 94, in __init__
+    self.pretrained_encoder = self._load_encoder(enc_layers)
+  File "/lustre/po9025/o09025/xtask_mt/model/xtask_ts.py", line 114, in _load_encoder
+    backbone = torch.hub.load('pytorch/vision:v0.6.0', 'resnet' + str(enc_layers), pretrained=self.use_pretrain)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 368, in load
+    repo_or_dir = _get_cache_or_reload(repo_or_dir, force_reload, verbose)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 141, in _get_cache_or_reload
+    download_url_to_file(url, cached_file, progress=False)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 425, in download_url_to_file
+    u = urlopen(req)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 222, in urlopen
+    return opener.open(url, data, timeout)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 525, in open
+    response = self._open(req, data)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 543, in _open
+    '_open', req)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 503, in _call_chain
+    result = func(*args)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1362, in https_open
+    context=self._context, check_hostname=self._check_hostname)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1321, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno -2] Name or service not known>
+Downloading: "https://github.com/pytorch/vision/archive/v0.6.0.zip" to /home/po9025/o09025/.cache/torch/hub/v0.6.0.zip
+Initializing...
+Parameters:
+   predicting at size [128*256]
+   # of classes: 7
+   using ResNet34, optimizer: Adam (lr=0.0001, beta=(0.9, 0.99)), scheduler: StepLR(60, 0.5)
+   loss function --- Lp_depth: L1, tsegmt: cross, tdepth: L1
+   hyperparameters --- alpha: 0.01, gamma: 0.01, smoothing: 0.1
+   batch size: 6, train for 200 epochs
+   batch_norm=False, wider_ttnet=False
+   device: cuda
+Traceback (most recent call last):
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1319, in do_open
+    encode_chunked=req.has_header('Transfer-encoding'))
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1262, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1308, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1257, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1028, in _send_output
+    self.send(msg)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 968, in send
+    self.connect()
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1424, in connect
+    super().connect()
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 940, in connect
+    (self.host,self.port), self.timeout, self.source_address)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/socket.py", line 707, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/socket.py", line 752, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "main_cross_cs.py", line 90, in <module>
+    use_pretrain=opt.use_pretrain
+  File "/lustre/po9025/o09025/xtask_mt/model/xtask_ts.py", line 94, in __init__
+    self.pretrained_encoder = self._load_encoder(enc_layers)
+  File "/lustre/po9025/o09025/xtask_mt/model/xtask_ts.py", line 114, in _load_encoder
+    backbone = torch.hub.load('pytorch/vision:v0.6.0', 'resnet' + str(enc_layers), pretrained=self.use_pretrain)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 368, in load
+    repo_or_dir = _get_cache_or_reload(repo_or_dir, force_reload, verbose)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 141, in _get_cache_or_reload
+    download_url_to_file(url, cached_file, progress=False)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 425, in download_url_to_file
+    u = urlopen(req)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 222, in urlopen
+    return opener.open(url, data, timeout)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 525, in open
+    response = self._open(req, data)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 543, in _open
+    '_open', req)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 503, in _call_chain
+    result = func(*args)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1362, in https_open
+    context=self._context, check_hostname=self._check_hostname)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1321, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno -2] Name or service not known>
+Downloading: "https://github.com/pytorch/vision/archive/v0.6.0.zip" to /home/po9025/o09025/.cache/torch/hub/v0.6.0.zip
+Initializing...
+Parameters:
+   predicting at size [128*256]
+   # of classes: 7
+   using ResNet34, optimizer: Adam (lr=0.0001, beta=(0.9, 0.99)), scheduler: StepLR(60, 0.5)
+   loss function --- Lp_depth: L1, tsegmt: cross, tdepth: L1
+   hyperparameters --- alpha: 0.0, gamma: 0.0, smoothing: 0.0
+   batch size: 6, train for 200 epochs
+   batch_norm=False, wider_ttnet=False
+   device: cuda
+Traceback (most recent call last):
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1319, in do_open
+    encode_chunked=req.has_header('Transfer-encoding'))
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1262, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1308, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1257, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1028, in _send_output
+    self.send(msg)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 968, in send
+    self.connect()
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1424, in connect
+    super().connect()
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 940, in connect
+    (self.host,self.port), self.timeout, self.source_address)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/socket.py", line 707, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/socket.py", line 752, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "main_cross_cs.py", line 90, in <module>
+    use_pretrain=opt.use_pretrain
+  File "/lustre/po9025/o09025/xtask_mt/model/xtask_ts.py", line 94, in __init__
+    self.pretrained_encoder = self._load_encoder(enc_layers)
+  File "/lustre/po9025/o09025/xtask_mt/model/xtask_ts.py", line 114, in _load_encoder
+    backbone = torch.hub.load('pytorch/vision:v0.6.0', 'resnet' + str(enc_layers), pretrained=self.use_pretrain)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 368, in load
+    repo_or_dir = _get_cache_or_reload(repo_or_dir, force_reload, verbose)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 141, in _get_cache_or_reload
+    download_url_to_file(url, cached_file, progress=False)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 425, in download_url_to_file
+    u = urlopen(req)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 222, in urlopen
+    return opener.open(url, data, timeout)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 525, in open
+    response = self._open(req, data)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 543, in _open
+    '_open', req)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 503, in _call_chain
+    result = func(*args)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1362, in https_open
+    context=self._context, check_hostname=self._check_hostname)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1321, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno -2] Name or service not known>
+Downloading: "https://github.com/pytorch/vision/archive/v0.6.0.zip" to /home/po9025/o09025/.cache/torch/hub/v0.6.0.zip
+Initializing...
+Parameters:
+   predicting at size [128*256]
+   # of classes: 7
+   using ResNet34, optimizer: Adam (lr=0.0001, beta=(0.9, 0.99)), scheduler: StepLR(60, 0.5)
+   loss function --- Lp_depth: L1, tsegmt: cross, tdepth: L1
+   hyperparameters --- alpha: 0.0, gamma: 0.0, smoothing: 0.1
+   batch size: 6, train for 200 epochs
+   batch_norm=False, wider_ttnet=False
+   device: cuda
+Traceback (most recent call last):
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1319, in do_open
+    encode_chunked=req.has_header('Transfer-encoding'))
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1262, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1308, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1257, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1028, in _send_output
+    self.send(msg)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 968, in send
+    self.connect()
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 1424, in connect
+    super().connect()
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/http/client.py", line 940, in connect
+    (self.host,self.port), self.timeout, self.source_address)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/socket.py", line 707, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/socket.py", line 752, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "main_cross_cs.py", line 90, in <module>
+    use_pretrain=opt.use_pretrain
+  File "/lustre/po9025/o09025/xtask_mt/model/xtask_ts.py", line 94, in __init__
+    self.pretrained_encoder = self._load_encoder(enc_layers)
+  File "/lustre/po9025/o09025/xtask_mt/model/xtask_ts.py", line 114, in _load_encoder
+    backbone = torch.hub.load('pytorch/vision:v0.6.0', 'resnet' + str(enc_layers), pretrained=self.use_pretrain)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 368, in load
+    repo_or_dir = _get_cache_or_reload(repo_or_dir, force_reload, verbose)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 141, in _get_cache_or_reload
+    download_url_to_file(url, cached_file, progress=False)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/site-packages/torch/hub.py", line 425, in download_url_to_file
+    u = urlopen(req)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 222, in urlopen
+    return opener.open(url, data, timeout)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 525, in open
+    response = self._open(req, data)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 543, in _open
+    '_open', req)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 503, in _call_chain
+    result = func(*args)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1362, in https_open
+    context=self._context, check_hostname=self._check_hostname)
+  File "/lustre/po9025/o09025/anaconda/envs/pytorch/lib/python3.7/urllib/request.py", line 1321, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno -2] Name or service not known>
