@@ -9,11 +9,16 @@ def nyu_xtask_parser():
                         help='height of output (default: 288)')
     parser.add_argument('--width', type=int, default=384,
                         help='width of output (default: 384)')
+    parser.add_argument('--ignore_index', type=int, default=-1,
+                        help='ignore index (default: -1)')
 
-    parser.add_argument('-e', '--epochs', type=int, default=50,
-                        help='number of epochs (default: 50)')
+    parser.add_argument('-e', '--epochs', type=int, default=100,
+                        help='number of epochs (default: 100)')
     parser.add_argument('--enc_layers', type=int, default=34,
                         help='type of ResNet encoder (default: 34)')
+    parser.add_argument('--use_pretrain', action='store_true',
+                        help='flag: use pretrained encoder (default: False)')
+
     parser.add_argument('-b', '--batch_size', type=int, default=6,
                         help='batch size (default: 6)')
     parser.add_argument('--lr', '--learning_rate', type=float, default=0.0001,
@@ -22,28 +27,31 @@ def nyu_xtask_parser():
                         help='beta_1 of Adam (default: 0.9)')
     parser.add_argument('--b2', '--beta_2', type=float, default=0.99,
                         help='beta_2 of Adam (default: 0.99)')
-    parser.add_argument('--scheduler_step_size', type=int, default=15,
+    parser.add_argument('--scheduler_step_size', type=int, default=60,
                         help='step size of scheduler (steplr)')
-    parser.add_argument('--scheduler_gamma', type=float, default=0.1,
+    parser.add_argument('--scheduler_gamma', type=float, default=0.5,
                         help='lr decay of scheduler (steplr)')
 
-    parser.add_argument('-a', '--alpha', type=float, default=0.4,
-                        help='alpha of loss function (default: 0.4)')
-    parser.add_argument('-g', '--gamma', type=float, default=0.1,
-                        help='gamma of loss function (default: 0.1')
+    parser.add_argument('-a', '--alpha', type=float, default=0.0001,
+                        help='alpha of loss function (default: 0.0001)')
+    parser.add_argument('-g', '--gamma', type=float, default=0.0001,
+                        help='gamma of loss function (default: 0.0001')
     parser.add_argument('--label_smoothing', type=float, default=0.,
-                        help='label smoothing when calculating KL loss')
-    parser.add_argument('--lp', default="MSE", choices=["MSE", "L1", "logL1"],
+                        help='label smoothing when calculating cross-task segmt loss')
+    parser.add_argument('--lp', default="L1", choices=["MSE", "L1", "logL1", "smoothL1"],
                         help='depth loss for depth loss')
     parser.add_argument('--tseg_loss', default="cross", choices=["cross", "kl"],
                         help='label loss for cross-task segmt loss')
+    parser.add_argument('--tdep_loss', default='L1', choices=["ssim", "L1"],
+                        help='depth loss for cross-task depth loss')
+
+    parser.add_argument('--batch_norm', action='store_true',
+                        help='flag: enable batch normalization in ttnet')
+    parser.add_argument('--wider_ttnet', action='store_true',
+                        help='flag: make ttnet wider')
 
     parser.add_argument('--uncertainty_weights', action='store_true',
                         help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')
-    # parser.add_argument('--pcgrad', action='store_true',
-    #                     help='flag: use pc grad (Yu+, 2020) for cross-task losses')
-    parser.add_argument("--grad_loss", action='store_true',
-                        help='use grad loss')
 
     parser.add_argument('-j', '--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
@@ -70,6 +78,7 @@ def nyu_xtask_parser():
 
     return args
 
+
 def cityscapes_xtask_parser():
 
     parser = argparse.ArgumentParser(description='XTask MT on Cityscapes Dataset')
@@ -79,13 +88,18 @@ def cityscapes_xtask_parser():
                         help='height of output (default: 128)')
     parser.add_argument('--width', type=int, default=256,
                         help='width of output (default: 256)')
+    parser.add_argument('-n', '--num_classes', type=int, default=7, choices=[7, 19],
+                        help='number of classes for segmentation task (default: 7)')
+    parser.add_argument('--ignore_index', type=int, default=250,
+                        help='ignore index (default: 250)')
 
-    parser.add_argument('-e', '--epochs', type=int, default=250,
-                        help='number of epochs (default: 250)')
+    parser.add_argument('-e', '--epochs', type=int, default=200,
+                        help='number of epochs (default: 200)')
     parser.add_argument('--enc_layers', type=int, default=34,
                         help='type of ResNet encoder (default: 34)')
     parser.add_argument('--use_pretrain', action='store_true',
                         help='flag: use pretrained encoder (default: False)')
+
     parser.add_argument('-b', '--batch_size', type=int, default=6,
                         help='batch size (default: 6)')
     parser.add_argument('--lr', '--learning_rate', type=float, default=0.0001,
@@ -94,8 +108,6 @@ def cityscapes_xtask_parser():
                         help='beta_1 of Adam (default: 0.9)')
     parser.add_argument('--b2', '--beta_2', type=float, default=0.99,
                         help='beta_2 of Adam (default: 0.99)')
-    parser.add_argument('-n', '--num_classes', type=int, default=7, choices=[7, 19],
-                        help='number of classes for segmentation task (default: 7)')
     parser.add_argument('--scheduler_step_size', type=int, default=60,
                         help='step size of scheduler (steplr)')
     parser.add_argument('--scheduler_gamma', type=float, default=0.5,
@@ -105,27 +117,22 @@ def cityscapes_xtask_parser():
                         help='alpha of loss function (default: 0.01)')
     parser.add_argument('-g', '--gamma', type=float, default=0.01,
                         help='gamma of loss function (default: 0.01')
-    parser.add_argument('-t', '--temp', type=int, default=1,
-                        help='temperature of distillation (default: 1)')
     parser.add_argument('--label_smoothing', type=float, default=0.,
                         help='label smoothing when calculating KL loss')
     parser.add_argument('--lp', default="L1", choices=["MSE", "L1", "logL1", "smoothL1"],
                         help='depth loss for depth loss')
-    parser.add_argument('--tdep_loss', default='L1', choices=["ssim", "L1"])
     parser.add_argument('--tseg_loss', default="cross", choices=["cross", "kl"],
                         help='label loss for cross-task segmt loss')
+    parser.add_argument('--tdep_loss', default='L1', choices=["ssim", "L1"],
+                        help='depth loss for cross-task depth loss')
 
-    parser.add_argument('--is_shallow', action='store_true',
-                        help='flag: use shallow decoder for each task')
     parser.add_argument('--batch_norm', action='store_true',
                         help='flag: enable batch normalization in ttnet')
+    parser.add_argument('--wider_ttnet', action='store_true',
+                        help='flag: make ttnet wider')
 
     parser.add_argument('--uncertainty_weights', action='store_true',
                         help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')
-    # parser.add_argument('--pcgrad', action='store_true',
-    #                     help='flag: use pc grad (Yu+, 2020) for cross-task losses')
-    parser.add_argument("--grad_loss", action='store_true',
-                        help='use grad loss')
 
     parser.add_argument('-j', '--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')

@@ -75,29 +75,29 @@ if __name__=='__main__':
         opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
     print("   loss function --- Lp_depth: {}, tsegmt: {}, tdepth: {}".format(
         opt.lp, opt.tseg_loss, opt.tdep_loss))
-    print("   hyperparameters --- alpha: {}, gamma: {}, temp:{}, smoothing: {}".format(
-        opt.alpha, opt.gamma, opt.temp, opt.label_smoothing))
+    print("   hyperparameters --- alpha: {}, gamma: {}, smoothing: {}".format(
+        opt.alpha, opt.gamma, opt.label_smoothing))
     print("   batch size: {}, train for {} epochs".format(
         opt.batch_size, opt.epochs))
+    print("   batch_norm={}, wider_ttnet={}".format(
+        opt.batch_norm, opt.wider_ttnet))
 
     device_name = "cpu" if opt.cpu else "cuda"
     device = torch.device(device_name)
     print("   device: {}".format(device))
     model = XTaskTSNet(enc_layers=opt.enc_layers, 
-                       out_features_segmt=opt.num_classes, 
-                       is_shallow=opt.is_shallow, 
-                       batch_norm=opt.batch_norm, 
+                       out_features_segmt=opt.num_classes,
+                       batch_norm=opt.batch_norm, wider_ttnet=opt.wider_ttnet,
                        use_pretrain=opt.use_pretrain
                     )
     model.to(device)
     parameters_to_train = [p for p in model.parameters()]
+    print("Parameter Space: {}".format(count_parameters(model)))
     print("TransferNet type:")
     print("   {}".format(model.trans_name))
     
     print("Options:")
     log_vars = None
-    if opt.is_shallow:
-        print("   shallow decoder")
     if opt.uncertainty_weights:
         print("   use uncertainty weights")
         """
@@ -108,22 +108,20 @@ if __name__=='__main__':
         log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
         log_vars = [log_var_a, log_var_b]
         parameters_to_train += log_vars
-    if opt.grad_loss:
-        print("   use grad loss (k=1), no scaling")
 
     print("Loading dataset...")
     train_data = CityscapesDataset(root_path=opt.input_path, height=opt.height, width=opt.width, num_classes=opt.num_classes,
-                                   split='train', transform=["random_flip", "random_crop"])
+                                   split='train', transform=["random_flip", "random_crop"], ignore_index=opt.ignore_index)
     valid_data = CityscapesDataset(root_path=opt.input_path, height=opt.height, width=opt.width, num_classes=opt.num_classes,
-                                   split='val', transform=None)
+                                   split='val', transform=None, ignore_index=opt.ignore_index)
     # test_data = CityscapesDataset('./data/cityscapes', split='train', transform=transform)
     train = DataLoader(train_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
     valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
 
     criterion = XTaskLoss(num_classes=opt.num_classes, 
-                          alpha=opt.alpha, gamma=opt.gamma, temp=opt.temp, label_smoothing=opt.label_smoothing,
+                          alpha=opt.alpha, gamma=opt.gamma, label_smoothing=opt.label_smoothing,
                           image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
-                          grad_loss=opt.grad_loss).to(device)
+                          ignore_index=opt.ignore_index).to(device)
     optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
     scheduler = optim.lr_scheduler.StepLR(optimizer, opt.scheduler_step_size, opt.scheduler_gamma)
 
@@ -199,7 +197,7 @@ if __name__=='__main__':
     if not opt.debug:
         model.load_state_dict(torch.load(weights_path, map_location=device))
 
-    logger = Logger(num_classes=opt.num_classes)
+    logger = Logger(num_classes=opt.num_classes, ignore_index=opt.ignore_index)
     best_loss = 1e5
     best_set = {}
 

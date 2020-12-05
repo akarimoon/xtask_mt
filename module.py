@@ -1,12 +1,7 @@
-import copy
-import random
 import numpy as np
-from math import exp
-from sklearn.metrics import confusion_matrix
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 
 class Logger():
     """
@@ -175,7 +170,7 @@ class Logger():
 
     def get_scores(self):
         self.pixel_acc /= self.count
-        print(np.mean(self.iou, axis=0))
+        print("IoU: ", np.mean(self.iou, axis=0))
         self.miou /= self.count
         self.rmse /= self.count
         self.irmse /= self.count
@@ -255,16 +250,14 @@ class LabelSmoothingLoss(nn.Module):
         return torch.mean(torch.sum(-true_dist * F.log_softmax(predicted, dim=self.dim), dim=self.dim))
 
 class XTaskLoss(nn.Module):
-    def __init__(self, num_classes=19, alpha=0.2, gamma=0., temp=1, label_smoothing=0.,
+    def __init__(self, num_classes=19, alpha=0.01, gamma=0.01, label_smoothing=0.,
                  image_loss_type="MSE", t_segmt_loss_type="cross", t_depth_loss_type="ssim",
-                 grad_loss=False):
+                 ignore_index=250):
         super(XTaskLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
-        self.temp = float(temp)
         self.image_loss_type = image_loss_type
-        self.grad_loss = grad_loss
-        self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=250, reduction='mean')
+        self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=ignore_index, reduction='mean')
         self.t_depth_loss_type = t_depth_loss_type
 
         self.nonlinear = nn.LogSoftmax(dim=1)
@@ -332,24 +325,6 @@ class XTaskLoss(nn.Module):
         loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
         return torch.mean(loss)
 
-    def _calc_gradient(self, x, scale=True):
-        left = x
-        right = F.pad(x, [0, 1, 0, 0])[:, :, :, 1:]
-        top = x
-        bottom = F.pad(x, [0, 0, 0, 1])[:, :, 1:, :]
-        dx, dy = right - left, bottom - top
-        dx[:, :, :, -1] = 0
-        dy[:, :, -1, :] = 0
-
-        return dx, dy
-
-    def depth_grad_loss(self, predicted, target, mask):
-        dx, dy = self._calc_gradient(predicted - target, scale=True)
-        dx *= mask
-        dy *= mask
-        loss = torch.sum(torch.abs(dx) + torch.abs(dy), dim=(2, 3)) / torch.sum(mask, dim=(2, 3))
-        return torch.mean(loss)
-
     def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, log_vars=None):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
         if mask_segmt is None:
@@ -364,16 +339,12 @@ class XTaskLoss(nn.Module):
         tseg_loss = self.tseg_loss(pred_t_segmt, torch.argmax(self.nonlinear(pred_segmt.detach().clone()), dim=1), mask_segmt)
 
         if log_vars is None:
-            # image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp
-            # label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss / self.temp
-            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp
-            label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss / self.temp
-            image_loss = image_loss_tmp.item() / (image_loss_tmp.item() + label_loss_tmp.item()) * image_loss_tmp
-            label_loss = label_loss_tmp.item() / (image_loss_tmp.item() + label_loss_tmp.item()) * label_loss_tmp
+            image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss
+            label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss
 
         else:
-            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss / self.temp
-            label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss / self.temp
+            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss
+            label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss
             image_loss = 0.5 * torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
             label_loss = 0.5 * torch.exp(-log_vars[1]) * label_loss_tmp + log_vars[1]
 
