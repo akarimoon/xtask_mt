@@ -67,7 +67,7 @@ def make_results_dir(folder_path="./tmp"):
 
     return num, os.path.join(folder_path, num)
 
-def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses=None, valid_losses=None):
+def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses=None, valid_losses=None, is_nyu=False):
     best_set_size = best_set["pred_depth"].shape[0]
     show = np.random.randint(best_set_size)
     if not opt.infer_only:
@@ -80,7 +80,10 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
 
     plt.figure(figsize=(18, 10))
     plt.subplot(3,3,1)
-    plt.imshow(best_set["original"][0][show].cpu().numpy())
+    if not is_nyu:
+        plt.imshow(best_set["original"][0][show].cpu().numpy())
+    else:
+        plt.imshow(best_set["original"][show].permute(1,2,0).cpu().numpy())
     plt.title("Image")
 
     if not opt.infer_only:
@@ -103,12 +106,12 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     plt.title("Segmt. target")
 
     plt.subplot(3,3,7)
-    pred_clamped = torch.clamp(best_set["pred_depth"], min=1e-9, max=0.4922)
+    pred_clamped = torch.clamp(best_set["pred_depth"], min=1e-9, max=0.4922) if not is_nyu else best_set["pred_depth"]
     plt.imshow(pred_clamped[show].squeeze().cpu().numpy())
     plt.title("Direct depth pred.")
 
     plt.subplot(3,3,8)
-    pred_t_clamped = torch.clamp(best_set["pred_tdepth"], min=1e-9, max=0.4922)
+    pred_t_clamped = torch.clamp(best_set["pred_tdepth"], min=1e-9, max=0.4922) if not is_nyu else best_set["pred_tdepth"]
     plt.imshow(pred_t_clamped[show].squeeze().cpu().numpy())
     plt.title("Cross-task depth pred.")
 
@@ -134,8 +137,12 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     # plt.legend()
 
     df = pd.DataFrame()
-    df["pred"] = (0.20 * 2262) / (256 * flat_pred[flat_targ > 0])
-    df["targ"] = (0.20 * 2262) / (256 * flat_targ[flat_targ > 0])
+    if not is_nyu:
+        df["pred"] = (0.20 * 2262) / (256 * flat_pred[flat_targ > 0])
+        df["targ"] = (0.20 * 2262) / (256 * flat_targ[flat_targ > 0])
+    else:
+        df["pred"] = flat_pred[flat_targ > 0]
+        df["targ"] = flat_targ[flat_targ > 0]
     df["diff_abs"] = np.abs(df["pred"] - df["targ"])
     bins = np.linspace(0, 500, 51)
     df["targ_bin"] = np.digitize(np.round(df["targ"]), bins) - 1
@@ -143,12 +150,13 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     ax3.set_xticklabels([int(t.get_text()) * 10  for t in ax3.get_xticklabels()])
     ax3.set_title("Boxplot for absolute error for all non-nan pixels")
 
-    df["is_below_20"] = df["targ"] < 20
-    bins_20 = np.linspace(0, 20, 21)
-    df["targ_bin_20"] = np.digitize(np.round(df["targ"]), bins_20) - 1
-    sns.boxplot(x="targ_bin_20", y="diff_abs", data=df[df["is_below_20"] == True], ax=ax4)
+    thres = 20 if not is_nyu else 10
+    df["is_below_thres"] = df["targ"] < thres
+    bins_thres = np.linspace(0, thres, thres + 1)
+    df["targ_bin_thres"] = np.digitize(np.round(df["targ"]), bins_thres) - 1
+    sns.boxplot(x="targ_bin_thres", y="diff_abs", data=df[df["is_below_thres"] == True], ax=ax4)
     ax4.set_xticklabels([int(t.get_text()) * 1  for t in ax4.get_xticklabels()])
-    ax4.set_title("Boxplot for absolute error for all pixels < 20m")
+    ax4.set_title("Boxplot for absolute error for all pixels < {}m".format(thres))
     plt.tight_layout()
     if not opt.view_only:
         plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "hist.png"))
@@ -156,7 +164,10 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     plt.figure(figsize=(4 * best_set_size, 12))
     for i in range(best_set_size):
         plt.subplot(5, best_set_size, i + 1)
-        plt.imshow(best_set["original"][0][i].cpu().numpy())
+        if not is_nyu:
+            plt.imshow(best_set["original"][0][i].cpu().numpy())
+        else:
+            plt.imshow(best_set["original"][i].permute(1,2,0).cpu().numpy())
         plt.axis('off')
         plt.subplot(5, best_set_size, i + 1 + best_set_size)
         plt.imshow(valid_data.decode_segmt(best_set["targ_segmt"][i].cpu().numpy()))
