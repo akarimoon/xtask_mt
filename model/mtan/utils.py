@@ -85,16 +85,24 @@ def compute_iou(x_pred, x_output, is_cs=False):
     return pixel_acc / batch_size
 
 
-def depth_error(x_pred, x_output):
+def depth_error(x_pred, x_output, intrinsics=0.20*2262):
     device = x_pred.device
     binary_mask = (torch.sum(x_output, dim=1) != 0).unsqueeze(1).to(device)
     x_pred_true = x_pred.masked_select(binary_mask)
     x_output_true = x_output.masked_select(binary_mask)
     abs_err = torch.abs(x_pred_true - x_output_true)
     rel_err = torch.abs(x_pred_true - x_output_true) / x_output_true
-    return (torch.sum(abs_err) / torch.nonzero(binary_mask, as_tuple=False).size(0)).item(), \
-           (torch.sum(rel_err) / torch.nonzero(binary_mask, as_tuple=False).size(0)).item()
+    
+    pred_true, output_true = 1 / x_pred_true, 1 / x_output_true
+    metric_pred_true = torch.clamp(intrinsics * pred_true / 256, min=1e-9, max=None)
+    metric_output_true = intrinsics * output_true / 256
+    rmse_err = torch.sqrt(abs_err ** 2)
+    rmse_metric_err = torch.sqrt(torch.abs(metric_pred_true - metric_output_true) ** 2)
 
+    return (torch.sum(abs_err) / torch.nonzero(binary_mask, as_tuple=False).size(0)).item(), \
+           (torch.sum(rel_err) / torch.nonzero(binary_mask, as_tuple=False).size(0)).item(), \
+           (torch.sum(rmse_err) / torch.nonzero(binary_mask, as_tuple=False).size(0)).item(), \
+           (torch.sum(rmse_metric_err) / torch.nonzero(binary_mask, as_tuple=False).size(0)).item(), \
 
 def normal_error(x_pred, x_output):
     binary_mask = (torch.sum(x_output, dim=1) != 0)
@@ -112,10 +120,13 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
     train_batch = len(train_loader)
     test_batch = len(test_loader)
     T = opt.temp
-    avg_cost = np.zeros([total_epoch, 12], dtype=np.float32)
+    avg_cost = np.zeros([total_epoch, 16], dtype=np.float32) if num_tasks == 2 else np.zeros([total_epoch, 28], dtype=np.float32)
     lambda_weight = np.ones([2, total_epoch])
+    best_valid_loss = 1e5
+    best_avg_cost = None
+
     for index in range(total_epoch):
-        cost = np.zeros(12, dtype=np.float32)
+        cost = np.zeros(16, dtype=np.float32) if num_tasks == 2 else np.zeros(28, dtype=np.float32)
         start_time = time.time()
 
         # apply Dynamic Weight Average
@@ -160,8 +171,8 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                 cost[1] = compute_miou(train_pred[0], train_label, is_cs=is_cs).item()
                 cost[2] = compute_iou(train_pred[0], train_label, is_cs=is_cs).item()
                 cost[3] = train_loss[1].item()
-                cost[4], cost[5] = depth_error(train_pred[1], train_depth)
-                avg_cost[index, :6] += cost[:6] / train_batch
+                cost[4], cost[5], cost[6], cost[7] = depth_error(train_pred[1], train_depth)
+                avg_cost[index, :8] += cost[:8] / train_batch
 
             # evaluating test data
             multi_task_model.eval()
@@ -179,24 +190,33 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                     test_loss = [model_fit(test_pred[0], test_label, 'semantic', is_cs=is_cs),
                                 model_fit(test_pred[1], test_depth, 'depth', is_cs=is_cs)]
 
-                    cost[6] = test_loss[0].item()
-                    cost[7] = compute_miou(test_pred[0], test_label, is_cs=is_cs).item()
-                    cost[8] = compute_iou(test_pred[0], test_label, is_cs=is_cs).item()
-                    cost[9] = test_loss[1].item()
-                    cost[10], cost[11] = depth_error(test_pred[1], test_depth)
+                    if opt.weight == 'equal' or opt.weight == 'dwa':
+                        val_loss = sum([lambda_weight[i, index] * test_loss[i] for i in range(2)])
+                    else:
+                        val_loss = sum(1 / (2 * torch.exp(logsigma[i])) * test_loss[i] + logsigma[i] / 2 for i in range(2))
 
-                    avg_cost[index, 6:] += cost[6:] / test_batch
+                    cost[8] = test_loss[0].item()
+                    cost[9] = compute_miou(test_pred[0], test_label, is_cs=is_cs).item()
+                    cost[10] = compute_iou(test_pred[0], test_label, is_cs=is_cs).item()
+                    cost[11] = test_loss[1].item()
+                    cost[12], cost[13], cost[14], cost[15] = depth_error(test_pred[1], test_depth)
+
+                    avg_cost[index, 8:] += cost[8:] / test_batch
+
+                    if val_loss.item() < best_valid_loss:
+                        best_valid_loss = val_loss
+                        best_avg_cost = avg_cost
 
             scheduler.step()
             elapsed_time = (time.time() - start_time) / 60
             print("=======================================")
             print('Epoch: {:04d} [{:.1f}min]'.format(index, elapsed_time))
             print('Train Loss: segmt: {:.4f} --- depth: {:.4f}'.format(avg_cost[index, 0], avg_cost[index, 3]))
-            print('Test Loss: segmt: {:.4f} --- depth: {:.4f}'.format(avg_cost[index, 6], avg_cost[index, 9]))
+            print('Test Loss: segmt: {:.4f} --- depth: {:.4f}'.format(avg_cost[index, 8], avg_cost[index, 11]))
             print('Scores (Test):')
-            print('Pix Acc: {:.4f}, mIoU: {:.4f} | Abs Err: {:.4f}, Rel Err: {:.4f}'.format(
-                    avg_cost[index, 8], avg_cost[index, 7], 
-                    avg_cost[index, 10], avg_cost[index, 11], 
+            print('Pix Acc: {:.4f}, mIoU: {:.4f} | Abs Err: {:.4f}, Rel Err: {:.4f}, RMSE: {:.4f}, RMSE (metric): {:.4f}'.format(
+                    avg_cost[index, 10], avg_cost[index, 9], 
+                    avg_cost[index, 12], avg_cost[index, 13], avg_cost[indes, 14], avg_cost[index, 15]
             ))
 
         else:
@@ -226,10 +246,10 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                 cost[1] = compute_miou(train_pred[0], train_label).item()
                 cost[2] = compute_iou(train_pred[0], train_label).item()
                 cost[3] = train_loss[1].item()
-                cost[4], cost[5] = depth_error(train_pred[1], train_depth)
-                cost[6] = train_loss[2].item()
-                cost[7], cost[8], cost[9], cost[10], cost[11] = normal_error(train_pred[2], train_normal)
-                avg_cost[index, :12] += cost[:12] / train_batch
+                cost[4], cost[5], cost[6], cost[7] = depth_error(train_pred[1], train_depth)
+                cost[8] = train_loss[2].item()
+                cost[9], cost[10], cost[11], cost[12], cost[13] = normal_error(train_pred[2], train_normal)
+                avg_cost[index, :14] += cost[:14] / train_batch
 
             # evaluating test data
             multi_task_model.eval()
@@ -245,29 +265,51 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                                 model_fit(test_pred[1], test_depth, 'depth'),
                                 model_fit(test_pred[2], test_normal, 'normal')]
 
-                    cost[12] = test_loss[0].item()
-                    cost[13] = compute_miou(test_pred[0], test_label).item()
-                    cost[14] = compute_iou(test_pred[0], test_label).item()
-                    cost[15] = test_loss[1].item()
-                    cost[16], cost[17] = depth_error(test_pred[1], test_depth)
-                    cost[18] = test_loss[2].item()
-                    cost[19], cost[20], cost[21], cost[22], cost[23] = normal_error(test_pred[2], test_normal)
+                    if opt.weight == 'equal' or opt.weight == 'dwa':
+                        val_loss = sum([lambda_weight[i, index] * test_loss[i] for i in range(2)])
+                    else:
+                        val_loss = sum(1 / (2 * torch.exp(logsigma[i])) * test_loss[i] + logsigma[i] / 2 for i in range(2))
 
-                    avg_cost[index, 12:] += cost[12:] / test_batch
+                    cost[14] = test_loss[0].item()
+                    cost[15] = compute_miou(test_pred[0], test_label).item()
+                    cost[16] = compute_iou(test_pred[0], test_label).item()
+                    cost[17] = test_loss[1].item()
+                    cost[18], cost[19], cost[20], cost[21] = depth_error(test_pred[1], test_depth)
+                    cost[22] = test_loss[2].item()
+                    cost[23], cost[24], cost[25], cost[26], cost[27] = normal_error(test_pred[2], test_normal)
+
+                    avg_cost[index, 14:] += cost[14:] / test_batch
+
+                    if val_loss.item() < best_valid_loss:
+                        best_valid_loss = val_loss
+                        best_avg_cost = avg_cost
 
             scheduler.step()
             elapsed_time = (time.time() - start_time) / 60
             print("=======================================")
             print('Epoch: {:04d} [{:.1f}min]'.format(index, elapsed_time))
-            print('Train Loss: segmt: {:.4f} --- depth: {:.4f} --- normal: {:.4f}'.format(avg_cost[index, 0], avg_cost[index, 3], avg_cost[index, 6]))
-            print('Test Loss: segmt: {:.4f} --- depth: {:.4f} --- normal: {:.4f}'.format(avg_cost[index, 12], avg_cost[index, 15], avg_cost[index, 18]))
+            print('Train Loss: segmt: {:.4f} --- depth: {:.4f} --- normal: {:.4f}'.format(avg_cost[index, 0], avg_cost[index, 3], avg_cost[index, 8]))
+            print('Test Loss: segmt: {:.4f} --- depth: {:.4f} --- normal: {:.4f}'.format(avg_cost[index, 14], avg_cost[index, 17], avg_cost[index, 22]))
             print('Scores (Test):')
-            print('Pix Acc: {:.4f}, mIoU: {:.4f} | Abs Err: {:.4f}, Rel Err: {:.4f} | mean: {:.4f}, med: {:.4f}, <11.25: {:.4f}, <22.5: {:.4f}, <30: {:.4f}'.format(
-                    avg_cost[index, 14], avg_cost[index, 13], 
-                    avg_cost[index, 16], avg_cost[index, 17], 
-                    avg_cost[index, 19], avg_cost[index, 20], avg_cost[index, 21], avg_cost[index, 22], avg_cost[index, 23]
+            print('Pix Acc: {:.4f}, mIoU: {:.4f} | Abs Err: {:.4f}, Rel Err: {:.4f}, RMSE: {:.4f}, RMSE (metric): {:.4f} | mean: {:.4f}, med: {:.4f}, <11.25: {:.4f}, <22.5: {:.4f}, <30: {:.4f}'.format(
+                    avg_cost[index, 16], avg_cost[index, 15], 
+                    avg_cost[index, 18], avg_cost[index, 19], avg_cost[index, 20], avg_cost[index, 21], 
+                    avg_cost[index, 23], avg_cost[index, 24], avg_cost[index, 25], avg_cost[index, 26], avg_cost[index, 27]
             ))
 
+    print("Best loss: {:.4f}".format(best_valid_loss))
+    print('Scores (Test):')
+    if num_tasks == 2:
+        print('Pix Acc: {:.4f}, mIoU: {:.4f} | Abs Err: {:.4f}, Rel Err: {:.4f}, RMSE: {:.4f}, RMSE (metric): {:.4f}'.format(
+            best_avg_cost[index, 10], best_avg_cost[index, 9], 
+            best_avg_cost[index, 12], best_avg_cost[index, 13], best_avg_cost[indes, 14], best_avg_cost[index, 15]
+        ))
+    else:
+        print('Pix Acc: {:.4f}, mIoU: {:.4f} | Abs Err: {:.4f}, Rel Err: {:.4f}, RMSE: {:.4f}, RMSE (metric): {:.4f} | mean: {:.4f}, med: {:.4f}, <11.25: {:.4f}, <22.5: {:.4f}, <30: {:.4f}'.format(
+            best_avg_cost[index, 16], best_avg_cost[index, 15], 
+            best_avg_cost[index, 18], best_avg_cost[index, 19], best_avg_cost[index, 20], best_avg_cost[index, 21], 
+            best_avg_cost[index, 23], best_avg_cost[index, 24], best_avg_cost[index, 25], best_avg_cost[index, 26], best_avg_cost[index, 27]
+        ))
 
 """
 =========== Universal Single-task Trainer =========== 
