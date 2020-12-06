@@ -128,8 +128,8 @@ The results are the following:
 †: Trained on 2 tasks (segmentation and depth)<br>
 _Italic_: From original paper
 
-MTAN: \[[paper\]](https://arxiv.org/pdf/1803.10704.pdf)]\[[github\]](https://github.com/lorenmt/mtan)<br>
-KD4MTL: \[[paper\]](https://arxiv.org/pdf/2007.06889.pdf)\[[\[github\]](https://github.com/VICO-UoE/KD4MTL)<br>
-AdaMT-Net: \[[paper\]](https://openaccess.thecvf.com/content_CVPRW_2020/papers/w40/Jha_AdaMT-Net_An_Adaptive_Weight_Learning_Based_Multi-Task_Learning_Model_for_CVPRW_2020_paper.pdf)
+MTAN: \[[paper](https://arxiv.org/pdf/1803.10704.pdf)\]\[[github](https://github.com/lorenmt/mtan)\]<br>
+KD4MTL: \[[paper](https://arxiv.org/pdf/2007.06889.pdf)\]\[[github](https://github.com/VICO-UoE/KD4MTL)\]<br>
+AdaMT-Net: \[[paper](https://openaccess.thecvf.com/content_CVPRW_2020/papers/w40/Jha_AdaMT-Net_An_Adaptive_Weight_Learning_Based_Multi-Task_Learning_Model_for_CVPRW_2020_paper.pdf)\]
 
 
