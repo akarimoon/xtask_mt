@@ -110,8 +110,8 @@ The results are the following:
 | Models                |Pix acc|mIoU   |Abs     |Abs Rel |
 |:---------------------:|:-----:|:-----:|:------:|:------:|
 | _MTAN_                | 53.86 | 91.11 | 0.0144 | 33.63  |
-| KD4MTL                | 52.71 | 91.54 | 0.0139 | 27.33  |
-| AdaMT-Net             | 62.53 | **94.16** | **0.0125** | <ins>22.23</ins>  |
+| _KD4MTL_                | 52.71 | 91.54 | 0.0139 | 27.33  |
+| _AdaMT-Net_             | 62.53 | **94.16** | **0.0125** | <ins>22.23</ins>  |
 | Ours                  | **63.14**	| <ins>92.67</ins> | <ins>0.0126</ins> | **20.84**  |
 ### NYU
 | Models    |Pix acc|mIoU   |Abs     |Abs Rel |
@@ -120,16 +120,16 @@ The results are the following:
 | MTAN†      |  |  |  |  |
 | KD4MTL\*   |  |  |  |  |
 | KD4MTL†    |  |  |  |  |
-| AdaMT-Net\*| 21.86 | 60.35 | 0.5933	| 0.2456 |
+| AdaMT-Net\*| <ins>21.86</ins> | <ins>60.35</ins> | <ins>0.5933</ins>	| <ins>0.2456</ins> |
 | AdaMT-Net† | 20.61 | 58.91 | 0.6136 | 0.2547 |
-| Ours†      | 25.56 | 60.36 | 0.5088 | 0.2313 |
+| Ours†      | **25.56** | **60.36** | **0.5088** | **0.2313** |
 
-\*: Trained on 3 tasks (segmentation, depth, and surface normal)
-†: Trained on 2 tasks (segmentation and depth)
+\*: Trained on 3 tasks (segmentation, depth, and surface normal)<br>
+†: Trained on 2 tasks (segmentation and depth)<br>
 _Italic_: From original paper
 
-MTAN: [paper](https://arxiv.org/pdf/1803.10704.pdf)[github](https://github.com/lorenmt/mtan)<br>
-KD4MTL: [paper](https://arxiv.org/pdf/2007.06889.pdf)[github](https://github.com/VICO-UoE/KD4MTL)<br>
-AdaMT-Net: [paper](https://openaccess.thecvf.com/content_CVPRW_2020/papers/w40/Jha_AdaMT-Net_An_Adaptive_Weight_Learning_Based_Multi-Task_Learning_Model_for_CVPRW_2020_paper.pdf)
+MTAN: \[[paper]\](https://arxiv.org/pdf/1803.10704.pdf)\[[github]\](https://github.com/lorenmt/mtan)<br>
+KD4MTL: \[[paper]\](https://arxiv.org/pdf/2007.06889.pdf)\[[\[github]\](https://github.com/VICO-UoE/KD4MTL)<br>
+AdaMT-Net: \[[paper]\](https://openaccess.thecvf.com/content_CVPRW_2020/papers/w40/Jha_AdaMT-Net_An_Adaptive_Weight_Learning_Based_Multi-Task_Learning_Model_for_CVPRW_2020_paper.pdf)
 
 
