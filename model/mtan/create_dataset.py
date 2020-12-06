@@ -302,7 +302,7 @@ class MyCityscapesDataset(Dataset):
         mask_depth = inputs["mask_depth"]
 
         original = [image_org, segmt_org, disp]
-        return original, image, segmt, depth, mask_segmt, mask_depth
+        return image, segmt, depth
 
     def _transform(self, inputs):
         """

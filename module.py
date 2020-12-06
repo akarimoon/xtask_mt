@@ -87,6 +87,12 @@ class Logger():
         """
         return np.sum(np.sqrt(np.abs(preds - targets) ** 2 * masks)) / np.sum(masks)
 
+    def _depth_metric_rmse(self, preds, targets, masks, intrinsics=0.20*2262):
+        metric_preds = intrinsics * preds / 256
+        metric_preds = np.clip(metric_preds, a_min=1e-9, a_max=None)
+        metric_targs = intrinsics * targets / 256
+        return np.sum(np.sqrt(np.abs(metric_preds - metric_targs) ** 2 * masks)) / np.sum(masks)
+
     def _depth_irmse(self, inv_preds, inv_targets, masks):
         """
         Calculate RMSE of inverse depth
@@ -161,7 +167,8 @@ class Logger():
         N = preds_segmt.shape[0]
         self.pixel_acc += self._compute_pixacc(preds_segmt, targets_segmt) * N
         self.miou += self._compute_miou(preds_segmt, targets_segmt) * N
-        self.rmse += self._depth_rmse(preds_depth, targets_depth, masks_depth) * N
+        # self.rmse += self._depth_rmse(preds_depth, targets_depth, masks_depth) * N
+        self.rmse += self._depth_metric_rmse(preds_depth, targets_depth, masks_depth) * N
         self.irmse += self._depth_irmse(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.irmse_log += self._depth_irmse_log(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.abs += self._depth_abs(inv_preds_depth, inv_targets_depth, masks_depth) * N
