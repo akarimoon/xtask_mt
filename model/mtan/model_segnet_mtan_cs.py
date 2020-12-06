@@ -18,7 +18,7 @@ opt = parser.parse_args()
 
 # define model, optimiser and scheduler
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-SegNet_MTAN = SegNet2task(class_nb=opt.num_classes).to(device)
+SegNet_MTAN = SegNet2tasks(class_nb=opt.num_classes).to(device)
 optimizer = optim.Adam(SegNet_MTAN.parameters(), lr=1e-4)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
 
