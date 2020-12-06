@@ -216,7 +216,7 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
             print('Scores (Test):')
             print('Pix Acc: {:.4f}, mIoU: {:.4f} | Abs Err: {:.4f}, Rel Err: {:.4f}, RMSE: {:.4f}, RMSE (metric): {:.4f}'.format(
                     avg_cost[index, 10], avg_cost[index, 9], 
-                    avg_cost[index, 12], avg_cost[index, 13], avg_cost[indes, 14], avg_cost[index, 15]
+                    avg_cost[index, 12], avg_cost[index, 13], avg_cost[index, 14], avg_cost[index, 15]
             ))
 
         else:
