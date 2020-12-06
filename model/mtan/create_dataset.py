@@ -56,9 +56,16 @@ class NYUv2(Dataset):
 
     Please note that: all baselines and MTAN did NOT apply data augmentation in the original paper.
     """
-    def __init__(self, root_path, split='', transforms=None):
-        self.transforms = transforms
-        self.data_path = os.path.join(root_path, split)
+    def __init__(self, root, train=True, augmentation=False):
+        self.train = train
+        self.root = os.path.expanduser(root)
+        self.augmentation = augmentation
+
+        # read the data file
+        if train:
+            self.data_path = root + '/train'
+        else:
+            self.data_path = root + '/val'
         
         # calculate data length
         self.data_len = len(fnmatch.filter(os.listdir(self.data_path + '/image'), '*.npy'))
@@ -73,7 +80,7 @@ class NYUv2(Dataset):
         normal = torch.from_numpy(np.moveaxis(np.load(self.data_path + '/normal/{:d}.npy'.format(index)), -1, 0))
 
         # apply data augmentation if required
-        if self.transforms:
+        if self.augmentation:
             image, segmt, depth, normal = self._random_scale_crop(image, segmt, depth, normal)
             if torch.rand(1) < 0.5:
                 image = torch.flip(image, dims=[2])
@@ -82,13 +89,13 @@ class NYUv2(Dataset):
                 normal = torch.flip(normal, dims=[2])
                 normal[0, :, :] = - normal[0, :, :]
 
-        return image.float(), semantic.float(), depth.float(), normal.float()
+        return image.float(), segmt.float(), depth.float(), normal.float()
 
     def __len__(self):
         return self.data_len
 
     def _random_scale_crop(self, image, segmt, depth, normal):
-        height, width = img.shape[-2:]
+        height, width = image.shape[-2:]
         sc = self.scale[random.randint(0, len(self.scale) - 1)]
         h, w = int(height / sc), int(width / sc)
         i = random.randint(0, height - h)
