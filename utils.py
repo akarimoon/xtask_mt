@@ -125,16 +125,12 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
         plt.savefig(os.path.join(results_dir, "output", ep_or_infer + "results.png"))
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(10, 10), nrows=2, ncols=2)
-    img = ax1.imshow(np.abs((pred_clamped[show] - 1 / best_set["targ_depth"][show]).squeeze().cpu().numpy()))
+    img = ax1.imshow(np.abs((pred_clamped[show] - best_set["targ_depth"][show]).squeeze().cpu().numpy()))
     fig.colorbar(img, ax=ax1)
     plt.title("Absolute error of depth (non-inverted)")
 
     flat_pred = torch.flatten(best_set["pred_depth"][show]).cpu().numpy()
     flat_targ = torch.flatten(best_set["targ_depth"][show]).cpu().numpy()
-    # sns.histplot(flat_pred[flat_pred > 0], stat='density', color='blue', label='pred', ax=ax2)
-    # sns.histplot(flat_targ[flat_targ > 0], stat='density', color='green', label='target', ax=ax2)
-    # plt.title("Density plot of depth (non-inverted")
-    # plt.legend()
 
     df = pd.DataFrame()
     if not is_nyu:
@@ -146,6 +142,12 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     df["diff_abs"] = np.abs(df["pred"] - df["targ"])
     bins = np.linspace(0, 500, 51)
     df["targ_bin"] = np.digitize(np.round(df["targ"]), bins) - 1
+
+    sns.regplot(x="targ", y="pred", data=df, ax=ax2, scatter_kws={'s':5})
+    ax2.set_xlim((df["targ"].min(), df["targ"].max()))
+    ax2.set_ylim((df["targ"].min(), df["targ"].max()))
+    plt.title("Scatter plot of depth (non-inverted)")
+
     sns.boxplot(x="targ_bin", y="diff_abs", data=df, ax=ax3)
     ax3.set_xticklabels([int(t.get_text()) * 10  for t in ax3.get_xticklabels()])
     ax3.set_title("Boxplot for absolute error for all non-nan pixels")

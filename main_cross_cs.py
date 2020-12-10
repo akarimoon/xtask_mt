@@ -45,7 +45,7 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
     return image_loss.item() + label_loss.item()
 
 if __name__=='__main__':
-    torch.manual_seed(52)
+    torch.manual_seed(0)
     opt = cityscapes_xtask_parser()
     opt.betas = (opt.b1, opt.b2)
 
@@ -125,6 +125,7 @@ if __name__=='__main__':
                           image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
                           ignore_index=opt.ignore_index).to(device)
     optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
+    # optimizer = optim.SGD(parameters_to_train, lr=opt.lr)
     scheduler = optim.lr_scheduler.StepLR(optimizer, opt.scheduler_step_size, opt.scheduler_gamma)
 
     if not opt.infer_only:

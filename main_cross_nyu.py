@@ -103,8 +103,8 @@ if __name__ == '__main__':
         parameters_to_train += log_vars
 
     print("Loading dataset...")
-    train_data = NYUv2(root_path=opt.input_path, split='train')
-    valid_data = NYUv2(root_path=opt.input_path, split='val')
+    train_data = NYUv2(root_path=opt.input_path, split='train', transforms=True)
+    valid_data = NYUv2(root_path=opt.input_path, split='val', transforms=True)
 
     train = DataLoader(train_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
     valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)

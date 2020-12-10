@@ -167,8 +167,8 @@ class Logger():
         N = preds_segmt.shape[0]
         self.pixel_acc += self._compute_pixacc(preds_segmt, targets_segmt) * N
         self.miou += self._compute_miou(preds_segmt, targets_segmt) * N
-        # self.rmse += self._depth_rmse(preds_depth, targets_depth, masks_depth) * N
-        self.rmse += self._depth_metric_rmse(preds_depth, targets_depth, masks_depth) * N
+        self.rmse += self._depth_rmse(preds_depth, targets_depth, masks_depth) * N
+        # self.rmse += self._depth_metric_rmse(preds_depth, targets_depth, masks_depth) * N
         self.irmse += self._depth_irmse(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.irmse_log += self._depth_irmse_log(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.abs += self._depth_abs(inv_preds_depth, inv_targets_depth, masks_depth) * N
