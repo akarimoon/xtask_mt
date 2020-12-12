@@ -105,10 +105,10 @@ class XTaskTSNet(nn.Module):
                                                mid_features=decoder_mid_features)
         self.trans_s2d = TaskTransferNetWithSkipCN(in_features=out_features_segmt, 
                                                    out_features=out_features_depth, 
-                                                   batch_norm=batch_norm, wider_ttnet=False)
+                                                   batch_norm=batch_norm, wider_ttnet=wider_ttnet)
         self.trans_d2s = TaskTransferNetWithSkipCN(in_features=out_features_depth, 
                                                    out_features=out_features_segmt, 
-                                                   batch_norm=batch_norm, wider_ttnet=False)
+                                                   batch_norm=batch_norm, wider_ttnet=wider_ttnet)
         self.trans_name = self.trans_s2d.name
 
     def _load_encoder(self, enc_layers):
