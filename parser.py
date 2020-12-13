@@ -110,7 +110,7 @@ def cityscapes_xtask_parser():
                         help='beta_1 of Adam (default: 0.9)')
     parser.add_argument('--b2', '--beta_2', type=float, default=0.99,
                         help='beta_2 of Adam (default: 0.99)')
-    parser.add_argument('--scheduler_step_size', type=int, default=60,
+    parser.add_argument('--scheduler_step_size', type=int, default=80,
                         help='step size of scheduler (steplr)')
     parser.add_argument('--scheduler_gamma', type=float, default=0.5,
                         help='lr decay of scheduler (steplr)')

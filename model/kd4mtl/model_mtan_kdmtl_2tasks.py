@@ -71,7 +71,7 @@ single_model = {}
 transformers = {}
 for i, t in enumerate(tasks):
     single_model[i] = SegNet_STAN(class_nb=class_nb, task=tasks[i], ignore_index=ignore_index).cuda()
-    checkpoint = torch.load('{}_mtan_single_model_task_{}_model_best.pth.tar'.format(opt.dataset, tasks[i]))
+    checkpoint = torch.load(os.path.join(opt.out, '{}_mtan_single_model_task_{}_model_best.pth.tar'.format(opt.dataset, tasks[i])))
     single_model[i].load_state_dict(checkpoint['state_dict'])
     transformers[i] = transformer().cuda()
 
