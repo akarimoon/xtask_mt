@@ -53,7 +53,7 @@ tasks = ['semantic', 'depth']
 
 if not os.path.isdir(opt.out):
     mkdir_p(opt.out)
-title = 'NYUv2'
+title = 'NYUv2' if opt.dataset == 'nyu' else 'CS'
 logger = Logger(os.path.join(opt.out, 'mtan_kdmtl_' + 'log.txt'), title=title)
 logger.set_names(['Epoch', 'T.Ls', 'T. mIoU', 'T. Pix', 'T.Ld', 'T.abs', 'T.rel',
     'V.Ls', 'V. mIoU', 'V. Pix', 'V.Ld', 'V.abs', 'V.rel', 'ds', 'dd', 'dn'])
@@ -71,7 +71,7 @@ single_model = {}
 transformers = {}
 for i, t in enumerate(tasks):
     single_model[i] = SegNet_STAN(class_nb=class_nb, task=tasks[i], ignore_index=ignore_index).cuda()
-    checkpoint = torch.load('{}_mtan_single_model_task_{}_model_best.pth.tar'.format(opt.dataset, opt.single_dir, tasks[i]))
+    checkpoint = torch.load('{}_mtan_single_model_task_{}_model_best.pth.tar'.format(opt.dataset, tasks[i]))
     single_model[i].load_state_dict(checkpoint['state_dict'])
     transformers[i] = transformer().cuda()
 

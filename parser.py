@@ -95,15 +95,15 @@ def cityscapes_xtask_parser():
     parser.add_argument('--ignore_index', type=int, default=250,
                         help='ignore index (default: 250)')
 
-    parser.add_argument('-e', '--epochs', type=int, default=200,
-                        help='number of epochs (default: 200)')
+    parser.add_argument('-e', '--epochs', type=int, default=250,
+                        help='number of epochs (default: 250)')
     parser.add_argument('--enc_layers', type=int, default=34,
                         help='type of ResNet encoder (default: 34)')
     parser.add_argument('--use_pretrain', action='store_true',
                         help='flag: use pretrained encoder (default: False)')
 
-    parser.add_argument('-b', '--batch_size', type=int, default=6,
-                        help='batch size (default: 6)')
+    parser.add_argument('-b', '--batch_size', type=int, default=8,
+                        help='batch size (default: 8)')
     parser.add_argument('--lr', '--learning_rate', type=float, default=0.0001,
                         help='learning rate (default: 0.0001)')
     parser.add_argument('--b1', '--beta_1', type=float, default=0.9,
