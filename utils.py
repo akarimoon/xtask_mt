@@ -146,6 +146,9 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     sns.regplot(x="targ", y="pred", data=df, ax=ax2, scatter_kws={'s':5})
     ax2.set_xlim((df["targ"].min(), df["targ"].max()))
     ax2.set_ylim((df["targ"].min(), df["targ"].max()))
+    # sns.regplot(x=flat_pred[flat_targ > 0], y=flat_targ[flat_targ > 0], ax=ax2)
+    # ax2.set_xlim((0, 0.5))
+    # ax2.set_ylim((0, 0.5))
     plt.title("Scatter plot of depth (non-inverted)")
 
     sns.boxplot(x="targ_bin", y="diff_abs", data=df, ax=ax3)

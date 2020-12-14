@@ -21,8 +21,10 @@ DEPTH_CORRECTION = 2.1116e-09
 
 def compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                  batch_mask_segmt, batch_mask_depth, 
-                 model, log_vars=None,
-                 criterion=None, optimizer=None, is_train=True):
+                 model, task_weights=None,
+                 criterion=None, criterion2=None, optimizer=None, optimizer2=None, is_train=True, epoch=1):
+    if task_weights is None:
+        task_weights = [1, 1]
 
     model.train(is_train)
 
@@ -34,15 +36,57 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
 
     output = model(batch_X)
     image_loss, label_loss = criterion(output, batch_y_segmt, batch_y_depth,
-                                       batch_mask_segmt, batch_mask_depth, log_vars=log_vars)
+                                       batch_mask_segmt, batch_mask_depth, task_weights=task_weights)
 
     if is_train:
         optimizer.zero_grad()
         image_loss.backward(retain_graph=True)
-        label_loss.backward()
+        label_loss.backward(retain_graph=True)
+
+        if optimizer2 is not None:
+            alpha = 0.16
+            optimizer2.zero_grad()
+
+            l1 = task_weights[0] * image_loss
+            l2 = task_weights[1] * label_loss
+            loss = torch.div(torch.add(l1,l2), 2)
+
+            if epoch == 1:
+                l01 = l1.data  
+                l02 = l2.data
+                
+            param = list(model.parameters())
+            G1R = torch.autograd.grad(l1, param[0], retain_graph=True, create_graph=True)
+            G1 = torch.norm(G1R[0], 2)
+            G2R = torch.autograd.grad(l2, param[0], retain_graph=True, create_graph=True)
+            G2 = torch.norm(G2R[0], 2)
+            G_avg = torch.div(torch.add(G1, G2), 2)
+            
+            # Calculating relative losses 
+            lhat1 = torch.div(l1, l01)
+            lhat2 = torch.div(l2, l02)
+            lhat_avg = torch.div(torch.add(lhat1, lhat2), 2)
+            
+            # Calculating relative inverse training rates for tasks 
+            inv_rate1 = torch.div(lhat1, lhat_avg)
+            inv_rate2 = torch.div(lhat2, lhat_avg)
+            
+            # Calculating the constant target for Eq. 2 in the GradNorm paper
+            C1 = G_avg * inv_rate1 ** alpha
+            C2 = G_avg * inv_rate2 ** alpha
+            C1 = C1.detach()
+            C2 = C2.detach()
+            
+            # Calculating the gradient loss according to Eq. 2 in the GradNorm paper
+            Lgrad = torch.add(criterion2(G1, C1), criterion2(G2, C2))
+            Lgrad.backward()
+            
+            # Updating loss weights 
+            optimizer2.step()
+
         optimizer.step()
 
-    return image_loss.item() + label_loss.item()
+    return task_weights[0] * image_loss.item() + task_weights[1] * label_loss.item()
 
 if __name__=='__main__':
     torch.manual_seed(0)
@@ -96,20 +140,32 @@ if __name__=='__main__':
     print("   {}".format(model.trans_name))
     
     print("Options:")
-    log_vars = None
+    task_weights = None
+    opt.balance_method = None
+    optimizer2 = None
+    criterion2 = None
     if opt.multiple_gpu:
         print("   multiple GPUs")
         model = torch.nn.DataParallel(model)
     if opt.uncertainty_weights:
         print("   use uncertainty weights")
+        opt.balance_method = "uncert"
         """
         Implementation of uncertainty weights (learnable weight parameters to balance losses of multiple tasks)
         See arxiv.org/abs/1705.07115
         """
         log_var_a = torch.zeros((1,), requires_grad=True, device=device_name)
         log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
-        log_vars = [log_var_a, log_var_b]
-        parameters_to_train += log_vars
+        task_weights = [log_var_a, log_var_b]
+        parameters_to_train += task_weights
+    if opt.gradnorm:
+        print("   use gradnorm")
+        opt.balance_method = "gradnorm"
+        w_loss_1 = torch.ones((1,), requires_grad=True, device=device_name)
+        w_loss_2 = torch.ones((1,), requires_grad=True, device=device_name)
+        task_weights = [w_loss_1, w_loss_2]
+        optimizer2 = optim.Adam(task_weights, lr=opt.lr)
+        criterion2 = nn.L1Loss()
 
     print("Loading dataset...")
     train_data = CityscapesDataset(root_path=opt.input_path, height=opt.height, width=opt.width, num_classes=opt.num_classes,
@@ -123,6 +179,7 @@ if __name__=='__main__':
     criterion = XTaskLoss(num_classes=opt.num_classes, 
                           alpha=opt.alpha, gamma=opt.gamma, label_smoothing=opt.label_smoothing,
                           image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
+                          balance_method=opt.balance_method,
                           ignore_index=opt.ignore_index).to(device)
     optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
     # optimizer = optim.SGD(parameters_to_train, lr=opt.lr)
@@ -146,16 +203,18 @@ if __name__=='__main__':
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                     batch_mask_segmt, batch_mask_depth, 
-                                    model, log_vars=log_vars,
-                                    criterion=criterion, optimizer=optimizer, is_train=True)
+                                    model, task_weights=task_weights,
+                                    criterion=criterion, criterion2=criterion2, optimizer=optimizer, optimizer2=optimizer2, 
+                                    is_train=True, epoch=epoch)
                 train_loss += loss
 
             for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                     batch_mask_segmt, batch_mask_depth, 
-                                    model, log_vars=log_vars,
-                                    criterion=criterion, optimizer=optimizer, is_train=False)
+                                    model, task_weights=task_weights,
+                                    criterion=criterion, criterion2=criterion2, optimizer=optimizer, optimizer2=optimizer2, 
+                                    is_train=False, epoch=epoch)
                 valid_loss += loss
 
             train_loss /= len(train.dataset)
@@ -170,7 +229,12 @@ if __name__=='__main__':
 
             if opt.uncertainty_weights:
                 print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
-                        (torch.exp(log_vars[1]) ** 0.5).item(), (torch.exp(log_vars[0]) ** 0.5).item()))
+                        (torch.exp(task_weights[1]) ** 0.5).item(), (torch.exp(task_weights[0]) ** 0.5).item()))
+            if opt.gradnorm:
+                coef = 2 / torch.add(w_loss_1, w_loss_2)
+                params = [coef * w_loss_1, coef * w_loss_2]
+                print("GradNorm task weights: segmt={:.5f}, depth={:.5f}".format(
+                        task_weights[1].item(), task_weights[0].item()))
 
             if not opt.debug:
                 if epoch == 0 or valid_loss < best_valid_loss:
@@ -221,8 +285,8 @@ if __name__=='__main__':
             batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
 
             predicted = model(batch_X)
-            image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth,
-                                               batch_mask_segmt, batch_mask_depth)
+            # _, _ = criterion(predicted, batch_y_segmt, batch_y_depth,
+            #                                    batch_mask_segmt, batch_mask_depth)
 
             pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
 

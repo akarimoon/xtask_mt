@@ -135,6 +135,8 @@ def cityscapes_xtask_parser():
 
     parser.add_argument('--uncertainty_weights', action='store_true',
                         help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')
+    parser.add_argument('--gradnorm', action='store_true',
+                        help='flag: use gradnorm')
 
     parser.add_argument('-j', '--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
