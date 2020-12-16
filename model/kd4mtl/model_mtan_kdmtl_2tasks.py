@@ -56,7 +56,7 @@ if not os.path.isdir(opt.out):
 title = 'NYUv2' if opt.dataset == 'nyu' else 'CS'
 logger = Logger(os.path.join(opt.out, 'mtan_kdmtl_' + 'log.txt'), title=title)
 logger.set_names(['Epoch', 'T.Ls', 'T. mIoU', 'T. Pix', 'T.Ld', 'T.abs', 'T.rel',
-    'V.Ls', 'V. mIoU', 'V. Pix', 'V.Ld', 'V.abs', 'V.rel', 'ds', 'dd', 'dn'])
+    'V.Ls', 'V. mIoU', 'V. Pix', 'V.Ld', 'V.abs', 'V.rel', 'ds', 'dd'])
 
 
 # define model, optimiser and scheduler
