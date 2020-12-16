@@ -246,8 +246,8 @@ class SegNet(nn.Module):
         return np.mean(error), np.median(error), np.mean(error < 11.25), np.mean(error < 22.5), np.mean(error < 30)
 
 class SegNet2tasks(nn.Module):
-    def __init__(self):
-        super(SegNet, self, class_nb=13, ignore_index=-1).__init__()
+    def __init__(self, class_nb=13, ignore_index=-1):
+        super(SegNet2tasks, self).__init__()
         # initialise network parameters
         filter = [64, 128, 256, 512, 512]
         self.class_nb = class_nb
@@ -400,7 +400,7 @@ class SegNet2tasks(nn.Module):
                     atten_decoder[i][j][0] = self.decoder_block_att[-j - 1](atten_decoder[i][j][0])
                     atten_decoder[i][j][1] = self.decoder_att[i][-j - 1](torch.cat((g_upsampl[j], atten_decoder[i][j][0]), dim=1))
                     atten_decoder[i][j][2] = (atten_decoder[i][j][1]) * g_decoder[j][-1]
-        feat_end = [atten_decoder[0][-1][-1], atten_decoder[1][-1][-1], atten_decoder[2][-1][-1]]
+        feat_end = [atten_decoder[0][-1][-1], atten_decoder[1][-1][-1]]
         feat = []
         for i in range(2):
             feat.append([feat_enc[i], feat_end[i]])
