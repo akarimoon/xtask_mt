@@ -330,7 +330,7 @@ if __name__=='__main__':
 
             pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
 
-            preds = [pred_t_segmt, pred_t_depth]
+            preds = [pred_segmt, pred_depth]
             targets = [batch_y_segmt, batch_y_depth]
             masks = [batch_mask_segmt, batch_mask_depth]
             logger.log(preds, targets, masks)
