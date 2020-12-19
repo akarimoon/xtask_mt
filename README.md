@@ -1,4 +1,4 @@
-# Cross-task Alignment Learning for Multiple Tasks
+# Cross-task Alignment Learning for Multi-Task Learning
 
 ## Tested on
 - numpy(v1.19.1)
@@ -47,11 +47,11 @@ The flags are the same for both datasets. The flags and its usage are as written
 | `input_path`     | Path to dataset  | default is `data/cityscapes` (CS) or `data/nyu_preprocessed` (NYU)|
 | `height`   | height of prediction | default: 128 (CS) or 288 (NYU) |
 | `width`   | width of prediction | default: 256 (CS) or 384 (NYU) |
-| `epochs`   | # of epochs | default: 200 (CS) or 100 (NYU) |
+| `epochs`   | # of epochs | default: 250 (CS) or 100 (NYU) |
 | `enc_layers`   | which encoder to use | default: 34, can choose from 18, 34, 50, 101, 152 |
 | `use_pretrain`   | toggle on to use pretrained encoder weights | available for both datasets |
 | `batch_size`   | batch size | default: 6 |
-| `scheduler_step_size`   | step size for scheduler | default: 60, note that we use StepLR |
+| `scheduler_step_size`   | step size for scheduler | default: 80 (CS) or 60 (NYU), note that we use StepLR |
 | `scheduler_gamma`   | decay rate of scheduler | default: 0.5 |
 | `alpha`   | weight of adding transferred depth loss | default: 0.01 (CS) or 0.0001 (NYU) |
 | `gamma`   | weight of adding transferred segmentation loss | default: 0.01 (CS) or 0.0001 (NYU) |
@@ -59,9 +59,10 @@ The flags are the same for both datasets. The flags and its usage are as written
 | `lp`   | loss fn for direct depth loss | default: L1, can choose from L1, MSE, logL1, smoothL1 |
 | `tdep_loss`   | loss fn for transferred depth loss | default: L1, can choose from L1 or SSIM |
 | `tseg_loss`   | loss fn for transferred segmentation loss | default: cross, can choose from cross or kl |
-| `batch_norm`   | toggle on to enable batch normalization layer in TaskTransferNet | slightly improves segmentation task |
-| `wider_ttnet`   | toggle on to double the # of channels in TaskTransferNet |  |
-| `uncertainty_weights`   | toggle on to use uncertainty weights (Kendall, et al. 2018) | we used this for best results |
+| `batch_norm`   | toggle to enable batch normalization layer in TaskTransferNet | slightly improves segmentation task |
+| `wider_ttnet`   | toggle to double the # of channels in TaskTransferNet |  |
+| `uncertainty_weights`   | toggle to use uncertainty weights (Kendall, et al. 2018) | we used this for best results |
+| `gradnorm`   | toggle to use GradNorm (Chen, et al. 2018) |  |
 
 ## Training
 ### Cityscapes
@@ -107,26 +108,26 @@ Evaluation metrics are the following:
 The results are the following:
 
 ### Cityscapes
-| Models                |Pix acc|mIoU   |Abs     |Abs Rel |
+| Models                | mIoU  |Pix Acc|Abs     |Abs Rel |
 |:---------------------:|:-----:|:-----:|:------:|:------:|
-| _MTAN_                | 53.86 | 91.11 | 0.0144 | 33.63  |
-| _KD4MTL_                | 52.71 | 91.54 | 0.0139 | 27.33  |
-| _AdaMT-Net_             | 62.53 | **94.16** | **0.0125** | <ins>22.23</ins>  |
+| MTAN                  | 59.25 | 91.22 | 0.0147 | 22.34  |
+| KD4MTL                | 58.46 | 91.36 | 0.0146 | 21.96  |
+| _AdaMT-Net_           | 62.53 | **94.16** | **0.0125** | <ins>22.23</ins>  |
 | Ours                  | **63.14**	| <ins>92.67</ins> | <ins>0.0126</ins> | **20.84**  |
 ### NYU
-| Models    |Pix acc|mIoU   |Abs     |Abs Rel |
+| Models     |mIoU   |Pix Acc| Abs    |Abs Rel |
 |:----------:|:-----:|:-----:|:------:|:------:|
-| MTAN\*     |  |  |  |  |
-| MTAN†      |  |  |  |  |
-| KD4MTL\*   |  |  |  |  |
-| KD4MTL†    |  |  |  |  |
-| AdaMT-Net\*| <ins>21.86</ins> | <ins>60.35</ins> | <ins>0.5933</ins>	| <ins>0.2456</ins> |
-| AdaMT-Net† | 20.61 | 58.91 | 0.6136 | 0.2547 |
+| MTAN\*     | 22.13 | 54.72 | 0.6349 | 0.2727 |
+| MTAN†      | 21.07 | 55.70 | 0.6035 | 0.2472 |
+| KD4MTL\*   | 19.41 | 57.83 | 0.6696 | 0.2994 |
+| KD4MTL†    | 22.44 | 57.32 | 0.6003 | 0.2601 |
+| _AdaMT-Net\*_| <ins>21.86</ins> | <ins>60.35</ins> | <ins>0.5933</ins>	| <ins>0.2456</ins> |
+| _AdaMT-Net†_ | 20.61 | 58.91 | 0.6136 | 0.2547 |
 | Ours†      | **25.56** | **60.36** | **0.5088** | **0.2313** |
 
 \*: Trained on 3 tasks (segmentation, depth, and surface normal)<br>
 †: Trained on 2 tasks (segmentation and depth)<br>
-_Italic_: From original paper
+_Italic_: From original paper (if not, reproduced results)
 
 MTAN: \[[paper](https://arxiv.org/pdf/1803.10704.pdf)\]\[[github](https://github.com/lorenmt/mtan)\]<br>
 KD4MTL: \[[paper](https://arxiv.org/pdf/2007.06889.pdf)\]\[[github](https://github.com/VICO-UoE/KD4MTL)\]<br>
