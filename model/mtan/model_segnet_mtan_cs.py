@@ -33,12 +33,12 @@ if opt.num_classes == 7:
         cs_train_set = MyCityscapesDataset(height=128, width=256, root_path=dataset_path, num_classes=7, split='train',
                                              transform=['random_flip', 'random_crop'], ignore_index=250)
         # cs_train_set = Cityscapes(root=dataset_path, train=True)
-        print('Applying data augmentation on Citscapes7.')
+        print('Applying data augmentation on Cityscapes7.')
     else:
         cs_train_set = MyCityscapesDataset(height=128, width=256, root_path=dataset_path, num_classes=7, split='train',
                                              transform=None, ignore_index=250)
         # cs_train_set = Cityscapes(root=dataset_path, train=True)
-        print('Standard training strategy without data augmentation.')
+        print('Standard training strategy without data augmentation on Cityscapes7.')
     cs_test_set = MyCityscapesDataset(height=128, width=256, root_path=dataset_path, num_classes=7, split='val',
                                              transform=None, ignore_index=250)
     # cs_test_set = Cityscapes(root=dataset_path, train=False)
@@ -51,22 +51,22 @@ elif opt.num_classes == 19:
     else:
         cs_train_set = MyCityscapesDataset(height=128, width=256, root_path=dataset_path, num_classes=19, split='train',
                                              transform=None, ignore_index=250)
-        print('Standard training strategy without data augmentation.')
+        print('Standard training strategy without data augmentation on Cityscapes19.')
     cs_test_set = MyCityscapesDataset(height=128, width=256, root_path=dataset_path, num_classes=19, split='val',
                                              transform=None, ignore_index=250)
 
-
+print("Task weighting method: {}".format(opt.weight))
 
 batch_size = 2
 cs_train_loader = torch.utils.data.DataLoader(
     dataset=cs_train_set,
     batch_size=batch_size,
-    shuffle=True)
+    shuffle=True, num_workers=4)
 
 cs_test_loader = torch.utils.data.DataLoader(
     dataset=cs_test_set,
     batch_size=batch_size,
-    shuffle=False)
+    shuffle=False, num_workers=4)
 
 # Train and evaluate multi-task network
 multi_task_trainer(cs_train_loader,

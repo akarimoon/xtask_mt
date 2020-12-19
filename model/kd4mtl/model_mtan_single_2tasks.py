@@ -22,6 +22,7 @@ parser.add_argument('--dataset', default='nyu', type=str, help='choose dataset: 
 parser.add_argument('--task', default='semantic', type=str, help='choose task: semantic, depth')
 parser.add_argument('--dataroot', default='nyuv2', type=str, help='dataset root')
 parser.add_argument('--gpu', default='0', type=str, help='id(s) for CUDA_VISIBLE_DEVICES')
+parser.add_argument('--apply_augmentation', action='store_true', help='toggle to apply data augmentation')
 parser.add_argument('--out', default='result', help='Directory to output the result')
 opt = parser.parse_args()
 
@@ -34,7 +35,7 @@ def save_checkpoint(state, is_best, checkpoint=opt.out, filename='checkpoint.pth
 
 if not os.path.isdir(opt.out):
     mkdir_p(opt.out)
-title = 'NYUv2'
+title = 'NYUv2' if opt.dataset == 'nyu' else 'CS'
 logger = Logger(os.path.join(opt.out, '{}_mtan_single_model_task_{}_log.txt'.format(opt.dataset, opt.task)), title=title)
 logger.set_names(['Epoch', 'T.Ls', 'T. mIoU', 'T. Pix', 'T.Ld', 'T.abs', 'T.rel',
     'V.Ls', 'V. mIoU', 'V. Pix', 'V.Ld', 'V.abs', 'V.rel', 'ds', 'dd'])
@@ -63,11 +64,15 @@ print('LOSS FORMAT: SEMANTIC_LOSS MEAN_IOU PIX_ACC\n'
 # define dataset path
 dataset_path = opt.dataroot
 if opt.dataset == 'nyu':
-    train_set = NYUv2(root=dataset_path, train=True)
-    test_set = NYUv2(root=dataset_path, train=False)
+    train_set = NYUv2(root=dataset_path, train=True, augmentation=opt.apply_augmentation)
+    test_set = NYUv2(root=dataset_path, train=False, augmentation=opt.apply_augmentation)
 elif opt.dataset == 'cs':
-    train_set = MyCityscapesDataset(height=128, width=256, root_path=dataset_path, num_classes=7, split='train',
-                                    transform=['random_flip', 'random_crop'], ignore_index=ignore_index)
+    if opt.apply_augmentation:
+        train_set = MyCityscapesDataset(height=128, width=256, root_path=dataset_path, num_classes=7, split='train',
+                                        transform=['random_flip', 'random_crop'], ignore_index=ignore_index)
+    else:
+        train_set = MyCityscapesDataset(height=128, width=256, root_path=dataset_path, num_classes=7, split='train',
+                                        transform=None, ignore_index=ignore_index)    
     test_set = MyCityscapesDataset(height=128, width=256, root_path=dataset_path, num_classes=7, split='val',
                                     transform=None, ignore_index=ignore_index)
 

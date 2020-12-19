@@ -37,7 +37,9 @@ if opt.apply_augmentation:
     print('Applying data augmentation on NYUv2.')
 else:
     nyuv2_train_set = NYUv2(root=dataset_path, train=True)
-    print('Standard training strategy without data augmentation.')
+    print('Standard training strategy without data augmentation on NYUv2.')
+print("# of tasks: {}".format(num_tasks))
+print("Task weighting method: {}".format(opt.weight))
 
 nyuv2_test_set = NYUv2(root=dataset_path, train=False)
 

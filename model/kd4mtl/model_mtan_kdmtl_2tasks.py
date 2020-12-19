@@ -13,7 +13,7 @@ import shutil
 from dataset.nyuv2 import *
 from dataset.cityscapes import *
 from torch.autograd import Variable
-from model.mtan import SegNet2tasks as SegNet
+from model.mtan import SegNet2tasks
 from model.mtan_single import SegNet as SegNet_STAN
 
 from utils import Logger, AverageMeter, accuracy, mkdir_p, savefig
@@ -53,10 +53,10 @@ tasks = ['semantic', 'depth']
 
 if not os.path.isdir(opt.out):
     mkdir_p(opt.out)
-title = 'NYUv2'
+title = 'NYUv2' if opt.dataset == 'nyu' else 'CS'
 logger = Logger(os.path.join(opt.out, 'mtan_kdmtl_' + 'log.txt'), title=title)
 logger.set_names(['Epoch', 'T.Ls', 'T. mIoU', 'T. Pix', 'T.Ld', 'T.abs', 'T.rel',
-    'V.Ls', 'V. mIoU', 'V. Pix', 'V.Ld', 'V.abs', 'V.rel', 'ds', 'dd', 'dn'])
+    'V.Ls', 'V. mIoU', 'V. Pix', 'V.Ld', 'V.abs', 'V.rel', 'ds', 'dd'])
 
 
 # define model, optimiser and scheduler
@@ -66,12 +66,12 @@ use_cuda = torch.cuda.is_available()
 class_nb = 13 if opt.dataset == 'nyu' else 7
 ignore_index = -1 if opt.dataset == 'nyu' else 250
 
-model = SegNet(ignore_index=ignore_index).cuda()
+model = SegNet2tasks(ignore_index=ignore_index).cuda()
 single_model = {}
 transformers = {}
 for i, t in enumerate(tasks):
     single_model[i] = SegNet_STAN(class_nb=class_nb, task=tasks[i], ignore_index=ignore_index).cuda()
-    checkpoint = torch.load('{}_mtan_single_model_task_{}_model_best.pth.tar'.format(opt.dataset, opt.single_dir, tasks[i]))
+    checkpoint = torch.load(os.path.join(opt.out, '{}_mtan_single_model_task_{}_model_best.pth.tar'.format(opt.dataset, tasks[i])))
     single_model[i].load_state_dict(checkpoint['state_dict'])
     transformers[i] = transformer().cuda()
 
@@ -152,7 +152,7 @@ for epoch in range(total_epoch):
         train_loss = model.model_fit(train_pred[0], train_label, train_pred[1], train_depth)
 
         w = torch.ones(len(tasks)).cuda()
-        loss = torch.mean(sum(w[i] * train_loss[i] for i in range(3)))
+        loss = torch.mean(sum(w[i] * train_loss[i] for i in range(2)))
 
 
         dist_loss = []
@@ -238,7 +238,7 @@ for epoch in range(total_epoch):
     logger.append([index, avg_cost[index, 0], avg_cost[index, 1], avg_cost[index, 2], avg_cost[index, 3],
                 avg_cost[index, 4], avg_cost[index, 5], avg_cost[index, 6], avg_cost[index, 7], avg_cost[index, 8], avg_cost[index, 9],
                 avg_cost[index, 10], avg_cost[index, 11],
-                dist_loss_save[0].avg, dist_loss_save[1].avg)
+                dist_loss_save[0].avg, dist_loss_save[1].avg])
     if isbest:
         best_loss = loss_index
         print_index = index

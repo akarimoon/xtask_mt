@@ -95,22 +95,22 @@ def cityscapes_xtask_parser():
     parser.add_argument('--ignore_index', type=int, default=250,
                         help='ignore index (default: 250)')
 
-    parser.add_argument('-e', '--epochs', type=int, default=200,
-                        help='number of epochs (default: 200)')
+    parser.add_argument('-e', '--epochs', type=int, default=250,
+                        help='number of epochs (default: 250)')
     parser.add_argument('--enc_layers', type=int, default=34,
                         help='type of ResNet encoder (default: 34)')
     parser.add_argument('--use_pretrain', action='store_true',
                         help='flag: use pretrained encoder (default: False)')
 
-    parser.add_argument('-b', '--batch_size', type=int, default=6,
-                        help='batch size (default: 6)')
+    parser.add_argument('-b', '--batch_size', type=int, default=8,
+                        help='batch size (default: 8)')
     parser.add_argument('--lr', '--learning_rate', type=float, default=0.0001,
                         help='learning rate (default: 0.0001)')
     parser.add_argument('--b1', '--beta_1', type=float, default=0.9,
                         help='beta_1 of Adam (default: 0.9)')
     parser.add_argument('--b2', '--beta_2', type=float, default=0.99,
                         help='beta_2 of Adam (default: 0.99)')
-    parser.add_argument('--scheduler_step_size', type=int, default=60,
+    parser.add_argument('--scheduler_step_size', type=int, default=80,
                         help='step size of scheduler (steplr)')
     parser.add_argument('--scheduler_gamma', type=float, default=0.5,
                         help='lr decay of scheduler (steplr)')
@@ -135,6 +135,8 @@ def cityscapes_xtask_parser():
 
     parser.add_argument('--uncertainty_weights', action='store_true',
                         help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')
+    parser.add_argument('--gradnorm', action='store_true',
+                        help='flag: use gradnorm')
 
     parser.add_argument('-j', '--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')

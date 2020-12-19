@@ -14,6 +14,7 @@ class Logger():
         self.rmse = 0
         self.irmse = 0
         self.irmse_log = 0
+        self.iproj = 0
         self.abs = 0
         self.abs_rel = 0
         self.sqrt_rel = 0
@@ -87,11 +88,11 @@ class Logger():
         """
         return np.sum(np.sqrt(np.abs(preds - targets) ** 2 * masks)) / np.sum(masks)
 
-    def _depth_metric_rmse(self, preds, targets, masks, intrinsics=0.20*2262):
-        metric_preds = intrinsics * preds / 256
-        metric_preds = np.clip(metric_preds, a_min=1e-9, a_max=None)
-        metric_targs = intrinsics * targets / 256
-        return np.sum(np.sqrt(np.abs(metric_preds - metric_targs) ** 2 * masks)) / np.sum(masks)
+    def _depth_iproj_error(self, inv_preds, inv_targets, masks):
+        inv_preds = np.clip(inv_preds, a_min=1e-9, a_max=None)
+        flat_preds = (np.log(inv_preds) * masks).flatten()
+        flat_projs = flat_preds * np.ones_like(flat_preds) / np.sqrt(len(flat_preds))
+        return np.sum(np.dot(flat_preds, flat_preds) - np.dot(flat_projs, flat_projs)) / np.sum(masks)
 
     def _depth_irmse(self, inv_preds, inv_targets, masks):
         """
@@ -167,15 +168,11 @@ class Logger():
         N = preds_segmt.shape[0]
         self.pixel_acc += self._compute_pixacc(preds_segmt, targets_segmt) * N
         self.miou += self._compute_miou(preds_segmt, targets_segmt) * N
-<<<<<<< HEAD
-        # self.rmse += self._depth_rmse(preds_depth, targets_depth, masks_depth) * N
-        self.rmse += self._depth_metric_rmse(preds_depth, targets_depth, masks_depth) * N
-=======
         self.rmse += self._depth_rmse(preds_depth, targets_depth, masks_depth) * N
         # self.rmse += self._depth_metric_rmse(preds_depth, targets_depth, masks_depth) * N
->>>>>>> d82394882473687436c3b4e3bb8760fa7bd50693
         self.irmse += self._depth_irmse(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.irmse_log += self._depth_irmse_log(inv_preds_depth, inv_targets_depth, masks_depth) * N
+        self.iproj += self._depth_iproj_error(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.abs += self._depth_abs(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.abs_rel += self._depth_abs_rel(inv_preds_depth, inv_targets_depth, masks_depth) * N
         self.sqrt_rel += self._depth_sqrt_rel(inv_preds_depth, inv_targets_depth, masks_depth) * N
@@ -191,12 +188,14 @@ class Logger():
         self.rmse /= self.count
         self.irmse /= self.count
         self.irmse_log /= self.count
+        self.iproj /= self.count
         self.abs /= self.count
         self.abs_rel /= self.count
         self.sqrt_rel /= self.count
         self.delta1 /= self.count
         self.delta2 /= self.count
         self.delta3 /= self.count
+        print(self.iproj)
 
         print_segmt_str = "Pix Acc: {:.4f}, mIoU: {:.4f}"
         print(print_segmt_str.format(
@@ -268,6 +267,7 @@ class LabelSmoothingLoss(nn.Module):
 class XTaskLoss(nn.Module):
     def __init__(self, num_classes=19, alpha=0.01, gamma=0.01, label_smoothing=0.,
                  image_loss_type="MSE", t_segmt_loss_type="cross", t_depth_loss_type="ssim",
+                 balance_method=None,
                  ignore_index=250):
         super(XTaskLoss, self).__init__()
         self.num_classes = num_classes
@@ -276,6 +276,7 @@ class XTaskLoss(nn.Module):
         self.image_loss_type = image_loss_type
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=ignore_index, reduction='mean')
         self.t_depth_loss_type = t_depth_loss_type
+        self.balance_method = balance_method
 
         self.nonlinear = nn.LogSoftmax(dim=1)
 
@@ -342,7 +343,7 @@ class XTaskLoss(nn.Module):
         loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
         return torch.mean(loss)
 
-    def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, log_vars=None):
+    def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, task_weights=None):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
         if self.num_classes != 13 and mask_segmt is None:
             mask_segmt = torch.ones_like(targ_segmt)
@@ -355,14 +356,18 @@ class XTaskLoss(nn.Module):
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
         tseg_loss = self.tseg_loss(pred_t_segmt, torch.argmax(self.nonlinear(pred_segmt.detach().clone()), dim=1), mask_segmt)
 
-        if log_vars is None:
+        if self.balance_method is None:
             image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss
             label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss
 
-        else:
+        elif self.balance_method == "uncert":
             image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss
             label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss
-            image_loss = 0.5 * torch.exp(-log_vars[0]) * image_loss_tmp + log_vars[0]
-            label_loss = 0.5 * torch.exp(-log_vars[1]) * label_loss_tmp + log_vars[1]
+            image_loss = 0.5 * torch.exp(-task_weights[0]) * image_loss_tmp + task_weights[0]
+            label_loss = 0.5 * torch.exp(-task_weights[1]) * label_loss_tmp + task_weights[1]
+
+        elif self.balance_method == "gradnorm":
+            image_loss = (1 - self.alpha) * depth_loss + self.alpha * tseg_loss
+            label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tdep_loss
 
         return image_loss, label_loss

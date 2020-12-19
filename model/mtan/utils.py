@@ -121,7 +121,8 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
     test_batch = len(test_loader)
     T = opt.temp
     avg_cost = np.zeros([total_epoch, 16], dtype=np.float32) if num_tasks == 2 else np.zeros([total_epoch, 28], dtype=np.float32)
-    lambda_weight = np.ones([2, total_epoch])
+    lambda_weight = np.ones([num_tasks, total_epoch])
+    best_index = 0
     best_valid_loss = 1e5
     best_avg_cost = None
 
@@ -204,6 +205,7 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                     avg_cost[index, 8:] += cost[8:] / test_batch
 
                     if val_loss.item() < best_valid_loss:
+                        best_index = index
                         best_valid_loss = val_loss
                         best_avg_cost = avg_cost
 
@@ -281,6 +283,7 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                     avg_cost[index, 14:] += cost[14:] / test_batch
 
                     if val_loss.item() < best_valid_loss:
+                        best_index = index
                         best_valid_loss = val_loss
                         best_avg_cost = avg_cost
 
@@ -301,14 +304,14 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
     print('Scores (Test):')
     if num_tasks == 2:
         print('Pix Acc: {:.4f}, mIoU: {:.4f} | Abs Err: {:.4f}, Rel Err: {:.4f}, RMSE: {:.4f}, RMSE (metric): {:.4f}'.format(
-            best_avg_cost[index, 10], best_avg_cost[index, 9], 
-            best_avg_cost[index, 12], best_avg_cost[index, 13], best_avg_cost[indes, 14], best_avg_cost[index, 15]
+            best_avg_cost[best_index, 10], best_avg_cost[best_index, 9], 
+            best_avg_cost[best_index, 12], best_avg_cost[best_index, 13], best_avg_cost[best_index, 14], best_avg_cost[best_index, 15]
         ))
     else:
         print('Pix Acc: {:.4f}, mIoU: {:.4f} | Abs Err: {:.4f}, Rel Err: {:.4f}, RMSE: {:.4f}, RMSE (metric): {:.4f} | mean: {:.4f}, med: {:.4f}, <11.25: {:.4f}, <22.5: {:.4f}, <30: {:.4f}'.format(
-            best_avg_cost[index, 16], best_avg_cost[index, 15], 
-            best_avg_cost[index, 18], best_avg_cost[index, 19], best_avg_cost[index, 20], best_avg_cost[index, 21], 
-            best_avg_cost[index, 23], best_avg_cost[index, 24], best_avg_cost[index, 25], best_avg_cost[index, 26], best_avg_cost[index, 27]
+            best_avg_cost[best_index, 16], best_avg_cost[best_index, 15], 
+            best_avg_cost[best_index, 18], best_avg_cost[best_index, 19], best_avg_cost[best_index, 20], best_avg_cost[best_index, 21], 
+            best_avg_cost[best_index, 23], best_avg_cost[best_index, 24], best_avg_cost[best_index, 25], best_avg_cost[best_index, 26], best_avg_cost[best_index, 27]
         ))
 
 """

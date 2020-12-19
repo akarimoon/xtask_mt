@@ -20,8 +20,8 @@ def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=Non
             f.write("# of classes: {}\n".format(opt.num_classes))
         f.write("   batch norm in ttnet: {} (if not written, then False)\n".format(opt.batch_norm))
         f.write("   wider ttnet: {} (if not written, then False)\n".format(opt.wider_ttnet))
-        f.write("transfernet type: {}, use_uncertainty: {}\n".format(
-            model.trans_name, opt.uncertainty_weights))
+        f.write("transfernet type: {}, use_uncertainty: {}, use_gradnorm: {}\n".format(
+            model.trans_name, opt.uncertainty_weights, opt.gradnorm))
             
         print_segmt_str = "Pix Acc: {:.4f}, mIoU: {:.4f}\n"
         f.write(print_segmt_str.format(
@@ -49,8 +49,8 @@ def write_indv_results(opt, model, folder_path):
         f.write("   use pretrained encoder: {} (if not written, then False)\n".format(opt.use_pretrain))
         f.write("   batch norm in ttnet: {} (if not written, then False)\n".format(opt.batch_norm))
         f.write("   wider ttnet: {} (if not written, then False)\n".format(opt.wider_ttnet))
-        f.write("   transfernet type: {}, use_uncertainty: {}\n".format(
-            model.trans_name, opt.uncertainty_weights))
+        f.write("   transfernet type: {}, use_uncertainty: {}, use_gradnorm: {}\n".format(
+            model.trans_name, opt.uncertainty_weights, opt.gradnorm))
 
 def make_results_dir(folder_path="./tmp"):
     i = 1
@@ -68,7 +68,8 @@ def make_results_dir(folder_path="./tmp"):
     return num, os.path.join(folder_path, num)
 
 def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses=None, valid_losses=None, is_nyu=False):
-    best_set_size = best_set["pred_depth"].shape[0]
+    # best_set_size = best_set["pred_depth"].shape[0]
+    best_set_size = 4
     show = np.random.randint(best_set_size)
     if not opt.infer_only:
         plt.figure(figsize=(14, 8))
@@ -146,6 +147,9 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     sns.regplot(x="targ", y="pred", data=df, ax=ax2, scatter_kws={'s':5})
     ax2.set_xlim((df["targ"].min(), df["targ"].max()))
     ax2.set_ylim((df["targ"].min(), df["targ"].max()))
+    # sns.regplot(x=flat_pred[flat_targ > 0], y=flat_targ[flat_targ > 0], ax=ax2)
+    # ax2.set_xlim((0, 0.5))
+    # ax2.set_ylim((0, 0.5))
     plt.title("Scatter plot of depth (non-inverted)")
 
     sns.boxplot(x="targ_bin", y="diff_abs", data=df, ax=ax3)

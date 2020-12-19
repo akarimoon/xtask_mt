@@ -93,11 +93,7 @@ class NYUv2(Dataset):
         return self.data_len
 
     def _random_scale_crop(self, image, segmt, depth):
-<<<<<<< HEAD
-        height, width = img.shape[-2:]
-=======
         height, width = image.shape[-2:]
->>>>>>> d82394882473687436c3b4e3bb8760fa7bd50693
         sc = self.scale[random.randint(0, len(self.scale) - 1)]
         h, w = int(height / sc), int(width / sc)
         i = random.randint(0, height - h)

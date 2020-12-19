@@ -3,7 +3,7 @@
 python main_cross_cs.py --uncertainty_weights --run_only -b 8 -e 250 --scheduler_step_size 80 --notqdm --alpha 0.0 --gamma 0.0
 python main_cross_cs.py --uncertainty_weights --run_only -b 8 -e 250 --scheduler_step_size 80 --notqdm --label_smoothing 0.1 --alpha 0.0 --gamma 0.0
 
-python main_cross_cs.py --uncertainty_weights --run_only -b 8 -e 250 --scheduler_step_size 80 --notqdm --use_pretrained
+python main_cross_cs.py --uncertainty_weights --run_only -b 8 -e 250 --scheduler_step_size 80 --notqdm --use_pretrain
 python main_cross_cs.py --uncertainty_weights --run_only -b 8 -e 250 --scheduler_step_size 80 --notqdm --enc_layers 50
 python main_cross_cs.py --uncertainty_weights --run_only -b 8 -e 250 --scheduler_step_size 80 --notqdm --enc_layers 101
 
