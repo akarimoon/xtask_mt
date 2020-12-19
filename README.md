@@ -12,7 +12,7 @@
 
 ## Data
 ### Cityscapes (CS)
-Download Cityscapes dataset and put it in a subdirectory named `./data/cityscapes`.
+Download [`Cityscapes` dataset](https://www.cityscapes-dataset.com/login/) and put it in a subdirectory named `./data/cityscapes`.
 The folder should have the following subfolders:
 - RGB image in folder `leftImg8bit`
 - Segmentation in folder `gtFine`
