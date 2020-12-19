@@ -67,11 +67,11 @@ The flags are the same for both datasets. The flags and its usage are as written
 ## Training
 ### Cityscapes
 For the Cityscapes dataset, there are two versions of segmentation task, which are 7-classes task and 19-classes task (Use flag 'num_classes' to switch tasks, default is 7).<br>
-So far, the results show SOTA for 7-class segmentation task + depth estimation.
+So far, the results show near-SOTA for 7-class segmentation task + depth estimation.
 
 ResNet34 was used as the encoder, _L1()_ for direct depth loss and _CrossEntropyLosswithLabelSmoothing()_ with smoothing value of 0.1 for transferred segmentation loss.<br>
 The hyperparameter weights for both transferred predictions were 0.01.<br>
-I used Adam as my optimizer with an initial learning rate of 0.0001 and trained for 200 epochs. The learning rate was halved every 60 epochs.
+I used Adam as my optimizer with an initial learning rate of 0.0001 and trained for 250 epochs with batch size 8. The learning rate was halved every 80 epochs.
 
 To reproduce the code, use the following:
 ```
@@ -81,11 +81,11 @@ python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights
 We notice that not using the label smoothing for transferred segmentation predictions leads to better depth predictions but marginally worse segmentation predictions.
 
 ### NYU
-Our results show SOTA for NYU dataset as well.
+Our results show SOTA for NYU dataset.
 
 ResNet34 was used as the encoder, _L1()_ for direct depth loss and _CrossEntropyLosswithLabelSmoothing()_ with smoothing value of 0.1 for transferred segmentation loss.<br>
 The hyperparameter weights for both transferred predictions were 0.0001.<br>
-I used Adam as my optimizer with an initial learning rate of 0.0001 and trained for 100 epochs. The learning rate was halved every 60 epochs.
+I used Adam as my optimizer with an initial learning rate of 0.0001 and trained for 100 epochs with batch size 6. The learning rate was halved every 60 epochs.
 
 To reproduce the code, use the following:
 ```
@@ -129,6 +129,7 @@ The results are the following:
 †: Trained on 2 tasks (segmentation and depth)<br>
 _Italic_: From original paper (if not, reproduced results)
 
+### Papers referred
 MTAN: \[[paper](https://arxiv.org/pdf/1803.10704.pdf)\]\[[github](https://github.com/lorenmt/mtan)\]<br>
 KD4MTL: \[[paper](https://arxiv.org/pdf/2007.06889.pdf)\]\[[github](https://github.com/VICO-UoE/KD4MTL)\]<br>
 AdaMT-Net: \[[paper](https://openaccess.thecvf.com/content_CVPRW_2020/papers/w40/Jha_AdaMT-Net_An_Adaptive_Weight_Learning_Based_Multi-Task_Learning_Model_for_CVPRW_2020_paper.pdf)\]
