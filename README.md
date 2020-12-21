@@ -112,6 +112,7 @@ The results are the following:
 |:---------------------:|:-----:|:-----:|:------:|:------:|
 | MTAN                  | 59.25 | 91.22 | 0.0147 | 22.34  |
 | KD4MTL                | 58.46 | 91.36 | 0.0146 | 21.96  |
+| PCGrad                | 58.45 | 91.01 | 0.0152 | 22.93  |
 | _AdaMT-Net_           | 62.53 | **94.16** | **0.0125** | <ins>22.23</ins>  |
 | Ours                  | **63.14**	| <ins>92.67</ins> | <ins>0.0126</ins> | **20.84**  |
 ### NYU
@@ -120,8 +121,10 @@ The results are the following:
 | MTAN\*     | 22.13 | 54.72 | 0.6349 | 0.2727 |
 | MTAN†      | 21.07 | 55.70 | 0.6035 | 0.2472 |
 | KD4MTL\*   | 19.41 | 57.83 | 0.6696 | 0.2994 |
-| KD4MTL†    | 22.44 | 57.32 | 0.6003 | 0.2601 |
-| _AdaMT-Net\*_| <ins>21.86</ins> | <ins>60.35</ins> | <ins>0.5933</ins>	| <ins>0.2456</ins> |
+| KD4MTL†    | <ins>22.44</ins> | 57.32 | 0.6003 | 0.2601 |
+| PCGrad\*   | 21.41 | 54.99 | 0.6188 | 0.2697 |
+| PCGrad†    | 21.52 | 53.29 | 0.6092 | 0.2578 |
+| _AdaMT-Net\*_| 21.86 | <ins>60.35</ins> | <ins>0.5933</ins>	| <ins>0.2456</ins> |
 | _AdaMT-Net†_ | 20.61 | 58.91 | 0.6136 | 0.2547 |
 | Ours†      | **25.56** | **60.36** | **0.5088** | **0.2313** |
 
@@ -132,6 +135,7 @@ _Italic_: From original paper (if not, reproduced results)
 ### Papers referred
 MTAN: \[[paper](https://arxiv.org/pdf/1803.10704.pdf)\]\[[github](https://github.com/lorenmt/mtan)\]<br>
 KD4MTL: \[[paper](https://arxiv.org/pdf/2007.06889.pdf)\]\[[github](https://github.com/VICO-UoE/KD4MTL)\]<br>
+PCGrad: \[[paper](https://proceedings.neurips.cc/paper/2020/file/3fe78a8acf5fda99de95303940a2420c-Paper.pdf)\]\[[github (tensorflow)](https://github.com/tianheyu927/PCGrad)\]\[[github (pytorch)](https://github.com/WeiChengTseng/Pytorch-PCGrad)\]<br>
 AdaMT-Net: \[[paper](https://openaccess.thecvf.com/content_CVPRW_2020/papers/w40/Jha_AdaMT-Net_An_Adaptive_Weight_Learning_Based_Multi-Task_Learning_Model_for_CVPRW_2020_paper.pdf)\]
 
 
