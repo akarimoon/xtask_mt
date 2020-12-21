@@ -3,8 +3,8 @@ import argparse
 def nyu_xtask_parser():
 
     parser = argparse.ArgumentParser(description='XTask MT on NYU Dataset')
-    parser.add_argument('--input_path', default='./data/nyu_preprocessed',
-                        help='path of dataset (default: ./data/nyu_preprocessed)')
+    parser.add_argument('--input_path', default='./data/nyu',
+                        help='path of dataset (default: ./data/nyu)')
     parser.add_argument('--height', type=int, default=288,
                         help='height of output (default: 288)')
     parser.add_argument('--width', type=int, default=384,
