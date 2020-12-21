@@ -19,7 +19,7 @@ The folder should have the following subfolders:
 - Disparity maps in folder `disparity`
 
 ### NYU
-We use the preprocessed [`NYUv2` dataset](https://www.dropbox.com/sh/86nssgwm6hm3vkb/AACrnUQ4GxpdrBbLjb6n-mWNa?dl=0) provided by [this repo](https://github.com/lorenmt/mtan). Download the dataset and put it in the dataset folder in `./data/nyu_preprocessed`.
+We use the preprocessed [`NYUv2` dataset](https://www.dropbox.com/sh/86nssgwm6hm3vkb/AACrnUQ4GxpdrBbLjb6n-mWNa?dl=0) provided by [this repo](https://github.com/lorenmt/mtan). Download the dataset and put it in the dataset folder in `./data/nyu`.
 
 ## Model
 The model consists of one encoder (ResNet) and two decoders, one for each task. 
@@ -44,7 +44,7 @@ The flags are the same for both datasets. The flags and its usage are as written
 
 | Flag Name        | Usage  |  Comments |
 | ------------- |-------------| -----|
-| `input_path`     | Path to dataset  | default is `data/cityscapes` (CS) or `data/nyu_preprocessed` (NYU)|
+| `input_path`     | Path to dataset  | default is `data/cityscapes` (CS) or `data/nyu` (NYU)|
 | `height`   | height of prediction | default: 128 (CS) or 288 (NYU) |
 | `width`   | width of prediction | default: 256 (CS) or 384 (NYU) |
 | `epochs`   | # of epochs | default: 250 (CS) or 100 (NYU) |
