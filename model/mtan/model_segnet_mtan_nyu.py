@@ -6,6 +6,7 @@ import torch.utils.data.sampler as sampler
 
 from create_dataset import *
 from utils import *
+from pcgrad import *
 from segnets import *
 
 parser = argparse.ArgumentParser(description='Multi-task: Attention Network')
@@ -13,6 +14,7 @@ parser.add_argument('--weight', default='equal', type=str, help='multi-task weig
 parser.add_argument('--dataroot', default='nyuv2', type=str, help='dataset root')
 parser.add_argument('--temp', default=2.0, type=float, help='temperature for DWA (must be positive)')
 parser.add_argument('--apply_augmentation', action='store_true', help='toggle to apply data augmentation on NYUv2')
+parser.add_argument('--pcgrad', action='store_true', help='toggle to use pcgrad')
 parser.add_argument('-n', '--num_tasks', type=int, default=2, help='number of tasks, 2 or 3')
 opt = parser.parse_args()
 
@@ -23,8 +25,13 @@ if num_tasks == 3:
     SegNet_MTAN = SegNet3tasks().to(device)
 else:
     SegNet_MTAN = SegNet2tasks(class_nb=13).to(device)
-optimizer = optim.Adam(SegNet_MTAN.parameters(), lr=1e-4)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
+if not opt.pcgrad:
+    optimizer = optim.Adam(SegNet_MTAN.parameters(), lr=1e-4)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
+else:
+    optimizer = PCGrad(optim.Adam(SegNet_MTAN.parameters(), lr=1e-4))
+    scheduler = None
+    print("Using PCGrad")
 
 print('Parameter Space: ABS: {:.1f}, REL: {:.4f}'.format(count_parameters(SegNet_MTAN),
                                                          count_parameters(SegNet_MTAN) / 24981069))

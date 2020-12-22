@@ -209,7 +209,8 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                         best_valid_loss = val_loss
                         best_avg_cost = avg_cost
 
-            scheduler.step()
+            if scheduler is not None:
+                scheduler.step()
             elapsed_time = (time.time() - start_time) / 60
             print("=======================================")
             print('Epoch: {:04d} [{:.1f}min]'.format(index, elapsed_time))
@@ -287,7 +288,8 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                         best_valid_loss = val_loss
                         best_avg_cost = avg_cost
 
-            scheduler.step()
+            if scheduler is not None:
+                scheduler.step()
             elapsed_time = (time.time() - start_time) / 60
             print("=======================================")
             print('Epoch: {:04d} [{:.1f}min]'.format(index, elapsed_time))

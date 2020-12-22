@@ -94,7 +94,7 @@ if __name__ == '__main__':
     print("   {}".format(model.trans_name))
     
     print("Options:")
-    log_vars = None
+    task_weights = None
     if opt.uncertainty_weights:
         print("   use uncertainty weights")
         """
@@ -158,7 +158,7 @@ if __name__ == '__main__':
                         epoch, opt.epochs, elapsed_time, train_loss, valid_loss))
             if opt.uncertainty_weights:
                 print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
-                        (torch.exp(log_vars[1]) ** 0.5).item(), (torch.exp(log_vars[0]) ** 0.5).item()))
+                        (torch.exp(task_weights[1]) ** 0.5).item(), (torch.exp(task_weights[0]) ** 0.5).item()))
 
             if not opt.debug:
                 if epoch == 0 or valid_loss < best_valid_loss:
@@ -189,7 +189,7 @@ if __name__ == '__main__':
         model.load_state_dict(torch.load(weights_path, map_location=device))
 
     logger = Logger(num_classes=opt.num_classes, ignore_index=opt.ignore_index)
-    best_loss = 1e5
+    best_score = 0
     best_set = {}
 
     model.eval()
@@ -210,9 +210,10 @@ if __name__ == '__main__':
             logger.log(preds, targets)
 
             # use best results for final plot
-            loss = overall_score(preds, targets)
-            if i == 0 or loss < best_loss:
-                best_set["loss"] = loss
+            score = overall_score(preds, targets)
+            if i == 0 or score > best_score:
+                best_score = score
+                best_set["score"] = score
                 best_set["original"] = batch_X
                 best_set["targ_segmt"] = batch_y_segmt
                 best_set["targ_depth"] = batch_y_depth
