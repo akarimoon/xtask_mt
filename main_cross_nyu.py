@@ -18,9 +18,13 @@ from module import Logger, XTaskLoss
 from model.xtask_ts import XTaskTSNet
 from utils import *
 
-def compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
-                 model, log_vars=None,
-                 criterion=None, optimizer=None, is_train=True):
+def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
+                 model, task_weights=None,
+                 criterion=None, optimizer=None, 
+                 is_train=True):
+
+    if task_weights is None:
+        task_weights = [1, 1]
 
     model.train(is_train)
 
@@ -29,15 +33,15 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
     batch_y_depth = batch_y_depth.to(device, non_blocking=True)
 
     output = model(batch_X)
-    image_loss, label_loss = criterion(output, batch_y_segmt, batch_y_depth, log_vars=log_vars)
+    image_loss, label_loss = criterion(output, batch_y_segmt, batch_y_depth, task_weights=task_weights)
 
     if is_train:
         optimizer.zero_grad()
         image_loss.backward(retain_graph=True)
-        label_loss.backward()
+        label_loss.backward(retain_graph=True)
         optimizer.step()
 
-    return image_loss.item() + label_loss.item()
+    return (task_weights[0] * image_loss).item() + (task_weights[1] * label_loss).item()
 
 if __name__ == '__main__':
     torch.manual_seed(0)
@@ -99,8 +103,8 @@ if __name__ == '__main__':
         """
         log_var_a = torch.zeros((1,), requires_grad=True, device=device_name)
         log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
-        log_vars = [log_var_a, log_var_b]
-        parameters_to_train += log_vars
+        task_weights = [log_var_a, log_var_b]
+        parameters_to_train += task_weights
 
     print("Loading dataset...")
     train_data = NYUv2(root_path=opt.input_path, split='train', transforms=True)
@@ -131,15 +135,15 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(tqdm(train, disable=opt.notqdm)):
                 batch_X, batch_y_segmt, batch_y_depth = batch
-                loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
-                                    model, log_vars=log_vars,
+                loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth,
+                                    model, task_weights=task_weights,
                                     criterion=criterion, optimizer=optimizer, is_train=True)
                 train_loss += loss
 
             for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
                 batch_X, batch_y_segmt, batch_y_depth = batch
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
-                                    model, log_vars=log_vars,
+                                    model, task_weights=task_weights,
                                     criterion=criterion, optimizer=optimizer, is_train=False)
                 valid_loss += loss
 
@@ -197,7 +201,7 @@ if __name__ == '__main__':
             batch_y_depth = batch_y_depth.to(device, non_blocking=True)
 
             predicted = model(batch_X)
-            image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth)
+            # image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth)
 
             pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
 
