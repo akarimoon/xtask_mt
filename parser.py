@@ -3,8 +3,8 @@ import argparse
 def nyu_xtask_parser():
 
     parser = argparse.ArgumentParser(description='XTask MT on NYU Dataset')
-    parser.add_argument('--input_path', default='./data/nyu_preprocessed',
-                        help='path of dataset (default: ./data/nyu_preprocessed)')
+    parser.add_argument('--input_path', default='./data/nyu',
+                        help='path of dataset (default: ./data/nyu)')
     parser.add_argument('--height', type=int, default=288,
                         help='height of output (default: 288)')
     parser.add_argument('--width', type=int, default=384,
@@ -56,8 +56,8 @@ def nyu_xtask_parser():
     parser.add_argument('-j', '--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
 
-    parser.add_argument('--save_path', default='./tmp/',
-                        help='path to folder where weights are saved (default: ./tmp/)')
+    parser.add_argument('--save_path', default='./exps/',
+                        help='path to folder where weights are saved (default: ./exps/)')
 
     parser.add_argument('--infer_only', action='store_true', 
                         help='flag: only infer')
@@ -141,8 +141,8 @@ def cityscapes_xtask_parser():
     parser.add_argument('-j', '--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
 
-    parser.add_argument('--save_path', default='./tmp/',
-                        help='path to folder where weights are saved (default: ./tmp/)')
+    parser.add_argument('--save_path', default='./exps/',
+                        help='path to folder where weights are saved (default: ./exps/)')
 
     parser.add_argument('--infer_only', action='store_true', 
                         help='flag: only infer')

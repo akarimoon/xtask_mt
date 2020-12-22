@@ -6,7 +6,7 @@ import seaborn as sns
 import pandas as pd
 import torch
 
-def write_results(logger, opt, model, file_path="./tmp/results.txt", exp_num=None):
+def write_results(logger, opt, model, file_path="./exps/results.txt", exp_num=None):
     with open(file_path, 'a') as f:
         f.write("=" * 10 + "\n")
         if exp_num is not None:
@@ -52,7 +52,7 @@ def write_indv_results(opt, model, folder_path):
         f.write("   transfernet type: {}, use_uncertainty: {}, use_gradnorm: {}\n".format(
             model.trans_name, opt.uncertainty_weights, opt.gradnorm))
 
-def make_results_dir(folder_path="./tmp"):
+def make_results_dir(folder_path="./exps"):
     i = 1
     while True:
         num = str(i).zfill(3)
