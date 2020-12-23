@@ -16,6 +16,7 @@ parser.add_argument('--temp', default=2.0, type=float, help='temperature for DWA
 parser.add_argument('--apply_augmentation', action='store_true', help='toggle to apply data augmentation on CityScapes')
 parser.add_argument('--pcgrad', action='store_true', help='toggle to use pcgrad')
 parser.add_argument('-n', '--num_classes', default=7, type=int, choices=[7, 19])
+parser.add_argument('--time_inf', action='store_true')
 opt = parser.parse_args()
 
 # define model, optimiser and scheduler
@@ -72,7 +73,7 @@ cs_train_loader = torch.utils.data.DataLoader(
 
 cs_test_loader = torch.utils.data.DataLoader(
     dataset=cs_test_set,
-    batch_size=batch_size,
+    batch_size=batch_size if not opt.time_inf else 1,
     shuffle=False, num_workers=4)
 
 # Train and evaluate multi-task network
