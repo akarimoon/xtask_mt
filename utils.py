@@ -69,9 +69,9 @@ def make_results_dir(folder_path="./exps"):
 
 def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_losses=None, valid_losses=None, is_nyu=False):
     # best_set_size = best_set["pred_depth"].shape[0]
-    best_set_size = 4
+    best_set_size = min(opt.batch_size, 4)
     show = np.random.randint(best_set_size)
-    if not opt.infer_only:
+    if train_losses is not None and valid_losses is not None :
         plt.figure(figsize=(14, 8))
         plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
         plt.plot(np.arange(opt.epochs), valid_losses, linestyle="--", label="valid")
@@ -87,7 +87,7 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
         plt.imshow(best_set["original"][show].permute(1,2,0).cpu().numpy())
     plt.title("Image")
 
-    if not opt.infer_only:
+    if train_losses is not None and valid_losses is not None :
         plt.subplot(3,3,2)
         plt.plot(np.arange(opt.epochs), train_losses, linestyle="-", label="train")
         plt.plot(np.arange(opt.epochs), valid_losses, linestyle="--", label="valid")

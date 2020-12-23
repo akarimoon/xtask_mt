@@ -25,9 +25,6 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
                  criterion=None, optimizer=None, 
                  is_train=True):
 
-    if task_weights is None:
-        task_weights = [1, 1]
-
     model.train(is_train)
 
     batch_X = batch_X.to(device, non_blocking=True)
@@ -299,8 +296,6 @@ if __name__=='__main__':
         np.save(os.path.join(results_dir, "model", "va_losses.npy".format(opt.alpha, opt.gamma)), valid_losses)
 
     else:
-        train_losses = None
-        valid_losses = None
         save_at_epoch = 0
         print("Infer only mode -> skip training...")
 
@@ -309,6 +304,13 @@ if __name__=='__main__':
             model.load_state_dict(torch.load(weights_path, map_location=device))
         else:
             model.module.load_state_dict(torch.load(weights_path, map_location=device))
+    if opt.infer_only:
+        try:
+            train_losses = np.load(os.path.join(results_dir, "model", "tr_losses.npy"))
+            valid_losses = np.load(os.path.join(results_dir, "model", "va_losses.npy"))
+        except:
+            train_losses = None
+            valid_losses = None
 
     logger = Logger(num_classes=opt.num_classes, ignore_index=opt.ignore_index)
     best_score = 0
