@@ -12,16 +12,19 @@ class ConvBlock(nn.Module):
             nn.Conv2d(in_features, mid_features, kernel_size=1, stride=1),
             nn.BatchNorm2d(mid_features),
             nn.ReLU(inplace=True)
+            # nn.ELU(inplace=True)
         )
         self.conv2 = nn.Sequential(
             nn.Conv2d(mid_features, mid_features, kernel_size=1, stride=1),
             nn.BatchNorm2d(mid_features),
             nn.ReLU(inplace=True)
+            # nn.ELU(inplace=True)
         )
         self.conv3 = nn.Sequential(
             nn.Conv2d(mid_features, out_features, kernel_size=1, stride=1),
             nn.BatchNorm2d(out_features),
             nn.ReLU(inplace=True)
+            # nn.ELU(inplace=True)
         )
         self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
 
@@ -134,7 +137,7 @@ class XTaskTSNet(nn.Module):
         pretrained.layer4 = backbone.layer4
         return pretrained
 
-    def forward(self, x):
+    def forward(self, x, infer_only=False):
         enc0 = self.pretrained_encoder.layer0(x)
         enc1 = self.pretrained_encoder.layer1(enc0)
         enc2 = self.pretrained_encoder.layer2(enc1)
@@ -154,6 +157,9 @@ class XTaskTSNet(nn.Module):
         dep1 = self.decoder_depth.conv4(torch.cat((dep2, enc1), dim=1))
         dep0 = self.decoder_depth.conv5(torch.cat((dep1, enc0), dim=1))
         dep_out = self.decoder_depth.conv6(dep0)
+
+        if infer_only:
+            return seg_out, None, dep_out, None
 
         dep_tout = self.trans_s2d(seg_out)
         seg_tout = self.trans_d2s(dep_out)

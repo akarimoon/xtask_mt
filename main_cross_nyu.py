@@ -194,19 +194,39 @@ if __name__ == '__main__':
             train_losses = None
             valid_losses = None
 
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    elapsed_times = []
+
+    if opt.time_inf:
+        opt.batch_size = 1
+        valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
+
     logger = Logger(num_classes=opt.num_classes, ignore_index=opt.ignore_index)
     best_score = 0
     best_set = {}
 
     model.eval()
     with torch.no_grad():
+        # GPU warm-up
+        if opt.infer_only:    
+            dummy_input = torch.randn(1, 3, opt.height, opt.width, dtype=torch.float).to(device)
+            for _ in range(100):
+                _ = model(dummy_input)
         for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
             batch_X, batch_y_segmt, batch_y_depth = batch
             batch_X = batch_X.to(device, non_blocking=True)
             batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
             batch_y_depth = batch_y_depth.to(device, non_blocking=True)
 
-            predicted = model(batch_X)
+            start.record()
+            predicted = model(batch_X, infer_only=opt.time_inf)
+            end.record()
+
+            torch.cuda.synchronize()
+            batch_time = start.elapsed_time(end)
+            elapsed_times.append(batch_time)
+
             # image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth)
 
             pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
@@ -228,6 +248,8 @@ if __name__ == '__main__':
                 best_set["pred_tsegmt"] = pred_t_segmt
                 best_set["pred_tdepth"] = pred_t_depth
 
+    if opt.time_inf:
+        print("Avg inference time: {:.3f}[ms/batch]".format(np.mean(elapsed_times), opt.batch_size))
     logger.get_scores()
 
     if not opt.infer_only:

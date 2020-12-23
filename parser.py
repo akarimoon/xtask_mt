@@ -75,6 +75,8 @@ def nyu_xtask_parser():
                         help='flag: disable tqdm')
     parser.add_argument('--multiple_gpu', action='store_true',
                         help='flag: run on multiple gpus')
+    parser.add_argument('--time_inf', action='store_true',
+                        help='flag: get inference time (automatically set batch_size=1)')
 
     args = parser.parse_args()
 
@@ -160,6 +162,8 @@ def cityscapes_xtask_parser():
                         help='flag: disable tqdm')
     parser.add_argument('--multiple_gpu', action='store_true',
                         help='flag: run on multiple gpus')
+    parser.add_argument('--time_inf', action='store_true',
+                        help='flag: get inference time (automatically set batch_size=1)')
 
     args = parser.parse_args()
 

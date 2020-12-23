@@ -98,9 +98,10 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     plt.imshow(valid_data.decode_segmt(torch.argmax(best_set["pred_segmt"], dim=1)[show].cpu().numpy()))
     plt.title("Direct segmt. pred.")
 
-    plt.subplot(3,3,5)
-    plt.imshow(valid_data.decode_segmt(torch.argmax(best_set["pred_tsegmt"], dim=1)[show].cpu().numpy()))
-    plt.title("Cross-task segmt. pred.")
+    if best_set["pred_tsegmt"] is not None:
+        plt.subplot(3,3,5)
+        plt.imshow(valid_data.decode_segmt(torch.argmax(best_set["pred_tsegmt"], dim=1)[show].cpu().numpy()))
+        plt.title("Cross-task segmt. pred.")
 
     plt.subplot(3,3,6)
     plt.imshow(valid_data.decode_segmt(best_set["targ_segmt"][show].cpu().numpy()))
@@ -111,10 +112,11 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     plt.imshow(pred_clamped[show].squeeze().cpu().numpy())
     plt.title("Direct depth pred.")
 
-    plt.subplot(3,3,8)
-    pred_t_clamped = torch.clamp(best_set["pred_tdepth"], min=1e-9, max=0.4922) if not is_nyu else best_set["pred_tdepth"]
-    plt.imshow(pred_t_clamped[show].squeeze().cpu().numpy())
-    plt.title("Cross-task depth pred.")
+    if best_set["pred_tdepth"] is not None:
+        plt.subplot(3,3,8)
+        pred_t_clamped = torch.clamp(best_set["pred_tdepth"], min=1e-9, max=0.4922) if not is_nyu else best_set["pred_tdepth"]
+        plt.imshow(pred_t_clamped[show].squeeze().cpu().numpy())
+        plt.title("Cross-task depth pred.")
 
     plt.subplot(3,3,9)
     plt.imshow(best_set["targ_depth"][show].squeeze().cpu().numpy())
