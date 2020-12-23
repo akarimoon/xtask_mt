@@ -46,7 +46,7 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
         label_loss.backward(retain_graph=True)
         optimizer.step()
 
-    return (task_weights[0] * image_loss).item() + (task_weights[1] * label_loss).item()
+    return (image_loss + label_loss).item()
 
 def compute_loss_with_gradnorm(batch_X, batch_y_segmt, batch_y_depth, 
                                batch_mask_segmt, batch_mask_depth, 
