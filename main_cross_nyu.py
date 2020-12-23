@@ -41,13 +41,14 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
         label_loss.backward(retain_graph=True)
         optimizer.step()
 
-    return (task_weights[0] * image_loss).item() + (task_weights[1] * label_loss).item()
+    return (image_loss + label_loss).item()
 
 if __name__ == '__main__':
     torch.manual_seed(0)
     opt = nyu_xtask_parser()
     opt.betas = (opt.b1, opt.b2)
     opt.num_classes = 13
+    opt.gradnorm = False
 
     print("Initializing...")
     if not os.path.exists(opt.save_path):
@@ -176,17 +177,22 @@ if __name__ == '__main__':
         train_losses = np.array(train_losses)
         valid_losses = np.array(valid_losses)
 
-        np.save(os.path.join(results_dir, "model", "tr_losses.npy".format(opt.alpha, opt.gamma)), train_losses)
-        np.save(os.path.join(results_dir, "model", "va_losses.npy".format(opt.alpha, opt.gamma)), valid_losses)
+        np.save(os.path.join(results_dir, "model", "tr_losses.npy"), train_losses)
+        np.save(os.path.join(results_dir, "model", "va_losses.npy"), valid_losses)
 
     else:
-        train_losses = None
-        valid_losses = None
         save_at_epoch = 0
         print("Infer only mode -> skip training...")
 
     if not opt.debug:
         model.load_state_dict(torch.load(weights_path, map_location=device))
+    if opt.infer_only:
+        try:
+            train_losses = np.load(os.path.join(results_dir, "model", "tr_losses.npy"))
+            valid_losses = np.load(os.path.join(results_dir, "model", "va_losses.npy"))
+        except:
+            train_losses = None
+            valid_losses = None
 
     logger = Logger(num_classes=opt.num_classes, ignore_index=opt.ignore_index)
     best_score = 0
