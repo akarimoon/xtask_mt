@@ -11,20 +11,20 @@ class ConvBlock(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_features, mid_features, kernel_size=1, stride=1),
             nn.BatchNorm2d(mid_features),
-            nn.ReLU(inplace=True)
-            # nn.ELU(inplace=True)
+            # nn.ReLU(inplace=True)
+            nn.LeakyReLU(inplace=True)
         )
         self.conv2 = nn.Sequential(
             nn.Conv2d(mid_features, mid_features, kernel_size=1, stride=1),
             nn.BatchNorm2d(mid_features),
-            nn.ReLU(inplace=True)
-            # nn.ELU(inplace=True)
+            # nn.ReLU(inplace=True)
+            nn.LeakyReLU(inplace=True)
         )
         self.conv3 = nn.Sequential(
             nn.Conv2d(mid_features, out_features, kernel_size=1, stride=1),
             nn.BatchNorm2d(out_features),
-            nn.ReLU(inplace=True)
-            # nn.ELU(inplace=True)
+            # nn.ReLU(inplace=True)
+            nn.LeakyReLU(inplace=True)
         )
         self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
 

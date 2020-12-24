@@ -183,7 +183,6 @@ class Logger():
 
     def get_scores(self):
         self.pixel_acc /= self.count
-        print("IoU: ", np.around(np.mean(self.iou, axis=0), decimals=5))
         self.miou /= self.count
         self.rmse /= self.count
         self.irmse /= self.count
@@ -195,17 +194,16 @@ class Logger():
         self.delta1 /= self.count
         self.delta2 /= self.count
         self.delta3 /= self.count
-        print(self.iproj)
 
-        print_segmt_str = "Pix Acc: {:.4f}, mIoU: {:.4f}"
+        print_segmt_str = "Pix Acc: {:.4f}, mIoU: {:.4f}, IoU: {}"
         print(print_segmt_str.format(
-            self.pixel_acc, self.miou
+            self.pixel_acc, self.miou, np.around(np.mean(self.iou, axis=0), decimals=4)
         ))
 
-        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, iRMSE log: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {:.4f}, " +\
+        print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, iRMSE log: {:.4f}, iProjE: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {:.4f}, " +\
             "delta1: {:.4f}, delta2: {:.4f}, delta3: {:.4f}"
         print(print_depth_str.format(
-            self.rmse, self.irmse, self.irmse_log, self.abs, self.abs_rel, self.sqrt_rel, self.delta1, self.delta2, self.delta3
+            self.rmse, self.irmse, self.irmse_log, self.iproj, self.abs, self.abs_rel, self.sqrt_rel, self.delta1, self.delta2, self.delta3
         ))
 
 class MaskedKLLoss(nn.Module):

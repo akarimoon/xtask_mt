@@ -257,7 +257,7 @@ class CityscapesDataset(Dataset):
 
     label_colors_7 = dict(zip(range(7), colors_7))
 
-    def __init__(self, height, width, root_path, num_classes=19, split='', transform=None, ignore_index=250):
+    def __init__(self, height, width, root_path, num_classes=19, split='', transform=None, ignore_index=250, use_disparity=True):
         """
         transform should be a list
         """
@@ -272,6 +272,8 @@ class CityscapesDataset(Dataset):
         self.depth_dir = os.path.join(self.root, 'disparity', split)
         self.split = split
         self.transform = transform
+        self.use_disparity = use_disparity
+
         self.mode = 'gtFine'
         self.images = []
         self.segmts = []
@@ -343,12 +345,16 @@ class CityscapesDataset(Dataset):
 
         disp = np.array(Image.open(self.disps[index])).astype(np.float32)
         inputs["mask_depth"] = np.float32(disp > 0)
-        disp[disp > 0] = (disp[disp > 0] - 1 ) / 256 ** 2
-        # disp[disp > 0] = (disp[disp > 0] - 1 ) / 256 # if use disparity, comment ou
-        disp = np.clip(disp, a_min=None, a_max=0.4922)
-        depth_org = disp.copy()
-        # depth_org[depth_org > 0] = (0.20 * 2262) / depth_org[depth_org > 0] # if use disparity, comment out
-        inputs["depth"] = depth_org
+        if self.use_disparity:
+            disp[disp > 0] = (disp[disp > 0] - 1 ) / 256 ** 2
+            disp = np.clip(disp, a_min=None, a_max=0.4922)
+            depth_org = disp.copy()
+            inputs["depth"] = depth_org
+        else:
+            disp[disp > 0] = (disp[disp > 0] - 1 ) / 256
+            depth_org = disp.copy()
+            depth_org[depth_org > 0] = depth_org[depth_org > 0] /  (0.20 * 2262)
+            inputs["depth"] = depth_org
 
         self._transform(inputs)
 

@@ -126,9 +126,9 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
     best_valid_loss = 1e5
     best_avg_cost = None
 
-    start = torch.cuda.Event(enable_timing=True)
-    end = torch.cuda.Event(enable_timing=True)
-    elapsed_times = []
+    # start = torch.cuda.Event(enable_timing=True)
+    # end = torch.cuda.Event(enable_timing=True)
+    # elapsed_times = []
 
     for index in range(total_epoch):
         cost = np.zeros(16, dtype=np.float32) if num_tasks == 2 else np.zeros(28, dtype=np.float32)
@@ -191,13 +191,13 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                     test_data, test_label = test_data.to(device), test_label.long().to(device)
                     test_depth = test_depth.to(device)
 
-                    start.record()
+                    # start.record()
                     test_pred, _ = multi_task_model(test_data)
-                    end.record()
+                    # end.record()
 
-                    torch.cuda.synchronize()
-                    batch_time = start.elapsed_time(end)
-                    elapsed_times.append(batch_time)
+                    # torch.cuda.synchronize()
+                    # batch_time = start.elapsed_time(end)
+                    # elapsed_times.append(batch_time)
 
                     test_loss = [model_fit(test_pred[0], test_label, 'semantic', is_cs=is_cs),
                                 model_fit(test_pred[1], test_depth, 'depth', is_cs=is_cs)]
@@ -225,7 +225,7 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
             elapsed_time = (time.time() - start_time) / 60
             print("=======================================")
             print('Epoch: {:04d} [{:.1f}min]'.format(index, elapsed_time))
-            print('Inference time: {:.4f}[ms/batch]'.format(np.mean(elapsed_times)))
+            # print('Inference time: {:.4f}[ms/batch]'.format(np.mean(elapsed_times)))
             print('Train Loss: segmt: {:.4f} --- depth: {:.4f}'.format(avg_cost[index, 0], avg_cost[index, 3]))
             print('Test Loss: segmt: {:.4f} --- depth: {:.4f}'.format(avg_cost[index, 8], avg_cost[index, 11]))
             print('Scores (Test):')
@@ -275,13 +275,13 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                     test_data, test_label = test_data.to(device), test_label.long().to(device)
                     test_depth, test_normal = test_depth.to(device), test_normal.to(device)
 
-                    start.record()
+                    # start.record()
                     test_pred, _ = multi_task_model(test_data)
-                    end.record()
+                    # end.record()
 
-                    torch.cuda.synchronize()
-                    batch_time = start.elapsed_time(end)
-                    elapsed_times.append(batch_time)
+                    # torch.cuda.synchronize()
+                    # batch_time = start.elapsed_time(end)
+                    # elapsed_times.append(batch_time)
 
                     test_loss = [model_fit(test_pred[0], test_label, 'semantic'),
                                 model_fit(test_pred[1], test_depth, 'depth'),
@@ -312,7 +312,7 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
             elapsed_time = (time.time() - start_time) / 60
             print("=======================================")
             print('Epoch: {:04d} [{:.1f}min]'.format(index, elapsed_time))
-            print('Inference time: {:.4f}[ms/batch]'.format(np.mean(elapsed_times)))
+            # print('Inference time: {:.4f}[ms/batch]'.format(np.mean(elapsed_times)))
             print('Train Loss: segmt: {:.4f} --- depth: {:.4f} --- normal: {:.4f}'.format(avg_cost[index, 0], avg_cost[index, 3], avg_cost[index, 8]))
             print('Test Loss: segmt: {:.4f} --- depth: {:.4f} --- normal: {:.4f}'.format(avg_cost[index, 14], avg_cost[index, 17], avg_cost[index, 22]))
             print('Scores (Test):')
