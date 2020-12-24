@@ -10,14 +10,14 @@ class SingleConvBlock(nn.Module):
             self.conv = nn.Sequential(
                 nn.Conv2d(in_features, out_features, kernel_size=3, padding=1),
                 nn.BatchNorm2d(out_features),
-                # nn.ReLU(inplace=True)
-                nn.LeakyReLU(inplace=True)
+                nn.ReLU(inplace=True)
+                # nn.LeakyReLU(inplace=True)
             )
         else:
             self.conv = nn.Sequential(
                 nn.Conv2d(in_features, out_features, kernel_size=3, padding=1),
-                # nn.ReLU(inplace=True)
-                nn.LeakyReLU(inplace=True)
+                nn.ReLU(inplace=True)
+                # nn.LeakyReLU(inplace=True)
             )
 
     def forward(self, x):
