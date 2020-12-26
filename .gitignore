@@ -4,6 +4,7 @@
 *.sh.o*
 .ipynb_checkpoints/
 tmp/
+exps/
 data/
 repro/
 
