@@ -1,4 +1,4 @@
-# Cross-task Self-Consistency for Multi-Task Learning
+# Cross-Task Self-Consistency for Multi-Task Learning
 
 ## Tested on
 - numpy(v1.19.1)
