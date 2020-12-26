@@ -2,7 +2,7 @@ import argparse
 
 def nyu_xtask_parser():
 
-    parser = argparse.ArgumentParser(description='XTask MT on NYU Dataset')
+    parser = argparse.ArgumentParser(description='XTNet on NYU Dataset')
     parser.add_argument('--input_path', default='./data/nyu',
                         help='path of dataset (default: ./data/nyu)')
     parser.add_argument('--height', type=int, default=288,
@@ -85,7 +85,7 @@ def nyu_xtask_parser():
 
 def cityscapes_xtask_parser():
 
-    parser = argparse.ArgumentParser(description='XTask MT on Cityscapes Dataset')
+    parser = argparse.ArgumentParser(description='XTNet on Cityscapes Dataset')
     parser.add_argument('--input_path', default='./data/cityscapes',
                         help='path of dataset (default: ./data/cityscapes)')
     parser.add_argument('--height', type=int, default=128,
@@ -166,6 +166,37 @@ def cityscapes_xtask_parser():
                         help='flag: run on multiple gpus')
     parser.add_argument('--time_inf', action='store_true',
                         help='flag: get inference time (automatically set batch_size=1)')
+
+    args = parser.parse_args()
+
+    return args
+
+def time_inference_parser():
+    parser = argparse.ArgumentParser(description='XTNet Inference Time Measurement')
+    parser.add_argument('--data', default='cs', choices=['cs', 'nyu'])
+
+    parser.add_argument('--ignore_index', type=int, default=250,
+                        help='ignore index (default: 250)')
+    parser.add_argument('--enc_layers', type=int, default=34,
+                        help='type of ResNet encoder (default: 34)')
+    parser.add_argument('--use_pretrain', action='store_true',
+                        help='flag: use pretrained encoder (default: False)')
+
+    parser.add_argument('--batch_norm', action='store_true',
+                        help='flag: enable batch normalization in ttnet')
+    parser.add_argument('--wider_ttnet', action='store_true',
+                        help='flag: make ttnet wider')
+
+    parser.add_argument('--save_path', default='./exps/',
+                        help='path to folder where weights are saved (default: ./exps/)')
+    parser.add_argument('--exp_num', type=int,
+                        help='experiment number')
+                        
+    parser.add_argument('--cpu', action='store_true', 
+                        help='flag: use cpu')
+    parser.add_argument('--direct_only', action='store_true')
+    parser.add_argument('--notqdm', action='store_true',
+                        help='flag: disable tqdm')
 
     args = parser.parse_args()
 
