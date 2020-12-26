@@ -481,7 +481,7 @@ def infer_only(test_loader, multi_task_model, device, opt, total_epoch=10, is_cs
                     batch_time = start.elapsed_time(end)
                     elapsed_times.append(batch_time)
 
-            print('Inference time: {:.4f}[ms/batch]'.format(np.mean(elapsed_times)))
+            print('Inference time: {:.3f}[ms]'.format(np.mean(elapsed_times)))
         
         records.append(np.mean(elapsed_times))
     print('Avg of {} runs: {:.3f}[ms]'.format(total_epoch, np.mean(records)))

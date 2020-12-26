@@ -173,7 +173,10 @@ def cityscapes_xtask_parser():
 
 def time_inference_parser():
     parser = argparse.ArgumentParser(description='XTNet Inference Time Measurement')
-    parser.add_argument('--data', default='cs', choices=['cs', 'nyu'])
+    parser.add_argument('--num', '-n', type=int, default=10,
+                        help='calculate average of n times (default: 10)')
+    parser.add_argument('--data', default='cs', choices=['cs', 'nyu'],
+                        help='select dataset (cs or nyu)')
 
     parser.add_argument('--ignore_index', type=int, default=250,
                         help='ignore index (default: 250)')
@@ -194,7 +197,8 @@ def time_inference_parser():
                         
     parser.add_argument('--cpu', action='store_true', 
                         help='flag: use cpu')
-    parser.add_argument('--direct_only', action='store_true')
+    parser.add_argument('--direct_only', action='store_true',
+                        help='flag: only output direct predictions')
     parser.add_argument('--notqdm', action='store_true',
                         help='flag: disable tqdm')
 
