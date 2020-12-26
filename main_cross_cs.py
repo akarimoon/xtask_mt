@@ -113,7 +113,7 @@ def compute_loss_with_gradnorm(batch_X, batch_y_segmt, batch_y_depth,
     return (task_weights[0] * image_loss).item() + (task_weights[1] * label_loss).item(), l01, l02
 
 if __name__=='__main__':
-    torch.manual_seed(52)
+    torch.manual_seed(0)
     opt = cityscapes_xtask_parser()
     opt.betas = (opt.b1, opt.b2)
 
@@ -138,8 +138,12 @@ if __name__=='__main__':
     print("   predicting at size [{}*{}]".format(opt.height, opt.width))
     if opt.num_classes != 19:
         print("   # of classes: {}".format(opt.num_classes))
-    print("   using ResNet{}, optimizer: Adam (lr={}, beta={}), scheduler: StepLR({}, {})".format(
-        opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
+    if opt.optim == 'adam':
+        print("   using ResNet{}, optimizer: Adam (lr={}, beta={}), scheduler: StepLR({}, {})".format(
+            opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
+    elif opt.optim == 'sgd':
+        print("   using ResNet{}, optimizer: SGD (lr={}), scheduler: StepLR({}, {})".format(
+            opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
     print("   loss function --- Lp_depth: {}, tsegmt: {}, tdepth: {}".format(
         opt.lp, opt.tseg_loss, opt.tdep_loss))
     print("   hyperparameters --- alpha: {}, gamma: {}, smoothing: {}".format(
@@ -204,7 +208,10 @@ if __name__=='__main__':
                           image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
                           balance_method=opt.balance_method,
                           ignore_index=opt.ignore_index).to(device)
-    optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
+    if opt.optim == 'adam':
+        optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
+    elif opt.optim == 'sgd':
+        optimizer = optim.SGD(parameters_to_train, lr=opt.lr)
     scheduler = optim.lr_scheduler.StepLR(optimizer, opt.scheduler_step_size, opt.scheduler_gamma)
 
     if not opt.infer_only:

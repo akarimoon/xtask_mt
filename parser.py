@@ -106,6 +106,8 @@ def cityscapes_xtask_parser():
 
     parser.add_argument('-b', '--batch_size', type=int, default=8,
                         help='batch size (default: 8)')
+    parser.add_argument('--optim', default='adam', choices=['adam', 'sgd'],
+                        help='type of optimizer (adam or sgd)')
     parser.add_argument('--lr', '--learning_rate', type=float, default=0.0001,
                         help='learning rate (default: 0.0001)')
     parser.add_argument('--b1', '--beta_1', type=float, default=0.9,

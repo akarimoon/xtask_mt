@@ -15,7 +15,7 @@ def write_results(logger, opt, model, file_path="./exps/results.txt", exp_num=No
             opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss, opt.alpha, opt.gamma, opt.label_smoothing
         ))
         f.write("Use pretrained encoder: {} (if not written, then False)\n".format(opt.use_pretrain))
-        f.write("Optimizer: Adam, Scheduler: StepLR(step size={}, gamma={})\n".format(opt.scheduler_step_size, opt.scheduler_gamma))
+        f.write("Optimizer: {}, Scheduler: StepLR(step size={}, gamma={})\n".format(opt.optim.capitalize(), opt.scheduler_step_size, opt.scheduler_gamma))
         if opt.num_classes != 19:
             f.write("# of classes: {}\n".format(opt.num_classes))
         f.write("   batch norm in ttnet: {} (if not written, then False)\n".format(opt.batch_norm))
@@ -41,7 +41,7 @@ def write_indv_results(opt, model, folder_path):
         f.write("arguments:\n")
         f.write("   predicting at size [{}*{}]\n".format(opt.height, opt.width))
         f.write("   batch size: {}, train for {} epochs\n".format(opt.batch_size, opt.epochs))
-        f.write("   optimizer: Adam, scheduler: StepLR(step size={}, gamma={})\n".format(opt.scheduler_step_size, opt.scheduler_gamma))
+        f.write("   optimizer: {}, scheduler: StepLR(step size={}, gamma={})\n".format(opt.optim.capitalize(), opt.scheduler_step_size, opt.scheduler_gamma))
         f.write("   enc={}, numclasses={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, alpha={}, gamma={}, smoothing={}\n".format(
             opt.enc_layers, opt.num_classes, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss,
             opt.alpha, opt.gamma, opt.label_smoothing
@@ -146,12 +146,12 @@ def make_plots(opt, results_dir, best_set, save_at_epoch, valid_data, train_loss
     bins = np.linspace(0, 500, 51)
     df["targ_bin"] = np.digitize(np.round(df["targ"]), bins) - 1
 
-    sns.regplot(x="targ", y="pred", data=df, ax=ax2, scatter_kws={'s':5})
-    ax2.set_xlim((df["targ"].min(), df["targ"].max()))
-    ax2.set_ylim((df["targ"].min(), df["targ"].max()))
-    # sns.regplot(x=flat_pred[flat_targ > 0], y=flat_targ[flat_targ > 0], ax=ax2)
-    # ax2.set_xlim((0, 0.5))
-    # ax2.set_ylim((0, 0.5))
+    # sns.regplot(x="targ", y="pred", data=df, ax=ax2, scatter_kws={'s':5})
+    # ax2.set_xlim((df["targ"].min(), df["targ"].max()))
+    # ax2.set_ylim((df["targ"].min(), df["targ"].max()))
+    sns.regplot(x=flat_pred[flat_targ > 0], y=flat_targ[flat_targ > 0], ax=ax2)
+    ax2.set_xlim((0, 0.5))
+    ax2.set_ylim((0, 0.5))
     plt.title("Scatter plot of depth (non-inverted)")
 
     sns.boxplot(x="targ_bin", y="diff_abs", data=df, ax=ax3)
