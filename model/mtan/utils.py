@@ -2,6 +2,7 @@ import time
 import torch
 import torch.nn.functional as F
 import numpy as np
+from tqdm import tqdm
 
 """
 Define task metrics, loss functions and model trainer here.
@@ -424,3 +425,63 @@ def single_task_trainer(train_loader, test_loader, single_task_model, device, op
             print('Epoch: {:04d} | TRAIN: {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} TEST: {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f}'
               .format(index, avg_cost[index, 6], avg_cost[index, 7], avg_cost[index, 8], avg_cost[index, 9], avg_cost[index, 10], avg_cost[index, 11],
                       avg_cost[index, 18], avg_cost[index, 19], avg_cost[index, 20], avg_cost[index, 21], avg_cost[index, 22], avg_cost[index, 23]))
+
+"""
+=========== Just for measuring inference time =========== 
+"""
+
+
+def infer_only(test_loader, multi_task_model, device, opt, total_epoch=10, is_cs=False, num_tasks=2):
+    test_batch = len(test_loader)
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    elapsed_times = []
+    records = []
+
+    for index in range(total_epoch):
+        # iteration for all batches
+        if num_tasks == 2:
+            # evaluating test data
+            multi_task_model.eval()
+            with torch.no_grad():  # operations inside don't track history
+                test_dataset = iter(test_loader)
+                for k in tqdm(range(test_batch)):
+                    if is_cs:
+                        test_data, test_label, test_depth = test_dataset.next()
+                    else:
+                        test_data, test_label, test_depth, _ = test_dataset.next()
+                    test_data, test_label = test_data.to(device), test_label.long().to(device)
+                    test_depth = test_depth.to(device)
+
+                    start.record()
+                    test_pred, _ = multi_task_model(test_data)
+                    end.record()
+
+                    torch.cuda.synchronize()
+                    batch_time = start.elapsed_time(end)
+                    elapsed_times.append(batch_time)
+
+            print('Inference time: {:.3f}[ms]'.format(np.mean(elapsed_times)))
+
+        else:
+            # evaluating test data
+            multi_task_model.eval()
+            with torch.no_grad():  # operations inside don't track history
+                test_dataset = iter(test_loader)
+                for k in tqdm(range(test_batch)):
+                    test_data, test_label, test_depth, test_normal = test_dataset.next()
+                    test_data, test_label = test_data.to(device), test_label.long().to(device)
+                    test_depth, test_normal = test_depth.to(device), test_normal.to(device)
+
+                    start.record()
+                    test_pred, _ = multi_task_model(test_data)
+                    end.record()
+
+                    torch.cuda.synchronize()
+                    batch_time = start.elapsed_time(end)
+                    elapsed_times.append(batch_time)
+
+            print('Inference time: {:.4f}[ms/batch]'.format(np.mean(elapsed_times)))
+        
+        records.append(np.mean(elapsed_times))
+    print('Avg of {} runs: {:.3f}[ms]'.format(total_epoch, np.mean(records)))
