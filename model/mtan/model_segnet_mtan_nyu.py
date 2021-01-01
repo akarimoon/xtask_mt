@@ -58,7 +58,7 @@ nyuv2_train_loader = torch.utils.data.DataLoader(
 
 nyuv2_test_loader = torch.utils.data.DataLoader(
     dataset=nyuv2_test_set,
-    batch_size=batch_size if not opt.time_inf else 1,
+    batch_size=batch_size,
     shuffle=False)
 
 # Train and evaluate multi-task network

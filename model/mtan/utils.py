@@ -140,10 +140,17 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
             if index == 0 or index == 1:
                 lambda_weight[:, index] = 1.0
             else:
-                w_1 = avg_cost[index - 1, 0] / avg_cost[index - 2, 0]
-                w_2 = avg_cost[index - 1, 3] / avg_cost[index - 2, 3]
-                lambda_weight[0, index] = 3 * np.exp(w_1 / T) / (np.exp(w_1 / T) + np.exp(w_2 / T) + np.exp(w_3 / T))
-                lambda_weight[1, index] = 3 * np.exp(w_2 / T) / (np.exp(w_1 / T) + np.exp(w_2 / T) + np.exp(w_3 / T))
+                if num_tasks == 2:
+                    w_1 = avg_cost[index - 1, 0] / avg_cost[index - 2, 0]
+                    w_2 = avg_cost[index - 1, 3] / avg_cost[index - 2, 3]
+                    lambda_weight[0, index] = 3 * np.exp(w_1 / T) / (np.exp(w_1 / T) + np.exp(w_2 / T))
+                    lambda_weight[1, index] = 3 * np.exp(w_2 / T) / (np.exp(w_1 / T) + np.exp(w_2 / T))
+                else:
+                    w_1 = avg_cost[index - 1, 0] / avg_cost[index - 2, 0]
+                    w_2 = avg_cost[index - 1, 3] / avg_cost[index - 2, 3]
+                    w_3 = avg_cost[index - 1, 8] / avg_cost[index - 2, 8]
+                    lambda_weight[0, index] = 3 * np.exp(w_1 / T) / (np.exp(w_1 / T) + np.exp(w_2 / T) + np.exp(w_3 / T))
+                    lambda_weight[1, index] = 3 * np.exp(w_2 / T) / (np.exp(w_1 / T) + np.exp(w_2 / T) + np.exp(w_3 / T))
 
         # iteration for all batches
         if num_tasks == 2:

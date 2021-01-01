@@ -72,7 +72,7 @@ cs_train_loader = torch.utils.data.DataLoader(
 
 cs_test_loader = torch.utils.data.DataLoader(
     dataset=cs_test_set,
-    batch_size=batch_size if not opt.time_inf else 1,
+    batch_size=batch_size,
     shuffle=False, num_workers=4)
 
 # Train and evaluate multi-task network
