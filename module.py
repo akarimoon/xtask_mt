@@ -358,8 +358,10 @@ class XTaskLoss(nn.Module):
             label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss
 
         elif self.balance_method == "uncert":
-            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss
-            label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss
+            # image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss
+            # label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss
+            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tseg_loss
+            label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tdep_loss
             image_loss = 0.5 * torch.exp(-task_weights[0]) * image_loss_tmp + task_weights[0]
             label_loss = 0.5 * torch.exp(-task_weights[1]) * label_loss_tmp + task_weights[1]
 

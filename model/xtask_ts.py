@@ -9,19 +9,19 @@ class ConvBlock(nn.Module):
     def __init__(self, in_features, out_features, mid_features=128):
         super(ConvBlock, self).__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(in_features, mid_features, kernel_size=1, stride=1),
+            nn.Conv2d(in_features, mid_features, kernel_size=3, padding=1, stride=1),
             nn.BatchNorm2d(mid_features),
             nn.ReLU(inplace=True)
             # nn.LeakyReLU(inplace=True)
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(mid_features, mid_features, kernel_size=1, stride=1),
+            nn.Conv2d(mid_features, mid_features,kernel_size=3, padding=1, stride=1),
             nn.BatchNorm2d(mid_features),
             nn.ReLU(inplace=True)
             # nn.LeakyReLU(inplace=True)
         )
         self.conv3 = nn.Sequential(
-            nn.Conv2d(mid_features, out_features, kernel_size=1, stride=1),
+            nn.Conv2d(mid_features, out_features, kernel_size=3, padding=1, stride=1),
             nn.BatchNorm2d(out_features),
             nn.ReLU(inplace=True)
             # nn.LeakyReLU(inplace=True)
