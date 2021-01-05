@@ -73,9 +73,11 @@ def compute_loss_with_gradnorm(batch_X, batch_y_segmt, batch_y_depth,
         l2.backward(retain_graph=True)
             
         param = list(model.pretrained_encoder.layer4[-1].conv2.parameters())
-        G1R = torch.autograd.grad(l1, param[0], retain_graph=True, create_graph=True)
+        G1R = torch.autograd.grad(l1, param, retain_graph=True, create_graph=True)
+        print(G1R, 
+            torch.autograd.grad(l1, list(model.pretrained_encoder.layer4[-1].conv2.parameters())[0], retain_graph=True, create_graph=True))
         G1 = torch.norm(G1R[0], 2)
-        G2R = torch.autograd.grad(l2, param[0], retain_graph=True, create_graph=True)
+        G2R = torch.autograd.grad(l2, param, retain_graph=True, create_graph=True)
         G2 = torch.norm(G2R[0], 2)
         G_avg = (G1 + G2) / 2
         
@@ -111,7 +113,6 @@ if __name__ == '__main__':
     opt = nyu_xtask_parser()
     opt.betas = (opt.b1, opt.b2)
     opt.num_classes = 13
-    opt.gradnorm = False
 
     print("Initializing...")
     if not os.path.exists(opt.save_path):
@@ -161,13 +162,16 @@ if __name__ == '__main__':
     task_weights = None
     if opt.uncertainty_weights:
         print("   use uncertainty weights")
+        opt.balance_method = "uncert"
         """
         Implementation of uncertainty weights (learnable weight parameters to balance losses of multiple tasks)
         See arxiv.org/abs/1705.07115
         """
         log_var_a = torch.zeros((1,), requires_grad=True, device=device_name)
         log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
-        task_weights = [log_var_a, log_var_b]
+        log_var_a2b = torch.zeros((1,), requires_grad=True, device=device_name)
+        log_var_b2a = torch.zeros((1,), requires_grad=True, device=device_name)
+        task_weights = [log_var_a, log_var_b, log_var_a2b, log_var_b2a]
         parameters_to_train += task_weights
     if opt.gradnorm:
         print("   use gradnorm")
@@ -188,6 +192,7 @@ if __name__ == '__main__':
     criterion = XTaskLoss(num_classes=opt.num_classes, 
                           alpha=opt.alpha, gamma=opt.gamma, label_smoothing=opt.label_smoothing,
                           image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
+                          balance_method=opt.balance_method,
                           ignore_index=opt.ignore_index).to(device)
     optimizer = optim.Adam(parameters_to_train, lr=opt.lr, betas=opt.betas)
     scheduler = optim.lr_scheduler.StepLR(optimizer, opt.scheduler_step_size, opt.scheduler_gamma)
@@ -228,7 +233,7 @@ if __name__ == '__main__':
                     loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                         model, task_weights=task_weights,
                                         criterion=criterion, optimizer=optimizer,
-                                        is_train=True)
+                                        is_train=False)
                 else:
                     loss, l01, l02 = compute_loss_with_gradnorm(batch_X, batch_y_segmt, batch_y_depth, 
                                         model, task_weights=task_weights, l01=l01, l02=l02,
@@ -248,6 +253,8 @@ if __name__ == '__main__':
             if opt.uncertainty_weights:
                 print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
                         (torch.exp(task_weights[1]) ** 0.5).item(), (torch.exp(task_weights[0]) ** 0.5).item()))
+                print("                     seg2dep={:.5f}, dep2seg={:.5f}".format(
+                        (torch.exp(task_weights[3]) ** 0.5).item(), (torch.exp(task_weights[2]) ** 0.5).item()))
             if opt.gradnorm:
                 print("GradNorm task weights: segmt={:.5f}, depth={:.5f}".format(
                         task_weights[1].item(), task_weights[0].item()))
