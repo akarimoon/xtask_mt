@@ -92,7 +92,7 @@ if __name__=='__main__':
                 torch.cuda.synchronize()
                 batch_time = start.elapsed_time(end)
                 elapsed_times.append(batch_time)
-
+                
             print("Avg inference time: {:.3f}[ms]".format(np.mean(elapsed_times)))
             records.append(np.mean(elapsed_times))
 

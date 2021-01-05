@@ -78,7 +78,7 @@ def compute_loss_with_gradnorm(batch_X, batch_y_segmt, batch_y_depth,
         l1.backward(retain_graph=True)
         l2.backward(retain_graph=True)
             
-        param = list(model.parameters())
+        param = list(model.pretrained_encoder.layer4[-1].conv2.parameters())
         G1R = torch.autograd.grad(l1, param[0], retain_graph=True, create_graph=True)
         G1 = torch.norm(G1R[0], 2)
         G2R = torch.autograd.grad(l2, param[0], retain_graph=True, create_graph=True)
@@ -143,7 +143,7 @@ if __name__=='__main__':
             opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
     elif opt.optim == 'sgd':
         print("   using ResNet{}, optimizer: SGD (lr={}), scheduler: StepLR({}, {})".format(
-            opt.enc_layers, opt.lr, opt.betas, opt.scheduler_step_size, opt.scheduler_gamma))
+            opt.enc_layers, opt.lr, opt.scheduler_step_size, opt.scheduler_gamma))
     print("   loss function --- Lp_depth: {}, tsegmt: {}, tdepth: {}".format(
         opt.lp, opt.tseg_loss, opt.tdep_loss))
     print("   hyperparameters --- alpha: {}, gamma: {}, smoothing: {}".format(
