@@ -73,11 +73,9 @@ def compute_loss_with_gradnorm(batch_X, batch_y_segmt, batch_y_depth,
         l2.backward(retain_graph=True)
             
         param = list(model.pretrained_encoder.layer4[-1].conv2.parameters())
-        G1R = torch.autograd.grad(l1, param, retain_graph=True, create_graph=True)
-        print(G1R, 
-            torch.autograd.grad(l1, list(model.pretrained_encoder.layer4[-1].conv2.parameters())[0], retain_graph=True, create_graph=True))
+        G1R = torch.autograd.grad(l1, param[0], retain_graph=True, create_graph=True)
         G1 = torch.norm(G1R[0], 2)
-        G2R = torch.autograd.grad(l2, param, retain_graph=True, create_graph=True)
+        G2R = torch.autograd.grad(l2, param[0], retain_graph=True, create_graph=True)
         G2 = torch.norm(G2R[0], 2)
         G_avg = (G1 + G2) / 2
         
@@ -113,6 +111,7 @@ if __name__ == '__main__':
     opt = nyu_xtask_parser()
     opt.betas = (opt.b1, opt.b2)
     opt.num_classes = 13
+    opt.optim = 'adam'
 
     print("Initializing...")
     if not os.path.exists(opt.save_path):
@@ -169,9 +168,9 @@ if __name__ == '__main__':
         """
         log_var_a = torch.zeros((1,), requires_grad=True, device=device_name)
         log_var_b = torch.zeros((1,), requires_grad=True, device=device_name)
-        log_var_a2b = torch.zeros((1,), requires_grad=True, device=device_name)
-        log_var_b2a = torch.zeros((1,), requires_grad=True, device=device_name)
-        task_weights = [log_var_a, log_var_b, log_var_a2b, log_var_b2a]
+        # log_var_a2b = torch.zeros((1,), requires_grad=True, device=device_name)
+        # log_var_b2a = torch.zeros((1,), requires_grad=True, device=device_name)
+        task_weights = [log_var_a, log_var_b]
         parameters_to_train += task_weights
     if opt.gradnorm:
         print("   use gradnorm")
@@ -253,8 +252,8 @@ if __name__ == '__main__':
             if opt.uncertainty_weights:
                 print("Uncertainty weights: segmt={:.5f}, depth={:.5f}".format(
                         (torch.exp(task_weights[1]) ** 0.5).item(), (torch.exp(task_weights[0]) ** 0.5).item()))
-                print("                     seg2dep={:.5f}, dep2seg={:.5f}".format(
-                        (torch.exp(task_weights[3]) ** 0.5).item(), (torch.exp(task_weights[2]) ** 0.5).item()))
+                # print("                     seg2dep={:.5f}, dep2seg={:.5f}".format(
+                #         (torch.exp(task_weights[3]) ** 0.5).item(), (torch.exp(task_weights[2]) ** 0.5).item()))
             if opt.gradnorm:
                 print("GradNorm task weights: segmt={:.5f}, depth={:.5f}".format(
                         task_weights[1].item(), task_weights[0].item()))
