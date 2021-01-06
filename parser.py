@@ -166,8 +166,8 @@ def cityscapes_xtask_parser():
                         help='flag: disable tqdm')
     parser.add_argument('--multiple_gpu', action='store_true',
                         help='flag: run on multiple gpus')
-    parser.add_argument('--time_inf', action='store_true',
-                        help='flag: get inference time (automatically set batch_size=1)')
+    parser.add_argument('--direct_only', action='store_true',
+                        help='flag: only predict direct predictions while inferring (faster inference)')
 
     args = parser.parse_args()
 

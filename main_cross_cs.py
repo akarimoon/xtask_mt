@@ -338,7 +338,7 @@ if __name__=='__main__':
             batch_mask_segmt = batch_mask_segmt.to(device, non_blocking=True)
             batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
 
-            predicted = model(batch_X, infer_only=opt.time_inf)
+            predicted = model(batch_X, direct_only=opt.direct_only)
             # _, _ = criterion(predicted, batch_y_segmt, batch_y_depth,
             #                                    batch_mask_segmt, batch_mask_depth)
 
