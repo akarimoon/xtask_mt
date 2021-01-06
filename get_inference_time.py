@@ -96,4 +96,7 @@ if __name__=='__main__':
             print("Avg inference time: {:.3f}[ms]".format(np.mean(elapsed_times)))
             records.append(np.mean(elapsed_times))
 
+            del batch_X
+            del predicted
+
     print("Avg of {} runs: {:.3f}[ms]".format(opt.num, np.mean(records)))
