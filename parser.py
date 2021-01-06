@@ -207,3 +207,20 @@ def time_inference_parser():
     args = parser.parse_args()
 
     return args
+
+def stl_parser():
+    parser = argparse.ArgumentParser(description='STL')
+    parser.add_argument('--data', choices=['cs', 'nyu'])
+    parser.add_argument('--task', choices=['segmt', 'depth'])
+    
+    parser.add_argument('--save_path', default='./exps/',
+                    help='path to folder where weights are saved (default: ./exps/)')
+    
+    parser.add_argument('--cpu', action='store_true', 
+                        help='flag: use cpu')
+    parser.add_argument('--notqdm', action='store_true',
+                        help='flag: disable tqdm')
+
+    args = parser.parse_args()
+
+    return args

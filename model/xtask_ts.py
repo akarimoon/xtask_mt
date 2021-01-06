@@ -168,7 +168,7 @@ class XTaskTSNet(nn.Module):
 
 class BaseSTLNet(nn.Module):
     def __init__(self, enc_layers, out_features, decoder_in_features=256, decoder_mid_features=128):
-        super(XTaskTSNet, self).__init__()
+        super(BaseSTLNet, self).__init__()
 
         if enc_layers not in [18, 34, 50, 101, 152]:
             raise ValueError("{} is not a valid number of resnet layers".format(enc_layers))
@@ -210,11 +210,11 @@ class BaseSTLNet(nn.Module):
         enc3 = self.pretrained_encoder.layer3(enc2)
         enc4 = self.pretrained_encoder.layer4(enc3)
 
-        out4 = self.decoder_segmt.conv1(enc4)
-        out3 = self.decoder_segmt.conv2(torch.cat((out4, enc3), dim=1))
-        out2 = self.decoder_segmt.conv3(torch.cat((out3, enc2), dim=1))
-        out1 = self.decoder_segmt.conv4(torch.cat((out2, enc1), dim=1))
-        out0 = self.decoder_segmt.conv5(torch.cat((out1, enc0), dim=1))
-        out = self.decoder_segmt.conv6(out0)
+        out4 = self.decoder.conv1(enc4)
+        out3 = self.decoder.conv2(torch.cat((out4, enc3), dim=1))
+        out2 = self.decoder.conv3(torch.cat((out3, enc2), dim=1))
+        out1 = self.decoder.conv4(torch.cat((out2, enc1), dim=1))
+        out0 = self.decoder.conv5(torch.cat((out1, enc0), dim=1))
+        out = self.decoder.conv6(out0)
 
         return out

@@ -3,6 +3,137 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class STLLogger():
+    """
+    preds and targets are inverse depth
+    """
+    def __init__(self, task, num_classes=7, ignore_index=250):
+        self.pixel_acc = 0
+        self.iou = []
+        self.miou = 0
+        self.abs = 0
+        self.abs_rel = 0
+        self.count = 0
+        self.task = task
+        self.num_classes = num_classes
+        self.ignore_index = ignore_index
+
+    def _compute_miou(self, x_pred, x_output):
+        """
+        from https://github.com/lorenmt/mtan
+        """
+        x_pred = torch.from_numpy(x_pred)
+        x_output = torch.from_numpy(x_output)
+        _, x_pred_label = torch.max(x_pred, dim=1)
+        x_output_label = x_output
+        batch_size = x_pred.size(0)
+        device = x_pred.device
+
+        batch_avg = 0
+        ious = []
+        for i in range(batch_size):
+            true_class = 0
+            class_prob = 0
+            mask = (x_output[i] != self.ignore_index).float()
+            batch_ious = []
+
+            for j in range(self.num_classes):
+                pred_mask = torch.eq(x_pred_label[i], j * torch.ones(x_pred_label[i].shape).long().to(device))
+                true_mask = torch.eq(x_output_label[i], j * torch.ones(x_output_label[i].shape).long().to(device))
+                mask_comb = pred_mask.float() + true_mask.float()
+                union = torch.sum((mask_comb > 0).float() * mask)  # remove non-defined pixel predictions
+                intsec = torch.sum((mask_comb > 1).float())
+                if union == 0:
+                    batch_ious.append(np.nan)
+                    continue
+                class_prob += intsec / union
+                true_class += 1
+                batch_ious.append((intsec / union).item())
+                
+            batch_avg += class_prob / true_class
+            ious.append(batch_ious)
+        
+        ious = np.array(ious)
+        self.iou.append(np.nanmean(ious, axis=0))
+
+        return batch_avg / batch_size
+
+    def _compute_pixacc(self, x_pred, x_output):
+        """
+        from https://github.com/lorenmt/mtan
+        """
+        x_pred = torch.from_numpy(x_pred)
+        x_output = torch.from_numpy(x_output)
+        _, x_pred_label = torch.max(x_pred, dim=1)
+        x_output_label = x_output
+        batch_size = x_pred.size(0)
+        pixel_acc = 0
+        for i in range(batch_size):
+            pixel_acc += torch.div(
+                            torch.sum(torch.eq(x_pred_label[i], x_output_label[i]).float()),
+                            torch.sum((x_output_label[i] != self.ignore_index).float())
+                        )
+        return pixel_acc / batch_size
+
+    def _depth_abs(self, preds, targets, masks):
+        """
+        Calculate absolute error of inverse depth
+        """
+        nonzero = targets > 0
+        absdiff = np.abs(preds[nonzero] - targets[nonzero])
+        return np.sum(absdiff) / np.sum(nonzero)
+    
+    def _depth_abs_rel(self, preds, targets, masks):
+        """
+        Calculate absolute relative error of inverse depth
+        """
+        nonzero = targets > 0
+        absdiff = np.abs(preds[nonzero] - targets[nonzero])
+        relabsdiff = absdiff / targets[nonzero]
+        return np.sum(relabsdiff) / np.sum(nonzero)
+
+    def log(self, pred, target, mask=None):
+        """
+        preds are inverse depth
+        """
+        pred = pred.cpu().numpy()
+        target = target.cpu().numpy()
+        if mask is not None:
+            mask = mask.cpu().numpy()
+        else:
+            mask = np.ones_like(target)
+        N = pred.shape[0]
+
+        if self.task == 'segmt':
+            self.pixel_acc += self._compute_pixacc(pred, target) * N
+            self.miou += self._compute_miou(pred, target) * N
+
+        elif self.task == 'depth':
+            inv_pred = np.copy(pred)
+            inv_target = np.copy(target)
+            self.abs += self._depth_abs(inv_pred, inv_target, mask) * N
+            self.abs_rel += self._depth_abs_rel(inv_pred, inv_target, mask) * N
+        self.count += N
+
+    def get_scores(self):
+        self.pixel_acc /= self.count
+        self.miou /= self.count
+        self.abs /= self.count
+        self.abs_rel /= self.count
+
+        if self.task == 'segmt':
+            print_segmt_str = "Pix Acc: {:.4f}, mIoU: {:.4f}, IoU: {}"
+            print(print_segmt_str.format(
+                self.pixel_acc, self.miou, np.around(np.mean(self.iou, axis=0), decimals=4)
+            ))
+
+        elif self.task == 'depth':
+            print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, iRMSE log: {:.4f}, iProjE: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {:.4f}, " +\
+                "delta1: {:.4f}, delta2: {:.4f}, delta3: {:.4f}"
+            print(print_depth_str.format(
+                self.rmse, self.irmse, self.irmse_log, self.iproj, self.abs, self.abs_rel, self.sqrt_rel, self.delta1, self.delta2, self.delta3
+            ))
+
 class Logger():
     """
     preds and targets are inverse depth
@@ -204,6 +335,8 @@ class Logger():
         print(print_depth_str.format(
             self.rmse, self.irmse, self.irmse_log, self.iproj, self.abs, self.abs_rel, self.sqrt_rel, self.delta1, self.delta2, self.delta3
         ))
+
+
 
 class MaskedKLLoss(nn.Module):
     def __init__(self, n_classes, label_smoothing):
