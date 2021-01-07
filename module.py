@@ -395,8 +395,8 @@ class LabelSmoothingLoss(nn.Module):
 
 class XTaskLoss(nn.Module):
     def __init__(self, num_classes=19, alpha=0.01, gamma=0.01, label_smoothing=0.,
-                 image_loss_type="MSE", t_segmt_loss_type="cross", t_depth_loss_type="ssim",
-                 balance_method=None,
+                 image_loss_type="L1", t_segmt_loss_type="cross", t_depth_loss_type="L1",
+                 balance_method=None, 
                  ignore_index=250):
         super(XTaskLoss, self).__init__()
         self.num_classes = num_classes
@@ -472,7 +472,7 @@ class XTaskLoss(nn.Module):
         loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
         return torch.mean(loss)
 
-    def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, task_weights=None):
+    def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, task_weights=None, use_xtc=False):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
         if self.num_classes != 13 and mask_segmt is None:
             mask_segmt = torch.ones_like(targ_segmt)
@@ -480,10 +480,16 @@ class XTaskLoss(nn.Module):
             mask_depth = torch.ones_like(targ_depth)
 
         depth_loss = self.image_loss(pred_depth, targ_depth, mask_depth)
-        tdep_loss = self.tdep_loss(pred_t_depth, pred_depth.detach().clone(), mask_depth)
+        if not use_xtc:
+            tdep_loss = self.tdep_loss(pred_t_depth, pred_depth.detach().clone(), mask_depth)
+        else:
+            tdep_loss = self.image_loss(pred_t_depth, targ_depth.clone(), mask_depth)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
-        tseg_loss = self.tseg_loss(pred_t_segmt, torch.argmax(self.nonlinear(pred_segmt.detach().clone()), dim=1), mask_segmt)
+        if not use_xtc:
+            tseg_loss = self.tseg_loss(pred_t_segmt, torch.argmax(self.nonlinear(pred_segmt.detach().clone()), dim=1), mask_segmt)
+        else:
+            tseg_loss = self.cross_entropy_loss(pred_t_segmt, targ_segmt.clone())
 
         if self.balance_method is None:
             image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss
