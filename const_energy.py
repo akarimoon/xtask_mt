@@ -53,7 +53,6 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
 if __name__=='__main__':
     torch.manual_seed(0)
     opt = const_energy_parser()
-    opt.use_xtc = True
 
     print("Initializing...")
     if not os.path.exists(opt.save_path):
@@ -188,6 +187,7 @@ if __name__=='__main__':
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.title('Loss History')
+        plt.legend()
 
         plt.subplot(1,2,2)
         plt.plot(np.arange(eps), xtsc_energy, color='blue', label='xtsc')
@@ -195,7 +195,8 @@ if __name__=='__main__':
         plt.xlabel('Epoch')
         plt.ylabel('Energy')
         plt.title('Energy History')
-
         plt.legend()
+
         plt.tight_layout()
+        plt.savefig(os.path.join(opt.save_path, "loss_and_energy.py"))
         plt.show()
