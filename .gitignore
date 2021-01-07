@@ -2,6 +2,7 @@
 *.pyo
 *.ipynb
 *.sh.o*
+*.pth
 .ipynb_checkpoints/
 tmp/
 exps/
