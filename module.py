@@ -128,10 +128,9 @@ class STLLogger():
             ))
 
         elif self.task == 'depth':
-            print_depth_str = "Scores - RMSE: {:.4f}, iRMSE: {:.4f}, iRMSE log: {:.4f}, iProjE: {:.4f}, Abs: {:.4f}, Abs Rel: {:.4f}, Sqrt Rel: {:.4f}, " +\
-                "delta1: {:.4f}, delta2: {:.4f}, delta3: {:.4f}"
+            print_depth_str = "Scores - Abs: {:.4f}, Abs Rel: {:.4f}"
             print(print_depth_str.format(
-                self.rmse, self.irmse, self.irmse_log, self.iproj, self.abs, self.abs_rel, self.sqrt_rel, self.delta1, self.delta2, self.delta3
+                self.abs, self.abs_rel
             ))
 
 class Logger():

@@ -166,12 +166,11 @@ if __name__=='__main__':
         print("Epoch {}/{} [{:.1f}min] --- train loss: {:.5f} --- valid loss: {:.5f}".format(
                     epoch, opt.epochs, elapsed_time, train_loss, valid_loss))
 
-        if not opt.debug:
-            if epoch == 0 or valid_loss < best_valid_loss:
-                print("Saving weights...")
-                weights = model.state_dict()
-                torch.save(weights, weights_path)
-                best_valid_loss = valid_loss
+        if epoch == 1 or valid_loss < best_valid_loss:
+            print("Saving weights...")
+            weights = model.state_dict()
+            torch.save(weights, weights_path)
+            best_valid_loss = valid_loss
 
         scheduler.step()
 
@@ -197,9 +196,10 @@ if __name__=='__main__':
                     batch_X, batch_y, _ = batch
                 elif opt.task == 'depth':
                     batch_X, _, batch_y = batch
+                batch_mask = None
 
             batch_X = batch_X.to(device, non_blocking=True)
-            batch_y = batch_y_segmt.to(device, non_blocking=True)
+            batch_y = batch_y.to(device, non_blocking=True)
 
             pred = model(batch_X)
 
