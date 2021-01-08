@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from dataloader import CityscapesDataset
 from parser import const_energy_parser
-from module import Logger, XTaskLoss
+from module import Logger, EnergyLogger, XTaskLoss
 from model.xtask_ts import XTaskTSNet
 from utils import *
 
