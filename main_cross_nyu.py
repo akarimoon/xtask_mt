@@ -308,7 +308,7 @@ if __name__ == '__main__':
             batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
             batch_y_depth = batch_y_depth.to(device, non_blocking=True)
 
-            predicted = model(batch_X, infer_only=opt.time_inf)
+            predicted = model(batch_X, direct_only=False)
             
             # image_loss, label_loss = criterion(predicted, batch_y_segmt, batch_y_depth)
 
