@@ -256,6 +256,8 @@ def const_energy_parser():
                         help='flag: use cpu')
     parser.add_argument('--notqdm', action='store_true',
                         help='flag: disable tqdm')
+    parser.add_argument('--debug', action='store_true', 
+                        help='flag: debug mode, dont save weights')
 
     args = parser.parse_args()
 

@@ -22,7 +22,34 @@ DEPTH_CORRECTION = 2.1116e-09
 def const_energy(diff_segmt, diff_depth):
     energy_segmt = torch.mean(torch.sum((diff_segmt - torch.mean(diff_segmt)) / torch.std(diff_segmt), dim=(1, 2, 3)))
     energy_depth = torch.mean(torch.sum((diff_depth - torch.mean(diff_depth)) / torch.std(diff_depth), dim=(1, 2, 3)))
-    return 0.5 * energy_segmt + 0.5 * energy_depth
+    return 0. * energy_segmt + 1. * energy_depth
+
+class EnergyLogger():
+    def __init__(self):
+        self.energy_segmt = 0.
+        self.energy_depth = 0.
+        self.count = 0
+
+    def _segmt_energy(self, tpred, pred):
+        return F.kl_div(F.log_softmax(tpred.detach().cpu(), dim=1), F.softmax(pred.detach().cpu(), dim=1),
+                        reduction='mean')
+
+    def _depth_energy(self, tpred, pred):
+        return (tpred.detach().cpu() - pred.detach().cpu()).abs().mean()
+
+    def log(self, output):
+        pred_segmt, pred_tsegmt, pred_depth, pred_tdepth = output
+        N = pred_segmt.shape[0]
+
+        self.energy_segmt += self._segmt_energy(pred_tsegmt, pred_segmt) * N
+        self.energy_depth += self._depth_energy(pred_tdepth, pred_depth) * N
+        self.count += N
+
+    def get_scores(self):
+        self.energy_segmt /= self.count
+        self.energy_depth /= self.count
+
+        self.energy = 0.5 * self.energy_segmt + 0.5 * self.energy_depth
 
 def compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                  batch_mask_segmt, batch_mask_depth, 
@@ -102,17 +129,18 @@ if __name__=='__main__':
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=80, gamma=0.5)
 
     if not opt.infer_only:
-    print("=======================================")
-    print("Start training...")
-    best_valid_loss = 1e5
-    valid_losses = []
-    energy_hist = []
-    save_at_epoch = 0
+        print("=======================================")
+        print("Start training...")
+        best_valid_loss = 1e5
+        valid_losses = []
+        energy_hist = []
+        save_at_epoch = 0
 
         for epoch in range(1, opt.epochs + 1):
 
             start = time.time()
             valid_loss = 0.
+            logger = EnergyLogger()
 
             for i, batch in enumerate(tqdm(train, disable=opt.notqdm)):
                 _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
@@ -131,31 +159,23 @@ if __name__=='__main__':
                                         is_train=False)
                 valid_loss += loss
 
-                if i == 0:
-                    diff_segmt = torch.abs(F.log_softmax(output[0].cpu().detach(), dim=1) -\
-                                        F.log_softmax(output[1].cpu().detach(), dim=1))
-                    diff_depth = torch.abs(output[2].cpu().detach() - output[3].cpu().detach())
-
-                else:
-                    d_seg = torch.abs(F.log_softmax(output[0].cpu().detach(), dim=1) -\
-                                    F.log_softmax(output[1].cpu().detach(), dim=1))
-                    d_dep = torch.abs(output[2].cpu().detach() - output[3].cpu().detach())
-                    diff_segmt = torch.cat([diff_segmt, d_seg])
-                    diff_depth = torch.cat([diff_depth, d_dep])
+                logger.log(output)
 
             valid_loss /= len(valid.dataset)
             valid_losses.append(valid_loss)
 
-            energy = const_energy(diff_segmt, diff_depth)
-            energy_hist.append(energy.numpy())
+            logger.get_scores()
 
             elapsed_time = (time.time() - start) / 60
             print("Epoch {}/{} [{:.1f}min] --- valid loss: {:.5f} --- const energy: {:.5f}".format(
-                        epoch, opt.epochs, elapsed_time, valid_loss, energy))
+                        epoch, opt.epochs, elapsed_time, valid_loss, logger.energy))
+            
+            energy_hist.append(logger.energy)
 
-            print("Saving weights...")
-            weights = model.state_dict()
-            torch.save(weights, weights_path)
+            if not opt.debug:
+                print("Saving weights...")
+                weights = model.state_dict()
+                torch.save(weights, weights_path)
 
             scheduler.step()
 
@@ -165,12 +185,13 @@ if __name__=='__main__':
         valid_losses = np.array(valid_losses)
         energy_hist = np.array(energy_hist)
 
-        if not opt.use_xtc:
-            np.save(os.path.join(opt.save_path, "xtsc_va_losses.npy"), valid_losses)
-            np.save(os.path.join(opt.save_path, "xtsc_energy.npy"), energy_hist)
-        else:
-            np.save(os.path.join(opt.save_path, "xtc_va_losses.npy"), valid_losses)
-            np.save(os.path.join(opt.save_path, "xtc_energy.npy"), energy_hist)
+        if not opt.debug:
+            if not opt.use_xtc:
+                np.save(os.path.join(opt.save_path, "xtsc_va_losses.npy"), valid_losses)
+                np.save(os.path.join(opt.save_path, "xtsc_energy.npy"), energy_hist)
+            else:
+                np.save(os.path.join(opt.save_path, "xtc_va_losses.npy"), valid_losses)
+                np.save(os.path.join(opt.save_path, "xtc_energy.npy"), energy_hist)
 
     else:
         xtsc_loss = np.load(os.path.join(opt.save_path, "xtsc_va_losses.npy"))
@@ -198,5 +219,5 @@ if __name__=='__main__':
         plt.legend()
 
         plt.tight_layout()
-        plt.savefig(os.path.join(opt.save_path, "loss_and_energy.py"))
+        plt.savefig(os.path.join(opt.save_path, "loss_and_energy.png"))
         plt.show()
