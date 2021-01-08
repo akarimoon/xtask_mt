@@ -508,3 +508,30 @@ class XTaskLoss(nn.Module):
             label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tdep_loss
 
         return image_loss, label_loss
+
+class EnergyLogger():
+    def __init__(self):
+        self.energy_segmt = 0.
+        self.energy_depth = 0.
+        self.count = 0
+
+    def _segmt_energy(self, tpred, pred):
+        return F.kl_div(F.log_softmax(tpred.detach().cpu(), dim=1), F.softmax(pred.detach().cpu(), dim=1),
+                        reduction='mean')
+
+    def _depth_energy(self, tpred, pred):
+        return (tpred.detach().cpu() - pred.detach().cpu()).abs().mean()
+
+    def log(self, output):
+        pred_segmt, pred_tsegmt, pred_depth, pred_tdepth = output
+        N = pred_segmt.shape[0]
+
+        self.energy_segmt += self._segmt_energy(pred_tsegmt, pred_segmt) * N
+        self.energy_depth += self._depth_energy(pred_tdepth, pred_depth) * N
+        self.count += N
+
+    def get_scores(self):
+        self.energy_segmt /= self.count
+        self.energy_depth /= self.count
+
+        self.energy = 0.5 * self.energy_segmt + 0.5 * self.energy_depth

@@ -19,38 +19,6 @@ from utils import *
 
 DEPTH_CORRECTION = 2.1116e-09
 
-def const_energy(diff_segmt, diff_depth):
-    energy_segmt = torch.mean(torch.sum((diff_segmt - torch.mean(diff_segmt)) / torch.std(diff_segmt), dim=(1, 2, 3)))
-    energy_depth = torch.mean(torch.sum((diff_depth - torch.mean(diff_depth)) / torch.std(diff_depth), dim=(1, 2, 3)))
-    return 0. * energy_segmt + 1. * energy_depth
-
-class EnergyLogger():
-    def __init__(self):
-        self.energy_segmt = 0.
-        self.energy_depth = 0.
-        self.count = 0
-
-    def _segmt_energy(self, tpred, pred):
-        return F.kl_div(F.log_softmax(tpred.detach().cpu(), dim=1), F.softmax(pred.detach().cpu(), dim=1),
-                        reduction='mean')
-
-    def _depth_energy(self, tpred, pred):
-        return (tpred.detach().cpu() - pred.detach().cpu()).abs().mean()
-
-    def log(self, output):
-        pred_segmt, pred_tsegmt, pred_depth, pred_tdepth = output
-        N = pred_segmt.shape[0]
-
-        self.energy_segmt += self._segmt_energy(pred_tsegmt, pred_segmt) * N
-        self.energy_depth += self._depth_energy(pred_tdepth, pred_depth) * N
-        self.count += N
-
-    def get_scores(self):
-        self.energy_segmt /= self.count
-        self.energy_depth /= self.count
-
-        self.energy = 0.5 * self.energy_segmt + 0.5 * self.energy_depth
-
 def compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                  batch_mask_segmt, batch_mask_depth, 
                  model, task_weights=None, use_xtc=False,
