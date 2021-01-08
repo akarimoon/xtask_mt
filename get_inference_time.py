@@ -86,7 +86,7 @@ if __name__=='__main__':
                 batch_X = batch_X.to(device, non_blocking=True)
 
                 start.record()
-                predicted = model(batch_X, infer_only=opt.direct_only)
+                predicted = model(batch_X, direct_only=opt.direct_only)
                 end.record()
 
                 torch.cuda.synchronize()
