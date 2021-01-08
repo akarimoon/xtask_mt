@@ -6,18 +6,15 @@
 cd $PBS_O_WORKDIR
 source /lustre/po9025/o09025/.bashrc
 conda activate pytorch
-# export CUDA_VISIBLE_DEVICES=0,1 
+export CUDA_VISIBLE_DEVICES=0,1 
 
 # python model/mtan/model_segnet_mtan_cs.py --dataroot data/cityscapes/ --weight dwa
 # python model/mtan/model_segnet_mtan_nyu.py --dataroot data/nyu/ --weight dwa -n 2
 # python model/mtan/model_segnet_mtan_nyu.py --dataroot data/nyu/ --weight dwa -n 3
 
-# python main_cross_nyu.py --run_only --notqdm
-# python main_cross_nyu.py --uncertainty_weights --run_only --notqdm --alpha 0.0 --gamma 0.0
+# python main_cross_nyu.py --run_only --notqdm --uncertainty_weights --label_smoothing 0.1
 
-# python main_cross_nyu.py --run_only --notqdm --alpha 0.0 --gamma 0.0
-# python main_cross_nyu.py --run_only --notqdm
-# python main_cross_nyu.py --uncertainty_weights --run_only --notqdm --use_pretrain
 
-python main_cross_nyu.py --uncertainty_weights --label_smoothing 0.1 --alpha 0.0 --gamma 0.0 --run_only --notqdm
-python main_cross_nyu.py --uncertainty_weights --label_smoothing 0.1 --alpha 0.0 --gamma 0.0 --run_only --notqdm
+# 2470392
+python main_cross_cs.py --run_only --notqdm --multiple_gpu --uncertainty_weights -n 19
+python main_cross_cs.py --run_only --notqdm --multiple_gpu --uncertainty_weights -n 19 --alpha 0.0 --gamma 0.0
