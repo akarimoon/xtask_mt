@@ -39,6 +39,52 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
 
     return (segmt_loss + depth_loss).item()
 
+def compute_loss_with_adalsp(batch_X, batch_y_segmt, batch_y_depth, 
+                             batch_mask_segmt, batch_mask_depth, 
+                             model,
+                             criteria=None, optimizer=None, 
+                             is_train=True):
+    
+    model.train(is_train)
+
+    batch_X = batch_X.to(device, non_blocking=True)
+    batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
+    batch_y_depth = batch_y_depth.to(device, non_blocking=True)
+    batch_mask_segmt = batch_mask_segmt.to(device, non_blocking=True)
+    batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
+
+    output = model(batch_X)
+    segmt_loss = criteria[0](output[0], batch_y_segmt)
+    depth_loss = criteria[1](output[1], batch_y_depth, batch_mask_depth)
+
+    if is_train:
+        enc_g1 = []
+        enc_g2 = []
+
+        optimizer.zero_grad()
+        segmt_loss.backward(retain_graph=True)
+        for p in model.encoder.parameters():
+            enc_g1.append(p.grad.clone())
+
+        depth_loss.backward(retain_graph=True)
+        for p in model.encoder.parameters():
+            enc_g2.append(p.grad.clone())
+
+        mag1 = model.decoder_segmt.dec_block1.conv1[0].weight.grad.abs().mean()
+        mag2 = model.decoder_depth.dec_block1.conv1[0].weight.grad.abs().mean()
+        
+        for p in model.decoder_segmt.parameters():
+            p.grad *= mag1 / (mag1 + mag2)
+        for p in model.decoder_depth.parameters():
+            p.grad *= mag1 / (mag1 + mag2)
+        for i, p in enumerate(model.encoder.parameters()):
+            p.grad = mag1 / (mag1 + mag2) * enc_g1[i] + mag2 / (mag1 + mag2) * enc_g2[i]
+
+        optimizer.step()
+
+    return (segmt_loss + depth_loss).item()
+
+
 def masked_L1_loss(predicted, target, mask):
     diff = torch.abs(predicted - target) * mask
     loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
@@ -47,9 +93,10 @@ def masked_L1_loss(predicted, target, mask):
 input_path = './data/cityscapes'
 num_epochs = 200
 weights_path = './exps/model/adamtnet.pth'
-infer_only = True
+infer_only = False
+use_adalsp = True
 
-device = torch.device("cuda")
+device = torch.device("cpu")
 model = AdaMTNet()
 model.to(device)
 
@@ -80,20 +127,35 @@ if not infer_only:
 
         for i, batch in enumerate(train):
             _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
-            loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
-                                batch_mask_segmt, batch_mask_depth, 
-                                model,
-                                criteria=criteria, optimizer=optimizer,
-                                is_train=True)
+            if not use_adalsp:
+                loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
+                                    batch_mask_segmt, batch_mask_depth, 
+                                    model,
+                                    criteria=criteria, optimizer=optimizer,
+                                    is_train=True)
+            else:
+                loss = compute_loss_with_adalsp(batch_X, batch_y_segmt, batch_y_depth, 
+                                                batch_mask_segmt, batch_mask_depth, 
+                                                model,
+                                                criteria=criteria, optimizer=optimizer,
+                                                is_train=True)
+                            
             train_loss += loss
 
         for i, batch in enumerate(valid):
             _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
-            loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
-                                batch_mask_segmt, batch_mask_depth, 
-                                model,
-                                criteria=criteria, optimizer=optimizer,
-                                is_train=False)
+            if not use_adalsp:
+                loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
+                                    batch_mask_segmt, batch_mask_depth, 
+                                    model,
+                                    criteria=criteria, optimizer=optimizer,
+                                    is_train=False)
+            else:
+                loss = compute_loss_with_adalsp(batch_X, batch_y_segmt, batch_y_depth, 
+                                                batch_mask_segmt, batch_mask_depth, 
+                                                model,
+                                                criteria=criteria, optimizer=optimizer,
+                                                is_train=False)
             valid_loss += loss
 
         train_loss /= len(train.dataset)
