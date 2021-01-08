@@ -78,7 +78,7 @@ if __name__=='__main__':
     print("Initializing...")
     if not os.path.exists(opt.save_path):
         os.makedirs(opt.save_path)
-    weights_path = os.path.join(opt.save_path, "model", "stl_{}_{}.pth".format(opt.data, opt.task))
+    weights_path = os.path.join(opt.save_path, "stl_{}_{}.pth".format(opt.data, opt.task))
 
     parameters_to_train = []
 

@@ -84,7 +84,6 @@ def nyu_xtask_parser():
 
     return args
 
-
 def cityscapes_xtask_parser():
 
     parser = argparse.ArgumentParser(description='XTNet on Cityscapes Dataset')
@@ -213,13 +212,52 @@ def stl_parser():
     parser.add_argument('--data', choices=['cs', 'nyu'])
     parser.add_argument('--task', choices=['segmt', 'depth'])
     
-    parser.add_argument('--save_path', default='./exps/',
-                    help='path to folder where weights are saved (default: ./exps/)')
+    parser.add_argument('--save_path', default='./exps/stl/',
+                    help='path to folder where weights are saved (default: ./exps/stl/)')
     
     parser.add_argument('--cpu', action='store_true', 
                         help='flag: use cpu')
     parser.add_argument('--notqdm', action='store_true',
                         help='flag: disable tqdm')
+
+    args = parser.parse_args()
+
+    return args
+
+def const_energy_parser():
+
+    parser = argparse.ArgumentParser(description='Consistent energy on Cityscapes')
+    parser.add_argument('--input_path', default='./data/cityscapes',
+                        help='path of dataset (default: ./data/cityscapes)')
+
+    parser.add_argument('-e', '--epochs', type=int, default=250,
+                        help='number of epochs (default: 250)')
+    parser.add_argument('-b', '--batch_size', type=int, default=8,
+                        help='batch size (default: 8)')
+
+    parser.add_argument('--uncertainty_weights', action='store_true',
+                        help='flag: use uncertainty weights (Kendall+, 2018) for balancing cross-task losses')
+
+    parser.add_argument('-j', '--workers', default=4, type=int,
+                        help='number of data loading workers (default: 4)')
+
+    parser.add_argument('--save_path', default='./exps/const/',
+                        help='path to folder where weights are saved (default: ./exps/const/)')
+
+    parser.add_argument('--use_xtc', action='store_true', 
+                        help='flag: xtc')
+    parser.add_argument('--infer_only', action='store_true', 
+                        help='flag: only infer')
+    parser.add_argument('--view_only', action='store_true', 
+                        help='flag: do not save graphs')
+    parser.add_argument('--run_only', action='store_true', 
+                        help='flag: do not show graphs')
+    parser.add_argument('--cpu', action='store_true', 
+                        help='flag: use cpu')
+    parser.add_argument('--notqdm', action='store_true',
+                        help='flag: disable tqdm')
+    parser.add_argument('--debug', action='store_true', 
+                        help='flag: debug mode, dont save weights')
 
     args = parser.parse_args()
 
