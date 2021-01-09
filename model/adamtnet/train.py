@@ -1,4 +1,4 @@
-import time
+import argparse, time
 import numpy as np
 import torch
 from torch import optim
@@ -90,21 +90,32 @@ def masked_L1_loss(predicted, target, mask):
     loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
     return torch.mean(loss)
 
-input_path = './data/cityscapes'
-num_epochs = 200
-weights_path = './exps/model/adamtnet.pth'
-infer_only = False
-use_adalsp = True
+parser = argparse.ArgumentParser(description='Reproduction code of AdaMTNet for CS')
+parser.add_argument('--input_path', default='./data/cityscapes')
+parser.add_argument('--weights_path', default='./exps/model/adamtnet.pth')
+parser.add_argument('--epochs', type=int, default=200)
+parser.add_argument('--infer_only', action='store_true')
+parser.add_argument('--use_adalsp', action='store_true')
+parser.add_argument('--cpu', action='store_true')
+opt = parser.parse_args()
 
-device = torch.device("cpu")
+device = torch.device('cuda' if not opt.cpu else 'cpu')
 model = AdaMTNet()
 model.to(device)
 
+print("AdaMTNet for CS dataset")
+if opt.use_adalsp:
+    print("Using adaptive loss-specific weight learning")
+else:
+    print("Equal weights")
+print("===============================================================")
+print("===============================================================")
+
 print("Parameter Space: {}".format(count_parameters(model)))
 
-train_data = CityscapesDataset(root_path=input_path, height=128, width=256, num_classes=7,
+train_data = CityscapesDataset(root_path=opt.input_path, height=128, width=256, num_classes=7,
                                 split='train', transform=None, ignore_index=250)
-valid_data = CityscapesDataset(root_path=input_path, height=128, width=256, num_classes=7,
+valid_data = CityscapesDataset(root_path=opt.input_path, height=128, width=256, num_classes=7,
                                 split='val', transform=None, ignore_index=250)
 # test_data = CityscapesDataset('./data/cityscapes', split='train', transform=transform)
 train = DataLoader(train_data, batch_size=8, shuffle=True, num_workers=4)
@@ -119,15 +130,15 @@ best_valid_loss = 1e5
 train_losses = []
 valid_losses = []
 
-if not infer_only:
-    for epoch in range(1, num_epochs + 1):
+if not opt.infer_only:
+    for epoch in range(1, opt.epochs + 1):
         start = time.time()
         train_loss = 0.
         valid_loss = 0.
 
         for i, batch in enumerate(train):
             _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
-            if not use_adalsp:
+            if not opt.use_adalsp:
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                     batch_mask_segmt, batch_mask_depth, 
                                     model,
@@ -144,7 +155,7 @@ if not infer_only:
 
         for i, batch in enumerate(valid):
             _, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
-            if not use_adalsp:
+            if not opt.use_adalsp:
                 loss = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                     batch_mask_segmt, batch_mask_depth, 
                                     model,
@@ -166,15 +177,15 @@ if not infer_only:
 
         elapsed_time = (time.time() - start) / 60
         print("Epoch {}/{} [{:.1f}min] --- train loss: {:.5f} --- valid loss: {:.5f}".format(
-                    epoch, num_epochs, elapsed_time, train_loss, valid_loss))
+                    epoch, opt.epochs, elapsed_time, train_loss, valid_loss))
 
         if epoch == 0 or valid_loss < best_valid_loss:
             print("Saving weights...")
             weights = model.state_dict()
-            torch.save(weights, weights_path)
+            torch.save(weights, opt.weights_path)
             best_valid_loss = valid_loss
 
-model.load_state_dict(torch.load(weights_path, map_location=device))
+model.load_state_dict(torch.load(opt.weights_path, map_location=device))
 logger = Logger(num_classes=7, ignore_index=250)
 best_score = 0
 best_set = {}
