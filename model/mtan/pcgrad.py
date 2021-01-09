@@ -5,7 +5,7 @@ import torch.optim as optim
 import numpy as np
 import copy
 import random
-
+from itertools import accumulate
 
 class PCGrad():
     def __init__(self, optimizer):
@@ -27,68 +27,55 @@ class PCGrad():
         input:
         - objectives: a list of objectives
         '''
-
-        grads, shapes = self._pack_grad(objectives)
+        grads, shapes, numel = self._pack_grad(objectives)
         pc_grad = self._project_conflicting(grads)
-        pc_grad = self._unflatten_grad(pc_grad, shapes[0])
-        self._set_grad(pc_grad)
-        return
+        self._set_grad(pc_grad, shapes, numel)
+
+    def _proj_grad(self, grad):
+        for k in range(self.num_tasks):
+            inner_product = torch.sum(grad * self.grads[k])
+            proj_direction = inner_product / (torch.sum(self.grads[k] * self.grads[k]) + 1e-12)
+            grad -= torch.min(proj_direction, torch.zeros_like(proj_direction)) * self.grads[k]
+        return grad
 
     def _project_conflicting(self, grads, shapes=None):
-        pc_grad, num_task = copy.deepcopy(grads), len(grads)
-        for g_i in pc_grad:
-            random.shuffle(grads)
-            for g_j in grads:
-                g_i_g_j = torch.dot(g_i, g_j)
-                if g_i_g_j < 0:
-                    g_i -= (g_i_g_j) * g_j / (g_j.norm()**2)
-        pc_grad = torch.stack(pc_grad).mean(dim=0)
+        self.num_tasks = len(grads)
+        random.shuffle(grads)
+
+        # gradient projection
+        self.grads = torch.stack(grads, dim=0)  # (T, # of params)
+        pc_grad = self.grads.clone()
+
+        pc_grad = torch.sum(torch.stack(list(map(self._proj_grad, list(pc_grad)))), dim=0)  # (of params, )
+
         return pc_grad
 
-    def _set_grad(self, grads):
-        idx = 0
-        for group in self._optim.param_groups:
-            for p in group['params']:
-                if p.grad is None: continue
-                p.grad = grads[idx]
-                idx += 1
-        return
+    def _set_grad(self, grads, shapes, numel):
+        indices = [0, ] + [v for v in accumulate(numel)]
+        params = [p for group in self._optim.param_groups for p in group['params']]
+        assert len(params) == len(shapes) == len(indices[:-1])
+        for param, shape, start_idx, end_idx in zip(params, shapes, indices[:-1], indices[1:]):
+            if shape is not None and param.grad is not None:
+                param.grad[...] = grads[start_idx:end_idx].view(shape)  # copy proj grad
 
     def _pack_grad(self, objectives):
-        grads, shapes = [], []
+        grads = []
+        shapes = [p.shape if p.requires_grad is True else None
+                    for group in self._optim.param_groups for p in group['params']]
+        numel = [p.numel() if p.requires_grad is True else 0
+                    for group in self._optim.param_groups for p in group['params']]
+
         for obj in objectives:
             self._optim.zero_grad()
             obj.backward(retain_graph=True)
-            grad, shape = self._retrieve_grad()
-            grads.append(self._flatten_grad(grad, shape))
-            shapes.append(shape)
-        return grads, shapes
+            grad = self._retrieve_and_flatten_grad()
+            grads.append(self._fill_zero_grad(grad, numel))
+        return grads, shapes, numel
 
-    def _unflatten_grad(self, grads, shapes):
-        unflatten_grad, idx = [], 0
-        for shape in shapes:
-            length = np.prod(shape)
-            unflatten_grad.append(grads[idx:idx + length].view(shape).clone())
-            idx += length
-        return unflatten_grad
+    def _retrieve_and_flatten_grad(self):
+        grad = [p.grad.detach().clone().flatten() if (p.requires_grad is True and p.grad is not None)
+                else None for group in self._optim.param_groups for p in group['params']]
+        return grad
 
-    def _flatten_grad(self, grads, shapes):
-        flatten_grad = torch.cat([g.flatten() for g in grads])
-        return flatten_grad
-
-    def _retrieve_grad(self):
-        '''
-        get the gradient of the parameters of the network.
-        
-        output:
-        - grad: a list of the gradient of the parameters
-        - shape: a list of the shape of the parameters
-        '''
-
-        grad, shape = [], []
-        for group in self._optim.param_groups:
-            for p in group['params']:
-                if p.grad is None: continue
-                shape.append(p.grad.shape)
-                grad.append(p.grad.clone())
-        return grad, shape
+    def _fill_zero_grad(self, grad, numel):
+        return torch.cat([g if g is not None else torch.zeros(numel[i]) for i, g in enumerate(grad)])

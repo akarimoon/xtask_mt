@@ -177,7 +177,10 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                 else:
                     loss = sum(1 / (2 * torch.exp(logsigma[i])) * train_loss[i] + logsigma[i] / 2 for i in range(2))
 
-                loss.backward()
+                if not opt.pcgrad:
+                    loss.backward()
+                else:
+                    optimizer.pc_backward([1 / (2 * torch.exp(logsigma[i])) * train_loss[i] + logsigma[i] / 2 for i in range(2)])
                 optimizer.step()
 
                 cost[0] = train_loss[0].item()
@@ -186,6 +189,8 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                 cost[3] = train_loss[1].item()
                 cost[4], cost[5], cost[6], cost[7] = depth_error(train_pred[1], train_depth)
                 avg_cost[index, :8] += cost[:8] / train_batch
+
+                print(k)
 
             # evaluating test data
             multi_task_model.eval()
@@ -262,7 +267,10 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                 else:
                     loss = sum(1 / (2 * torch.exp(logsigma[i])) * train_loss[i] + logsigma[i] / 2 for i in range(3))
 
-                loss.backward()
+                if not opt.pcgrad:
+                    loss.backward()
+                else:
+                    optimizer.pc_backward(1 / (2 * torch.exp(logsigma[i])) * train_loss[i] + logsigma[i] / 2 for i in range(3))
                 optimizer.step()
 
                 cost[0] = train_loss[0].item()
