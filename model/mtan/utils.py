@@ -190,8 +190,6 @@ def multi_task_trainer(train_loader, test_loader, multi_task_model, device, opti
                 cost[4], cost[5], cost[6], cost[7] = depth_error(train_pred[1], train_depth)
                 avg_cost[index, :8] += cost[:8] / train_batch
 
-                print(k)
-
             # evaluating test data
             multi_task_model.eval()
             with torch.no_grad():  # operations inside don't track history
