@@ -10,3 +10,4 @@ data/
 repro/
 
 yayoi_preprocess.py
+yayoi_finetune.py
