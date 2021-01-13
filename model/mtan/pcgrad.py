@@ -68,14 +68,15 @@ class PCGrad():
         for obj in objectives:
             self._optim.zero_grad()
             obj.backward(retain_graph=True)
+            devices = [p.device for group in self._optim.param_groups for p in group['params']]
             grad = self._retrieve_and_flatten_grad()
-            grads.append(self._fill_zero_grad(grad, numel))
+            grads.append(self._fill_zero_grad(grad, numel, devices))
         return grads, shapes, numel
 
     def _retrieve_and_flatten_grad(self):
-        grad = [p.grad.detach().clone().flatten() if (p.requires_grad is True and p.grad is not None)
+        grad = [p.grad.clone().flatten() if (p.requires_grad is True and p.grad is not None)
                 else None for group in self._optim.param_groups for p in group['params']]
         return grad
 
-    def _fill_zero_grad(self, grad, numel):
-        return torch.cat([g if g is not None else torch.zeros(numel[i]) for i, g in enumerate(grad)])
+    def _fill_zero_grad(self, grad, numel, devices):
+        return torch.cat([g if g is not None else torch.zeros(numel[i], device=devices[i]) for i, g in enumerate(grad)])
