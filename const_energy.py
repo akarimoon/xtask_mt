@@ -93,8 +93,8 @@ if __name__=='__main__':
 
     criterion = XTaskLoss(num_classes=7, balance_method=opt.balance_method).to(device)
 
-    optimizer = optim.Adam(parameters_to_train, lr=0.0001)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=80, gamma=0.5)
+    optimizer = optim.SGD(parameters_to_train, lr=0.0001)
+    # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=80, gamma=0.5)
 
     if not opt.infer_only:
         print("=======================================")
@@ -145,7 +145,7 @@ if __name__=='__main__':
                 weights = model.state_dict()
                 torch.save(weights, weights_path)
 
-            scheduler.step()
+            # scheduler.step()
 
         print("Training done")
         print("=======================================")
@@ -162,6 +162,39 @@ if __name__=='__main__':
                 np.save(os.path.join(opt.save_path, "xtc_energy.npy"), energy_hist)
 
     else:
+
+        for loss_type in ['xtsc', 'xtc']:
+            print("=======================================")
+            print("Performance of {}".format(loss_type))
+            model.load_state_dict(torch.load(os.path.join(opt.save_path, "energy_{}.pth".format(loss_type)), map_location=device))
+
+            logger = Logger(num_classes=7, ignore_index=250)
+            best_score = 0
+            best_set = {}
+
+            model.eval()
+            with torch.no_grad():
+                for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
+                    original, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
+                    batch_X = batch_X.to(device, non_blocking=True)
+                    batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
+                    batch_y_depth = batch_y_depth.to(device, non_blocking=True)
+                    batch_mask_segmt = batch_mask_segmt.to(device, non_blocking=True)
+                    batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
+
+                    predicted = model(batch_X)
+                    # _, _ = criterion(predicted, batch_y_segmt, batch_y_depth,
+                    #                                    batch_mask_segmt, batch_mask_depth)
+
+                    pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
+
+                    preds = [pred_t_segmt, pred_t_depth]
+                    targets = [batch_y_segmt, batch_y_depth]
+                    masks = [batch_mask_segmt, batch_mask_depth]
+                    logger.log(preds, targets, masks)
+
+            logger.get_scores()
+
         xtsc_loss = np.load(os.path.join(opt.save_path, "xtsc_va_losses.npy"))
         xtc_loss = np.load(os.path.join(opt.save_path, "xtc_va_losses.npy"))
         xtsc_energy = np.load(os.path.join(opt.save_path, "xtsc_energy.npy"))
@@ -187,5 +220,6 @@ if __name__=='__main__':
         plt.legend()
 
         plt.tight_layout()
-        plt.savefig(os.path.join(opt.save_path, "loss_and_energy.png"))
+        if not opt.debug:
+            plt.savefig(os.path.join(opt.save_path, "loss_and_energy.png"))
         plt.show()
