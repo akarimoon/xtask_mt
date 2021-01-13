@@ -92,7 +92,7 @@ def masked_L1_loss(predicted, target, mask):
 
 parser = argparse.ArgumentParser(description='Reproduction code of AdaMTNet for CS')
 parser.add_argument('--input_path', default='./data/cityscapes')
-parser.add_argument('--weights_path', default='./exps/model/adamtnet.pth')
+parser.add_argument('--weights_path', default='./exps/model/adamtnet_cs.pth')
 parser.add_argument('--epochs', type=int, default=200)
 parser.add_argument('--infer_only', action='store_true')
 parser.add_argument('--use_adalsp', action='store_true')

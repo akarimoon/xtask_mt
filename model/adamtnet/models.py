@@ -77,29 +77,30 @@ class EncoderSequential(nn.Module):
         return out
 
 class DecoderSequential(nn.Module):
-    def __init__(self, in_features, out_features, mid_features=[64, 128, 256, 512]):
+    def __init__(self, in_features, out_features, mid_features=[64, 128, 256, 512], batch_size=8, height=128, width=256):
         super().__init__()
         self.dec_block1 = DecoderConvBlock(in_features=in_features + mid_features[3], 
                                            out_features=mid_features[3] // 2, 
-                                           size=(8, mid_features[3] // 2, 16, 32))
+                                           size=(batch_size, mid_features[3] // 2, height // 8, width // 8))
         self.dec_block2 = DecoderConvBlock(in_features=mid_features[3] + mid_features[2], 
                                            out_features=mid_features[2] // 2,
-                                           size=(8, mid_features[2] // 2, 32, 64))
+                                           size=(batch_size, mid_features[2] // 2, height // 4, width // 4))
         self.dec_block3 = DecoderConvBlock(in_features=mid_features[2] + mid_features[1], 
                                            out_features=mid_features[1] // 2,
-                                           size=(8, mid_features[1] // 2, 64, 128))
+                                           size=(batch_size, mid_features[1] // 2, height // 2, width // 2))
         self.dec_block4 = DecoderConvBlock(in_features=mid_features[1] + mid_features[0], 
                                            out_features=mid_features[0] // 2,
-                                           size=(8, mid_features[0] // 2, 128, 256))
+                                           size=(batch_size, mid_features[0] // 2, height, width))
         self.final_conv = nn.Conv2d(mid_features[0], out_features, kernel_size=1, stride=1, bias=False)
 
 class AdaMTNet(nn.Module):
     def __init__(self, in_features=3, out_features_seg=7, out_features_dep=1,
-                 bn_features=1024, mid_features=[64, 128, 256, 512]):
+                 bn_features=1024, mid_features=[64, 128, 256, 512],
+                 batch_size=8, height=128, width=256):
         super(AdaMTNet, self).__init__()
         self.encoder = EncoderSequential(in_features, bn_features)
-        self.decoder_segmt = DecoderSequential(bn_features, out_features_seg)
-        self.decoder_depth = DecoderSequential(bn_features, out_features_dep)
+        self.decoder_segmt = DecoderSequential(bn_features, out_features_seg, batch_size=batch_size, height=height, width=width)
+        self.decoder_depth = DecoderSequential(bn_features, out_features_dep, batch_size=batch_size, height=height, width=width)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.dropout = nn.Dropout2d()
         self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
