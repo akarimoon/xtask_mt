@@ -185,14 +185,27 @@ if not opt.infer_only:
             torch.save(weights, opt.weights_path)
             best_valid_loss = valid_loss
 
+
+test_data = CityscapesDataset(root_path=opt.input_path, height=128, width=256, num_classes=7,
+                                split='val', transform=None, ignore_index=250)
+test = DataLoader(test_data, batch_size=1, shuffle=True)
+
+dummy_input = torch.randn(1, 3, 128, 256, dtype=torch.float).to(device)
+for _ in range(100):
+    _ = model(dummy_input)
+
 model.load_state_dict(torch.load(opt.weights_path, map_location=device))
 logger = Logger(num_classes=7, ignore_index=250)
 best_score = 0
 best_set = {}
 
+start = torch.cuda.Event(enable_timing=True)
+end = torch.cuda.Event(enable_timing=True)
+elapsed_times = []
+
 model.eval()
 with torch.no_grad():
-    for i, batch in enumerate(valid):
+    for i, batch in enumerate(test):
         original, batch_X, batch_y_segmt, batch_y_depth, batch_mask_segmt, batch_mask_depth = batch
         batch_X = batch_X.to(device, non_blocking=True)
         batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
@@ -200,9 +213,17 @@ with torch.no_grad():
         batch_mask_segmt = batch_mask_segmt.to(device, non_blocking=True)
         batch_mask_depth = batch_mask_depth.to(device, non_blocking=True)
 
+        start.record()
         preds = model(batch_X)
+        end.record()
+
+        torch.cuda.synchronize()
+        batch_time = start.elapsed_time(end)
+        elapsed_times.append(batch_time)
+
         targets = [batch_y_segmt, batch_y_depth]
         masks = [batch_mask_segmt, batch_mask_depth]
         logger.log(preds, targets, masks)
 
+print("Avg inference time: {:.3f}[ms]".format(np.mean(elapsed_times)))
 logger.get_scores()

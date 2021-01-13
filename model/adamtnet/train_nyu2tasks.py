@@ -167,22 +167,40 @@ if not opt.infer_only:
             torch.save(weights, opt.weights_path)
             best_valid_loss = valid_loss
 
+test_data = NYUv2(root_path=opt.input_path, split='val', transforms=None)
+test = DataLoader(test_data, batch_size=1, shuffle=True)
+
+dummy_input = torch.randn(1, 3, 288, 384, dtype=torch.float).to(device)
+for _ in range(100):
+    _ = model(dummy_input)
+
 model.load_state_dict(torch.load(opt.weights_path, map_location=device))
 logger = Logger(num_classes=13, ignore_index=-1)
 best_score = 0
 best_set = {}
 
+start = torch.cuda.Event(enable_timing=True)
+end = torch.cuda.Event(enable_timing=True)
+elapsed_times = []
+
 model.eval()
 with torch.no_grad():
-    for i, batch in enumerate(valid):
+    for i, batch in enumerate(test):
         batch_X, batch_y_segmt, batch_y_depth = batch
         batch_X = batch_X.to(device, non_blocking=True)
         batch_y_segmt = batch_y_segmt.to(device, non_blocking=True)
         batch_y_depth = batch_y_depth.to(device, non_blocking=True)
 
+        start.record()
         preds = model(batch_X)
-        targets = [batch_y_segmt, batch_y_depth]
-        masks = [batch_mask_segmt, batch_mask_depth]
-        logger.log(preds, targets, masks)
+        end.record()
 
+        torch.cuda.synchronize()
+        batch_time = start.elapsed_time(end)
+        elapsed_times.append(batch_time)
+
+        targets = [batch_y_segmt, batch_y_depth]
+        logger.log(preds, targets)
+
+print("Avg inference time: {:.3f}[ms]".format(np.mean(elapsed_times)))
 logger.get_scores()
