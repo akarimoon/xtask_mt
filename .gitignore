@@ -11,3 +11,4 @@ repro/
 
 yayoi_preprocess.py
 yayoi_finetune.py
+yayoi_inference.py
