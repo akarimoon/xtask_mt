@@ -214,7 +214,7 @@ with torch.no_grad():
         elapsed_times.append(batch_time)
 
         targets = [batch_y_segmt, batch_y_depth]
-        logger.log(preds, targets)
+        logger.log(preds[:2], targets)
 
 print("Avg inference time: {:.3f}[ms]".format(np.mean(elapsed_times)))
 logger.get_scores()
