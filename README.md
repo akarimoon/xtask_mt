@@ -126,6 +126,7 @@ The results are the following:
 
 \*: Trained on 3 tasks (segmentation, depth, and surface normal)<br>
 †: Trained on 2 tasks (segmentation and depth)<br>
+_Italic_: Reproduced by ourselves
 
 Scores with models trained on 3 tasks for NYU dataset are shown only as reference.
 
