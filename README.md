@@ -33,7 +33,7 @@ while the transferred predictions are compared with the direct predictions so th
 The total loss consists of 4 different losses:
 - direct segmentation loss: _CrossEntropyLoss()_
 - direct depth loss: _L1()_ or _MSE()_ or _logL1()_ or _SmoothL1()_
-- transferred segmentation loss: <br>_CrossEntropyLosswithLabelSmoothing()_ or _KLDivergence()_
+- transferred segmentation loss: <br>_CrossEntropyLoss()_ or _KLDivergence()_
 - transferred depth loss: _L1()_ or _SSIM()_
 
 \* Label smoothing: To "smooth" the one-hot probability by taking some of the probability from the correct class and distributing it among other classes.<br>
@@ -69,30 +69,26 @@ The flags are the same for both datasets. The flags and its usage are as written
 For the Cityscapes dataset, there are two versions of segmentation task, which are 7-classes task and 19-classes task (Use flag 'num_classes' to switch tasks, default is 7).<br>
 So far, the results show near-SOTA for 7-class segmentation task + depth estimation.
 
-ResNet34 was used as the encoder, _L1()_ for direct depth loss and _CrossEntropyLosswithLabelSmoothing()_ with smoothing value of 0.1 for transferred segmentation loss.<br>
+ResNet34 was used as the encoder, _L1()_ for direct depth loss and _CrossEntropyLoss()_ for transferred segmentation loss.<br>
 The hyperparameter weights for both transferred predictions were 0.01.<br>
 I used Adam as my optimizer with an initial learning rate of 0.0001 and trained for 250 epochs with batch size 8. The learning rate was halved every 80 epochs.
 
 To reproduce the code, use the following:
 ```
-python main_cross_cs.py --label_smoothing 0.1 --uncertainty_weights
+python main_cross_cs.py --uncertainty_weights
 ```
-
-We notice that not using the label smoothing for transferred segmentation predictions leads to better depth predictions but marginally worse segmentation predictions.
 
 ### NYU
 Our results show SOTA for NYU dataset.
 
-ResNet34 was used as the encoder, _L1()_ for direct depth loss and _CrossEntropyLosswithLabelSmoothing()_ with smoothing value of 0.1 for transferred segmentation loss.<br>
+ResNet34 was used as the encoder, _L1()_ for direct depth loss and _CrossEntropyLoss()_ for transferred segmentation loss.<br>
 The hyperparameter weights for both transferred predictions were 0.0001.<br>
 I used Adam as my optimizer with an initial learning rate of 0.0001 and trained for 100 epochs with batch size 6. The learning rate was halved every 60 epochs.
 
 To reproduce the code, use the following:
 ```
-python main_cross_nyu.py --label_smoothing 0.1 --uncertainty_weights
+python main_cross_nyu.py --uncertainty_weights
 ```
-
-We notice that since the depth distribution of NYU dataset is more complicated than Cityscapes, using label smoothing leads to better predictions for both tasks.
 
 ## Comparisons
 Evaluation metrics are the following:
@@ -110,27 +106,28 @@ The results are the following:
 ### Cityscapes
 | Models                | mIoU  |Pix Acc|Abs     |Abs Rel |
 |:---------------------:|:-----:|:-----:|:------:|:------:|
-| MTAN                  | 59.25 | 91.22 | 0.0147 | 22.34  |
-| KD4MTL                | 58.46 | 91.36 | 0.0146 | 21.96  |
-| PCGrad                | 58.45 | 91.01 | 0.0152 | 22.93  |
-| _AdaMT-Net_           | 62.53 | **94.16** | **0.0125** | <ins>22.23</ins>  |
-| Ours                  | **63.14**	| <ins>92.67</ins> | <ins>0.0126</ins> | **20.84**  |
+| MTAN                  | 53.04 | 91.11 | 0.0144 | 33.63  |
+| KD4MTL                | 52.71 | 91.54 | 0.0139 | 27.33  |
+| PCGrad                | 53.59 | 91.45 | 0.0171 | 31.34  |
+| AdaMT-Net             | <ins>62.53</ins> | **94.16** | <ins>0.0125</ins> | <ins>22.23</ins>  |
+| Ours                  | **66.51**	| <ins>93.56</ins> | **0.0122** | **19.40**  |
 ### NYU
 | Models     |mIoU   |Pix Acc| Abs    |Abs Rel |
 |:----------:|:-----:|:-----:|:------:|:------:|
-| MTAN\*     | 22.13 | 54.72 | 0.6349 | 0.2727 |
-| MTAN†      | 21.07 | 55.70 | 0.6035 | 0.2472 |
-| KD4MTL\*   | 19.41 | 57.83 | 0.6696 | 0.2994 |
-| KD4MTL†    | <ins>22.44</ins> | 57.32 | 0.6003 | 0.2601 |
-| PCGrad\*   | 21.41 | 54.99 | 0.6188 | 0.2697 |
-| PCGrad†    | 21.52 | 53.29 | 0.6092 | 0.2578 |
-| _AdaMT-Net\*_| 21.86 | <ins>60.35</ins> | <ins>0.5933</ins>	| <ins>0.2456</ins> |
-| _AdaMT-Net†_ | 20.61 | 58.91 | 0.6136 | 0.2547 |
-| Ours†      | **25.56** | **60.36** | **0.5088** | **0.2313** |
+| _MTAN\*_   | 21.07 | 55.70 | 0.6035 | 0.2472 |
+| _MTAN†_    | 20.10 | 53.73 | 0.6417 | 0.2758 |
+| KD4MTL\*   | 20.75 | 57.90 | 0.5816 | 0.2445 |
+| _KD4MTL†_  | <ins>22.44</ins> | 57.32 | <ins>0.6003</ins> | 0.2601 |
+| PCGrad\*   | 20.17 | 56.65 | 0.5904 | 0.2467 |
+| _PCGrad†_  | 21.29 | 54.07 | 0.6705 | 0.3000 |
+| AdaMT-Net\*| 21.86 | 60.35 | 0.5933	| 0.2456 |
+| AdaMT-Net† | 20.61 | <ins>58.91</ins> | 0.6136 | <ins>0.2547</ins> |
+| Ours†      | **30.31** | **63.02** | **0.5954** | **0.2235** |
 
 \*: Trained on 3 tasks (segmentation, depth, and surface normal)<br>
 †: Trained on 2 tasks (segmentation and depth)<br>
-_Italic_: From original paper (if not, reproduced results)
+
+Scores with models trained on 3 tasks for NYU dataset are shown only as reference.
 
 ### Papers referred
 MTAN: \[[paper](https://arxiv.org/pdf/1803.10704.pdf)\]\[[github](https://github.com/lorenmt/mtan)\]<br>
