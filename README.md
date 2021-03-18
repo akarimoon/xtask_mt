@@ -1,4 +1,4 @@
-# Cross-Task Self-Consistency for Multi-Task Learning
+# Cross-Task Consistency Learning Framework for Multi-Task Learning
 
 ## Tested on
 - numpy(v1.19.1)
@@ -50,7 +50,7 @@ The flags are the same for both datasets. The flags and its usage are as written
 | `epochs`   | # of epochs | default: 250 (CS) or 100 (NYU) |
 | `enc_layers`   | which encoder to use | default: 34, can choose from 18, 34, 50, 101, 152 |
 | `use_pretrain`   | toggle on to use pretrained encoder weights | available for both datasets |
-| `batch_size`   | batch size | default: 6 |
+| `batch_size`   | batch size | default: 8 (CS) or 6 (NYU) |
 | `scheduler_step_size`   | step size for scheduler | default: 80 (CS) or 60 (NYU), note that we use StepLR |
 | `scheduler_gamma`   | decay rate of scheduler | default: 0.5 |
 | `alpha`   | weight of adding transferred depth loss | default: 0.01 (CS) or 0.0001 (NYU) |
