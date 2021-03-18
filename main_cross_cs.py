@@ -146,8 +146,8 @@ if __name__=='__main__':
             opt.enc_layers, opt.lr, opt.scheduler_step_size, opt.scheduler_gamma))
     print("   loss function --- Lp_depth: {}, tsegmt: {}, tdepth: {}".format(
         opt.lp, opt.tseg_loss, opt.tdep_loss))
-    print("   hyperparameters --- alpha: {}, gamma: {}, smoothing: {}".format(
-        opt.alpha, opt.gamma, opt.label_smoothing))
+    print("   hyperparameters --- lambda_2: {}, lambda_1: {}, smoothing: {}".format(
+        opt.lambda_2, opt.lambda_1, opt.label_smoothing))
     print("   batch size: {}, train for {} epochs".format(
         opt.batch_size, opt.epochs))
     print("   batch_norm={}, wider_ttnet={}".format(
@@ -204,7 +204,7 @@ if __name__=='__main__':
     valid = DataLoader(valid_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
 
     criterion = XTaskLoss(num_classes=opt.num_classes, 
-                          alpha=opt.alpha, gamma=opt.gamma, label_smoothing=opt.label_smoothing,
+                          lambda_2=opt.lambda_2, lambda_1=opt.lambda_1, label_smoothing=opt.label_smoothing,
                           image_loss_type=opt.lp, t_segmt_loss_type=opt.tseg_loss, t_depth_loss_type=opt.tdep_loss,
                           balance_method=opt.balance_method,
                           ignore_index=opt.ignore_index).to(device)
@@ -299,8 +299,8 @@ if __name__=='__main__':
         train_losses = np.array(train_losses)
         valid_losses = np.array(valid_losses)
 
-        np.save(os.path.join(results_dir, "model", "tr_losses.npy".format(opt.alpha, opt.gamma)), train_losses)
-        np.save(os.path.join(results_dir, "model", "va_losses.npy".format(opt.alpha, opt.gamma)), valid_losses)
+        np.save(os.path.join(results_dir, "model", "tr_losses.npy".format(opt.lambda_2, opt.lambda_1)), train_losses)
+        np.save(os.path.join(results_dir, "model", "va_losses.npy".format(opt.lambda_2, opt.lambda_1)), valid_losses)
 
     else:
         save_at_epoch = 0

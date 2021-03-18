@@ -32,10 +32,10 @@ def nyu_xtask_parser():
     parser.add_argument('--scheduler_gamma', type=float, default=0.5,
                         help='lr decay of scheduler (steplr)')
 
-    parser.add_argument('-a', '--alpha', type=float, default=0.0001,
-                        help='alpha of loss function (default: 0.0001)')
-    parser.add_argument('-g', '--gamma', type=float, default=0.0001,
-                        help='gamma of loss function (default: 0.0001')
+    parser.add_argument('--lambda_1', type=float, default=0.0001,
+                        help='lambda_1 of loss function (default: 0.0001')
+    parser.add_argument('--lambda_2', type=float, default=0.0001,
+                        help='lambda_2 of loss function (default: 0.0001)')
     parser.add_argument('--label_smoothing', type=float, default=0.,
                         help='label smoothing when calculating cross-task segmt loss')
     parser.add_argument('--lp', default="L1", choices=["MSE", "L1", "logL1", "smoothL1"],
@@ -120,10 +120,10 @@ def cityscapes_xtask_parser():
     parser.add_argument('--scheduler_gamma', type=float, default=0.5,
                         help='lr decay of scheduler (steplr)')
 
-    parser.add_argument('-a', '--alpha', type=float, default=0.01,
-                        help='alpha of loss function (default: 0.01)')
-    parser.add_argument('-g', '--gamma', type=float, default=0.01,
-                        help='gamma of loss function (default: 0.01')
+    parser.add_argument('--lambda_1', type=float, default=0.01,
+                        help='lambda_1 of loss function (default: 0.01')
+    parser.add_argument('--lambda_2', type=float, default=0.01,
+                        help='lambda_2 of loss function (default: 0.01)')
     parser.add_argument('--label_smoothing', type=float, default=0.,
                         help='label smoothing when calculating KL loss')
     parser.add_argument('--lp', default="L1", choices=["MSE", "L1", "logL1", "smoothL1"],

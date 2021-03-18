@@ -11,8 +11,8 @@ def write_results(logger, opt, model, file_path="./exps/results.txt", exp_num=No
         f.write("=" * 10 + "\n")
         if exp_num is not None:
             f.write("Experiment #{}\n".format(exp_num))
-        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, alpha={}, gamma={}, smoothing={}\n".format(
-            opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss, opt.alpha, opt.gamma, opt.label_smoothing
+        f.write("Parameters: enc={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, lambda_2={}, lambda_1={}, smoothing={}\n".format(
+            opt.enc_layers, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss, opt.lambda_2, opt.lambda_1, opt.label_smoothing
         ))
         f.write("Use pretrained encoder: {} (if not written, then False)\n".format(opt.use_pretrain))
         f.write("Optimizer: {}, Scheduler: StepLR(step size={}, gamma={})\n".format(opt.optim.capitalize(), opt.scheduler_step_size, opt.scheduler_gamma))
@@ -42,9 +42,9 @@ def write_indv_results(opt, model, folder_path):
         f.write("   predicting at size [{}*{}]\n".format(opt.height, opt.width))
         f.write("   batch size: {}, train for {} epochs\n".format(opt.batch_size, opt.epochs))
         f.write("   optimizer: {}, scheduler: StepLR(step size={}, gamma={})\n".format(opt.optim.capitalize(), opt.scheduler_step_size, opt.scheduler_gamma))
-        f.write("   enc={}, numclasses={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, alpha={}, gamma={}, smoothing={}\n".format(
+        f.write("   enc={}, numclasses={}, lr={}, beta={}, lp={}, tsegmt={}, tdepth={}, lambda_2={}, lambda_1={}, smoothing={}\n".format(
             opt.enc_layers, opt.num_classes, opt.lr, (opt.b1, opt.b2), opt.lp, opt.tseg_loss, opt.tdep_loss,
-            opt.alpha, opt.gamma, opt.label_smoothing
+            opt.lambda_2, opt.lambda_1, opt.label_smoothing
         ))
         f.write("   use pretrained encoder: {} (if not written, then False)\n".format(opt.use_pretrain))
         f.write("   batch norm in ttnet: {} (if not written, then False)\n".format(opt.batch_norm))

@@ -394,14 +394,14 @@ class LabelSmoothingLoss(nn.Module):
         return torch.mean(torch.sum(-true_dist * F.log_softmax(predicted, dim=self.dim), dim=self.dim))
 
 class XTaskLoss(nn.Module):
-    def __init__(self, num_classes=19, alpha=0.01, gamma=0.01, label_smoothing=0.,
+    def __init__(self, num_classes=19, lambda_1=0.01, lambda_2=0.01, label_smoothing=0.,
                  image_loss_type="L1", t_segmt_loss_type="cross", t_depth_loss_type="L1",
                  balance_method=None, method='xtsc',
                  ignore_index=250):
         super(XTaskLoss, self).__init__()
         self.num_classes = num_classes
-        self.alpha = alpha
-        self.gamma = gamma
+        self.lambda_1 = lambda_1
+        self.lambda_2 = lambda_2
         self.image_loss_type = image_loss_type
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=ignore_index, reduction='mean')
         self.t_depth_loss_type = t_depth_loss_type
@@ -498,18 +498,18 @@ class XTaskLoss(nn.Module):
         #     tseg_loss = self.tdep_loss(pred_t_depth, pred_depth.detach().clone(), mask_depth)
 
         if self.balance_method is None:
-            image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss
-            label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss
+            label_loss = (1 - self.lambda_1) * segmt_loss + self.lambda_1 * tdep_loss
+            image_loss = (1 - self.lambda_2) * depth_loss + self.lambda_2 * tseg_loss
 
         elif self.balance_method == "uncert":
-            image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tseg_loss
-            label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tdep_loss
-            image_loss = 0.5 * torch.exp(-task_weights[0]) * image_loss_tmp + task_weights[0]
+            label_loss_tmp = (1 - self.lambda_1) * segmt_loss + self.lambda_1 * tdep_loss
+            image_loss_tmp = (1 - self.lambda_2) * depth_loss + self.lambda_2 * tseg_loss
             label_loss = 0.5 * torch.exp(-task_weights[1]) * label_loss_tmp + task_weights[1]
+            image_loss = 0.5 * torch.exp(-task_weights[0]) * image_loss_tmp + task_weights[0]
 
         elif self.balance_method == "gradnorm":
-            image_loss = (1 - self.alpha) * depth_loss + self.alpha * tseg_loss
-            label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tdep_loss
+            label_loss = (1 - self.lambda_1) * segmt_loss + self.lambda_1 * tdep_loss
+            image_loss = (1 - self.lambda_2) * depth_loss + self.lambda_2 * tseg_loss
 
         return image_loss, label_loss
 
