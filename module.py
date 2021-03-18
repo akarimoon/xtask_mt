@@ -396,7 +396,7 @@ class LabelSmoothingLoss(nn.Module):
 class XTaskLoss(nn.Module):
     def __init__(self, num_classes=19, alpha=0.01, gamma=0.01, label_smoothing=0.,
                  image_loss_type="L1", t_segmt_loss_type="cross", t_depth_loss_type="L1",
-                 balance_method=None, 
+                 balance_method=None, method='xtsc',
                  ignore_index=250):
         super(XTaskLoss, self).__init__()
         self.num_classes = num_classes
@@ -406,6 +406,8 @@ class XTaskLoss(nn.Module):
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=ignore_index, reduction='mean')
         self.t_depth_loss_type = t_depth_loss_type
         self.balance_method = balance_method
+
+        self.method = method
 
         self.nonlinear = nn.LogSoftmax(dim=1)
 
@@ -472,7 +474,7 @@ class XTaskLoss(nn.Module):
         loss = torch.sum(diff, dim=(2,3)) / torch.sum(mask, dim=(2,3))
         return torch.mean(loss)
 
-    def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, task_weights=None, use_xtc=False):
+    def forward(self, predicted, targ_segmt, targ_depth, mask_segmt=None, mask_depth=None, task_weights=None):
         pred_segmt, pred_t_segmt, pred_depth, pred_t_depth = predicted
         if self.num_classes != 13 and mask_segmt is None:
             mask_segmt = torch.ones_like(targ_segmt)
@@ -480,24 +482,26 @@ class XTaskLoss(nn.Module):
             mask_depth = torch.ones_like(targ_depth)
 
         depth_loss = self.image_loss(pred_depth, targ_depth, mask_depth)
-        if not use_xtc:
+        if self.method == 'xtsc':
             tdep_loss = self.tdep_loss(pred_t_depth, pred_depth.detach().clone(), mask_depth)
-        else:
-            tdep_loss = self.image_loss(pred_t_depth, targ_depth.clone(), mask_depth)
+        elif self.method == 'xtc':
+            tdep_loss = self.image_loss(pred_t_depth, targ_depth, mask_depth)
+        # elif self.method == 'percp':
+        #     tdep_loss = self.tseg_loss(pred_t_segmt, torch.argmax(self.nonlinear(pred_segmt.detach().clone()), dim=1), mask_segmt)
 
         segmt_loss = self.cross_entropy_loss(pred_segmt, targ_segmt)
-        if not use_xtc:
+        if self.method == 'xtsc':
             tseg_loss = self.tseg_loss(pred_t_segmt, torch.argmax(self.nonlinear(pred_segmt.detach().clone()), dim=1), mask_segmt)
-        else:
-            tseg_loss = self.cross_entropy_loss(pred_t_segmt, targ_segmt.clone())
+        elif self.method == 'xtc':
+            tseg_loss = self.cross_entropy_loss(pred_t_segmt, targ_segmt)
+        # elif self.method == 'percp':
+        #     tseg_loss = self.tdep_loss(pred_t_depth, pred_depth.detach().clone(), mask_depth)
 
         if self.balance_method is None:
             image_loss = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss
             label_loss = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss
 
         elif self.balance_method == "uncert":
-            # image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tdep_loss
-            # label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tseg_loss
             image_loss_tmp = (1 - self.alpha) * depth_loss + self.alpha * tseg_loss
             label_loss_tmp = (1 - self.gamma) * segmt_loss + self.gamma * tdep_loss
             image_loss = 0.5 * torch.exp(-task_weights[0]) * image_loss_tmp + task_weights[0]

@@ -244,8 +244,9 @@ def const_energy_parser():
     parser.add_argument('--save_path', default='./exps/const/',
                         help='path to folder where weights are saved (default: ./exps/const/)')
 
-    parser.add_argument('--use_xtc', action='store_true', 
-                        help='flag: xtc')
+    parser.add_argument('--method', default='xtsc', choices=['xtsc', 'xtc', 'percp'],
+                        help='choose consistency method from [xtsc, xtc, percp] (default: xtsc)')
+
     parser.add_argument('--infer_only', action='store_true', 
                         help='flag: only infer')
     parser.add_argument('--view_only', action='store_true', 

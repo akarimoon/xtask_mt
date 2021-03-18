@@ -21,7 +21,7 @@ DEPTH_CORRECTION = 2.1116e-09
 
 def compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                  batch_mask_segmt, batch_mask_depth, 
-                 model, task_weights=None, use_xtc=False,
+                 model, task_weights=None,
                  criterion=None, optimizer=None, 
                  is_train=True):
 
@@ -35,7 +35,7 @@ def compute_loss(batch_X, batch_y_segmt, batch_y_depth,
 
     output = model(batch_X)
     image_loss, label_loss = criterion(output, batch_y_segmt, batch_y_depth,
-                                       batch_mask_segmt, batch_mask_depth, task_weights=task_weights, use_xtc=use_xtc)
+                                       batch_mask_segmt, batch_mask_depth, task_weights=task_weights)
 
     if is_train:
         optimizer.zero_grad()
@@ -52,10 +52,8 @@ if __name__=='__main__':
     print("Initializing...")
     if not os.path.exists(opt.save_path):
         os.makedirs(opt.save_path)
-    if not opt.use_xtc:
-        weights_path = os.path.join(opt.save_path, "energy_xtsc.pth")
-    else:
-        weights_path = os.path.join(opt.save_path, "energy_xtc.pth")
+
+    weights_path = os.path.join(opt.save_path, "energy_{}.pth".format(opt.method))
 
     parameters_to_train = []
 
@@ -91,7 +89,7 @@ if __name__=='__main__':
     train = DataLoader(train_data, batch_size=8, shuffle=True, num_workers=opt.workers)
     valid = DataLoader(valid_data, batch_size=8, shuffle=True, num_workers=opt.workers)
 
-    criterion = XTaskLoss(num_classes=7, balance_method=opt.balance_method).to(device)
+    criterion = XTaskLoss(num_classes=7, balance_method=opt.balance_method, method=opt.method).to(device)
 
     optimizer = optim.SGD(parameters_to_train, lr=0.0001)
     # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=80, gamma=0.5)
@@ -115,7 +113,7 @@ if __name__=='__main__':
                 _, output = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                     batch_mask_segmt, batch_mask_depth, 
                                     model, task_weights=task_weights,
-                                    criterion=criterion, optimizer=optimizer, use_xtc=opt.use_xtc,
+                                    criterion=criterion, optimizer=optimizer,
                                     is_train=True)
 
             for i, batch in enumerate(tqdm(valid, disable=opt.notqdm)):
@@ -123,7 +121,7 @@ if __name__=='__main__':
                 loss, output = compute_loss(batch_X, batch_y_segmt, batch_y_depth, 
                                         batch_mask_segmt, batch_mask_depth, 
                                         model, task_weights=task_weights,
-                                        criterion=criterion, optimizer=optimizer, use_xtc=opt.use_xtc,
+                                        criterion=criterion, optimizer=optimizer,
                                         is_train=False)
                 valid_loss += loss
 
